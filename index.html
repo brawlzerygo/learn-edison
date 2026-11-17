@@ -8,12 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script>/* Apply the saved theme before the page paints, so it never flashes the wrong look. */
-(function(){var t='remastered';try{var v=JSON.parse(localStorage.getItem('edison:theme'));if(['remastered','index'].indexOf(v)>-1)t=v}catch(e){}document.documentElement.dataset.theme=t})();</script>
-<link rel="stylesheet" href="themes/remastered.css">
+(function(){var t='index';try{var v=JSON.parse(localStorage.getItem('edison:theme'));if(['index'].indexOf(v)>-1)t=v}catch(e){}document.documentElement.dataset.theme=t})();</script>
 <link rel="stylesheet" href="themes/index.css">
 <style>
 :root{
-  /* Base tokens. Each theme in themes/*.css (Forum remastered, Board index; older looks are kept in design/old-themes/) overrides them and
+  /* Base tokens. Each theme in themes/*.css (Board index, the site's one look since 2026-11-17; older looks, Forum remastered among them, are kept in design/old-themes/) overrides them and
      restyles the components; this file holds layout and structure only. */
   --bg:#f5f6fa; --surface:#ffffff; --ink:#151a2c; --muted:#5b6379; --line:#e1e4ee;
   --accent:#3046d4; --accent-soft:#e7eaff; --on-accent:#fff; --gold:#b9831a; --good:#1f8a55; --bad:#c23a3a;
@@ -617,9 +616,7 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
     <a href="#duel" role="menuitem">Duel the computer<small>Play a game, three difficulties</small></a>
     <a href="#simulator" role="menuitem">Practice board<small>Set up any field, try Synchros</small></a>
   </div>
-  <div class="tpick" role="group" aria-label="Site theme">
-    <button type="button" data-theme-pick="remastered" title="Forum remastered">Remastered</button><button type="button" data-theme-pick="index" title="Board index">Index</button>
-  </div>
+
 </div></header>
 <main id="app"></main>
 <footer class="sitefoot"><p>The literal and graphical information presented on this site about Yu-Gi-Oh!, including Card images, Attribute, Level, Rank, Type Symbols, is copyright 4K Media Inc, a subsidiary of Konami Digital Entertainment (KDE), Inc.</p><p>This website is not produced by, endorsed by, supported by, or affiliated with 4k Media, Studio Dice, or KDE.</p></footer>
@@ -631,6 +628,9 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
 <script src="data/localimg.js"></script>
 <script src="data/errata.js"></script>
 <script src="data/library.js"></script>
+<script src="data/lessons-201.js"></script>
+<script src="data/lessons-301.js"></script>
+<script src="data/lessons-301b.js"></script>
 <script src="data/meta.js"></script>
 <script>
 /* ============ STORAGE (safe) ============ */
@@ -1068,7 +1068,7 @@ ${call('analogy','Think of it like this','<p>In Goat, sheep were sandbags. In Ed
 <li><div>Summon ${c('drill')}. You still have 1 Fluff Token, and your Normal Summon is still unused.</div></li>
 </ol>
 ${eq(['quickdraw','fluff'],'drill','Level 5 + 1 = Level 6')}
-<p>One card from your hand became a Level 6 Synchro and a token. This is the heart of Quickdraw Plants, the deck that won the real Edison tournament. You will study it in Lesson 19.</p>
+<p>One card from your hand became a Level 6 Synchro and a token. This is the heart of Quickdraw Plants. According to edisonformat.com, a Quickdraw deck (Quickdraw Dandywarrior) won the April 2010 tournament in Edison that the format is named after. You will study it in Lesson 19.</p>
 ${call('rule','Quickdraw\'s limit','<p>Quickdraw Synchron can only be used for Synchros that need a "Synchron" Tuner, like Drill Warrior or Junk Warrior. It cannot make Stardust Dragon or Black Rose Dragon.</p>')}
 ${call('mistake','Common beginner mistakes','<ul><li>Thinking sheep can never be used for anything. They can be Synchro Material.</li><li>Trying to Tribute Summon with Fluff Tokens the turn they appear. That is not allowed.</li><li>Forgetting Dandylion works from anywhere it is sent from, even your Deck.</li></ul>')}
 <div class="recap"><h2>Recap</h2><ul><li>Tokens are monsters without a card. They vanish when they leave the field.</li><li>Tokens with a Level can be Synchro Material.</li><li>Scapegoat is now a wall and an ingredient.</li><li>Dandylion makes 2 tokens whenever it is sent to the Graveyard.</li></ul></div>`,
@@ -1489,7 +1489,17 @@ flash:[
 ['Mirror Force is Chain Link 1 and MST destroys it as Chain Link 2. Does Mirror Force still work?','Yes. An activated Normal Trap resolves even if it is destroyed. Only negation stops it.']
 ]});
 
-const ALL=[...B,...L];
+/* Edison 201 and 301 live in data/lessons-201.js and data/lessons-301.js. Each file sets a function that gets the
+ lesson helpers and returns its lessons: {n, title, sub, min, cards:[card names], html, flash:[[question, answer]]}.
+ cn('Card Name') links any real card by its exact name; call(type, tag, html) makes a callout. */
+function cn(name,label){const r=BYNAME.get(name);if(!r){console.warn('Lesson card not found:',name);return esc(label||name)}return `<button type="button" class="cref" data-rid="${r.id}">${esc(label||name)}</button>`}
+function nameTile(name){if(C[name])return tile(C[name]);const r=BYNAME.get(name);if(!r){console.warn('Lesson card not found:',name);return ''}
+  return `<button type="button" class="ctile pic" data-rid="${r.id}" aria-label="${esc(r.n)}" style="background-image:url('${artURL(r)}')"></button>`}
+const lessonHelpers={cn,call,esc};
+const L2=((window.EDISON_LESSONS_201||(()=>[]))(lessonHelpers)).map(l=>Object.assign({lv:'201'},l));
+const L3=[...(window.EDISON_LESSONS_301||(()=>[]))(lessonHelpers),...(window.EDISON_LESSONS_301B||(()=>[]))(lessonHelpers)].sort((a,b)=>a.n-b.n).map(l=>Object.assign({lv:'301'},l));
+const levelOf=l=>typeof l.n==='string'?'0':L2.includes(l)?'201':L3.includes(l)?'301':'101';
+const ALL=[...B,...L,...L2,...L3];
 const lessonLabel=l=>typeof l.n==='string'?`Step ${l.n}`:`${TW().lesson} ${l.n}`;
 
 const LOCKED=[
@@ -1553,12 +1563,11 @@ const TERMS=[
 
 /* ============ THEMES ============
  Two looks (themes/*.css). The structure and content never change; a theme swaps styles and a few words. */
-const THEMES=['remastered','index'];
+const THEMES=['index'];
 const THEME_WORDS={
-  remastered:{lesson:'Lesson',sep:' › ',done:'Read'},
   index:{lesson:'Lesson',sep:' / ',done:'Read'}
 };
-const curTheme=()=>THEMES.includes(document.documentElement.dataset.theme)?document.documentElement.dataset.theme:'remastered';
+const curTheme=()=>THEMES.includes(document.documentElement.dataset.theme)?document.documentElement.dataset.theme:'index';
 const TW=()=>THEME_WORDS[curTheme()];
 function setTheme(t){
   if(!THEMES.includes(t))return;
@@ -1678,9 +1687,9 @@ function renderCourse(){
   <section class="level-block"><div class="level-head"><span class="level-tag">101</span><h2>How do I play?</h2><p>The new ideas, explained slowly: Synchros, the Extra Deck, tokens, and the rules that changed since Goat.</p></div>
   <div class="lessons">${L.map(lcard).join('')}</div></section>
   <section class="level-block"><div class="level-head"><span class="level-tag">201</span><h2>What do these cards do?</h2><p>The cards you will see in almost every game, a few at a time.</p></div>
-  <div class="lessons">${LOCKED.filter(x=>x[1]==='201').map(lock).join('')}</div></section>
+  <div class="lessons">${[...L2.map(lcard),...LOCKED.filter(x=>x[1]==='201'&&!L2.some(l=>l.n===x[0])).map(lock)].join('')}</div></section>
   <section class="level-block"><div class="level-head"><span class="level-tag">301</span><h2>How do I win?</h2><p>Real decks, how they play, and how to beat them.</p></div>
-  <div class="lessons">${LOCKED.filter(x=>x[1]==='301').map(lock).join('')}</div></section>
+  <div class="lessons">${[...L3.map(lcard),...LOCKED.filter(x=>x[1]==='301'&&!L3.some(l=>l.n===x[0])).map(lock)].join('')}</div></section>
   ${DB.length?`<p class="sitestats"><span><b>${DB.length.toLocaleString()}</b> cards</span><span><b>${DECKS.length}</b> decks</span><span><b>${DB.filter(r=>r.ru).length.toLocaleString()}</b> Edison rulings</span><span>Banlist: <b>March 2010</b></span></p>`:''}`;
 }
 
@@ -1689,7 +1698,8 @@ function renderLesson(key){
   const idx=ALL.findIndex(x=>String(x.n)===key);if(idx<0){renderCourse();return}
   const l=ALL[idx];const n=l.n;const basics=typeof n==='string';
   const isDone=done().includes(n);const prev=ALL[idx-1],next=ALL[idx+1];
-  const sep=TW().sep;const crumb=basics?`Step 0: The Basics${sep}Part ${B.indexOf(l)+1} of ${B.length}`:`Edison 101${sep}${TW().lesson} ${n} of ${L.length}`;
+  const sep=TW().sep;const lvl=levelOf(l);const grp=lvl==='201'?L2:lvl==='301'?L3:L;
+  const crumb=basics?`Step 0: The Basics${sep}Part ${B.indexOf(l)+1} of ${B.length}`:`Edison ${lvl}${sep}${TW().lesson} ${n} (${grp.indexOf(l)+1} of ${grp.length})`;
   // Wide layout: the reading column on the left (kept to a comfortable line length), and a sticky sidebar
   // with the lesson's cards, its goals and an "On this page" list. On narrow screens the sidebar sits on top.
   app.innerHTML=`<article class="lesson wide">
@@ -1698,7 +1708,7 @@ function renderLesson(key){
     <div class="lgrid">
       <div class="lmain">${l.html}</div>
       <aside class="lside" aria-label="Lesson overview">
-        ${l.cards.length?`<section class="sbox"><h4>Cards in this lesson</h4><div class="stiles">${l.cards.map(i=>tile(C[i])).join('')}</div><p class="note" style="margin:6px 0 0">Tap a card for its text and rulings.</p></section>`:''}
+        ${l.cards.length?`<section class="sbox"><h4>Cards in this lesson</h4><div class="stiles">${l.cards.map(i=>C[i]?tile(C[i]):nameTile(i)).join('')}</div><p class="note" style="margin:6px 0 0">Tap a card for its text and rulings.</p></section>`:''}
         <div id="lgoals"></div>
         <section class="sbox stoc" id="ltoc"><h4>On this page</h4></section>
       </aside>
