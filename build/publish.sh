@@ -2,7 +2,9 @@
 # Publish Learn Edison to GitHub Pages on the brawlzerygo GitHub account.
 #
 # Runs in its own GitHub sign-in (~/.config/gh-brawlzerygo), so it never uses or changes any other GitHub login on
-# this Mac, and it never edits the global git settings. It stops unless the signed-in account is brawlzerygo.
+# this Mac, and it never edits the global git settings. It stops unless the signed-in account is brawlzerygo and the
+# push destination is a brawlzerygo repository. This script is the only way Claude sessions may push (Zack,
+# 2026-11-17): the project settings allow running it and still block raw `gh` and `git push`.
 #
 # First run: signs in (in the browser), creates the public repo brawlzerygo/learn-edison, pushes the site and turns on
 # GitHub Pages. Later runs: commit any changes and push them; the live site updates a minute or two later.
@@ -33,6 +35,13 @@ if ! git remote get-url origin >/dev/null 2>&1; then
   fi
   git remote add origin "https://github.com/$OWNER/$REPO.git"
 fi
+
+# Only ever push to a brawlzerygo repository.
+origin=$(git remote get-url origin)
+case "$origin" in
+  https://github.com/$OWNER/*) ;;
+  *) echo "The push destination is $origin, not a $OWNER repository. Stopping without publishing."; exit 1 ;;
+esac
 
 git add -A
 git diff --cached --quiet || git commit -q -m "${1:-Update the site}"
