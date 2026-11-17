@@ -1,0 +1,6 @@
+/img/*
+  Cache-Control: public, max-age=604800
+/data/*
+  Cache-Control: public, max-age=0, must-revalidate
+/themes/*
+  Cache-Control: public, max-age=0, must-revalidate

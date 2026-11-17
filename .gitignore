@@ -1,0 +1,15 @@
+# Build downloads: large and rebuilt by build/build_data.py
+build/raw/
+build/rulings/
+dist/
+
+# Old Netlify hosting (the site now lives on GitHub Pages)
+build/deploy.sh
+netlify.toml
+.netlify/
+
+# Local notes and system files
+CLAUDE.md
+.DS_Store
+Icon?
+Icon
