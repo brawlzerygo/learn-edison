@@ -4,6 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Learn Edison</title>
+<meta name="robots" content="noindex, nofollow">
+<script>/* Private for now (Zack, 2026-11-17): a password screen hides the site until the right password is entered once on
+   this browser. Only its SHA-256 hash is stored here. It keeps casual visitors out; it is not real security, because the
+   repo is public. To change the password, replace GATE_HASH with the new password's SHA-256; to open the site, delete
+   this script and the #gate styles. */
+(function(){var GATE_HASH='f6da76970546ded2eea9a32489ddb715eb860b328f27acb6c4819e0df15bae6b',K='edison:gate';
+try{if(localStorage.getItem(K)===GATE_HASH)return}catch(e){}
+document.documentElement.classList.add('gated');
+function hex(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return('0'+x.toString(16)).slice(-2)}).join('')}
+document.addEventListener('DOMContentLoaded',function(){
+  var g=document.createElement('form');g.id='gate';
+  g.innerHTML='<div class="gbox"><div class="glogo">Learn<span>Edison</span></div><p>This site is private for now.</p>'+
+    '<label for="gpw">Password</label><input id="gpw" type="password" autocomplete="current-password" autofocus>'+
+    '<button type="submit">Enter</button><p class="gerr" role="alert"></p></div>';
+  document.body.appendChild(g);
+  g.addEventListener('submit',function(ev){ev.preventDefault();var v=g.querySelector('#gpw').value;
+    crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)).then(function(b){
+      if(hex(b)===GATE_HASH){try{localStorage.setItem(K,GATE_HASH)}catch(e){}document.documentElement.classList.remove('gated');g.remove();window.dispatchEvent(new Event('resize'))}
+      else{g.querySelector('.gerr').textContent='That password is not right.';g.querySelector('#gpw').select()}})});
+});
+})();</script>
+<style>
+html.gated body>*:not(#gate){display:none!important}
+#gate{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:99999;padding:16px}
+#gate .gbox{width:min(360px,100%);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px;display:grid;gap:10px}
+#gate .glogo{font-family:var(--display);font-weight:700;font-size:26px} #gate .glogo span{color:var(--accent)}
+#gate p{margin:0;color:var(--muted)} #gate label{font-weight:600;font-size:14px}
+#gate input{height:40px;border:1px solid var(--line);border-radius:8px;padding:0 12px;font:inherit}
+#gate button{height:40px;border:0;border-radius:8px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:700;cursor:pointer}
+#gate .gerr{color:var(--bad);min-height:1.2em;font-size:14px}
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">

@@ -52,4 +52,20 @@ if ! gh api "repos/$OWNER/$REPO/pages" >/dev/null 2>&1; then
   gh api -X POST "repos/$OWNER/$REPO/pages" -f "source[branch]=main" -f "source[path]=/" >/dev/null
   echo "GitHub Pages is on."
 fi
-echo "Published. The live site updates in a minute or two: https://$OWNER.github.io/$REPO/"
+# Custom domain (the CNAME file, learnedison.com since 2026-11-17): make sure Pages uses it, and turn on HTTPS once
+# GitHub has issued the certificate (that can take up to a day after the DNS change; until then this step just waits).
+if [ -f CNAME ]; then
+  domain=$(head -n 1 CNAME | tr -d '[:space:]')
+  current=$(gh api "repos/$OWNER/$REPO/pages" --jq '.cname // ""' 2>/dev/null || true)
+  if [ "$current" != "$domain" ]; then
+    gh api -X PUT "repos/$OWNER/$REPO/pages" -f "cname=$domain" >/dev/null && echo "Custom domain set: $domain"
+  fi
+  if gh api -X PUT "repos/$OWNER/$REPO/pages" -F https_enforced=true >/dev/null 2>&1; then
+    echo "HTTPS is on for $domain."
+  else
+    echo "HTTPS for $domain isn't ready yet (GitHub is still issuing the certificate). Publish again later to turn it on."
+  fi
+  echo "Published. The live site updates in a minute or two: https://$domain/"
+else
+  echo "Published. The live site updates in a minute or two: https://$OWNER.github.io/$REPO/"
+fi
