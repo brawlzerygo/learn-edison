@@ -218,6 +218,20 @@ body.noscroll{overflow:hidden}
   .ahand{flex-wrap:wrap;margin-top:8px}
   .pcount{font-size:9.5px;padding:0 5px}
 }
+.ahint{left:16px;top:52px;width:min(340px,25vw);min-width:250px;max-height:calc(100% - 180px);overflow:auto;background:var(--panel);border:1px solid #ffd77a;border-radius:12px;padding:10px 12px;color:var(--ink-a);font-size:13.5px;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:7}
+.ahint .hhead{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#ffe7a6;font-size:14px;margin-bottom:4px}
+.ahint .hx{background:none;border:none;color:var(--ink-a);font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
+.ahint ol{margin:0;padding-left:20px;display:grid;gap:7px}
+.ahint li b{display:block;color:#fff}
+.ahint li span{color:rgba(243,231,207,.8)}
+.ahint .htips{margin-top:9px;padding-top:7px;border-top:1px solid rgba(201,162,74,.3)}
+.ahint .htips p{margin:0 0 5px;color:rgba(243,231,207,.8)}
+.ahint .htips b{color:#ffe7a6}
+.ahint .hnote{margin:6px 0 0;font-size:12px;color:rgba(243,231,207,.55)}
+.arena .hintbtn{border-color:#ffd77a}
+.arena .hintbtn.on{background:rgba(255,215,122,.16)}
+.ahand>.hinted,.arena .zone.hinted{outline:3px dashed #ffd77a;outline-offset:2px}
+@media(max-width:819px){.ahint{width:auto;min-width:0;max-height:none;margin:8px 10px 0}}
 /* Duel */
 .dsetup{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .dsetup label{display:grid;gap:4px;font-weight:600;font-size:14px;color:var(--muted)}
@@ -2404,7 +2418,7 @@ function arenaHTML(o){
   <div class="aov lp-opp">${o.oppPanel}</div>
   <div class="aov lp-you">${o.youPanel}</div>
   <div class="aov aacts">${o.actions}<button class="abtn" id="logbtn" type="button" aria-expanded="${LOGOPEN}">${LOGOPEN?'Hide log':'Log'}</button></div>
-  <div class="aov alog ${LOGOPEN?'open':''}" id="alog" aria-live="polite">${o.log}</div>`;
+  <div class="aov alog ${LOGOPEN?'open':''}" id="alog" aria-live="polite">${o.log}</div>${o.hint?`<div class="aov ahint" role="region" aria-label="Hint">${o.hint}</div>`:''}`;
 }
 const isFull=()=>{const a=document.getElementById('arena');return !!a&&(document.fullscreenElement===a||a.classList.contains('max'))};
 // Re-rendering keeps the same arena element, so fullscreen survives every move.
@@ -2838,7 +2852,7 @@ function dWin(pi,why){if(G.winner!==null)return;G.winner=pi;dlog(`${why}. ${pi==
 function dCheckLP(){for(const pi of [0,1])if(G.p[pi].lp<=0){G.p[pi].lp=0;dWin(1-pi,`${G.p[pi].name==='You'?'Your':"The computer's"} LP hit 0`)}}
 function dStartTurn(){
   if(G.winner!==null)return;
-  G.turnNo++;G.phase='draw';G.normalDone=false;G.ui=null;
+  G.turnNo++;G.phase='draw';G.normalDone=false;G.ui=null;G.hint=false;
   const P=G.p[G.turn];P.m.forEach(x=>{if(x){x.attacked=false;x.posChanged=false}});
   dlog(`— Turn ${G.turnNo}: ${G.turn===0?'your turn':"the computer's turn"} —`);
   if(!dDraw(G.turn))return;
@@ -2937,6 +2951,186 @@ function cpuSynchro(){
     for(const ex of P.extra){if(checkSyn(mats,ex).ok&&dAtk(ex)>Math.max(...mats.map(dAtk))&&(!best||dAtk(ex)>dAtk(best.ex)))best={ex,mats}}}
   if(!best)return false;dSynchro(1,best.mats.map(m=>m.u),best.ex);return true;
 }
+/* ---- turn hints (Zack, 2026-11-17: "tooltips each turn that the player can reveal to see what they should do") ----
+ The Hint button reveals a suggested play for the current phase, worked out from what the player can see: their own
+ hand and field, the opponent's face-up cards and how many cards they have Set. It never peeks at hidden cards.
+ Each step says what to do and why; cards in the first step glow. Tips explain the staples in hand, in our own words
+ from their Edison text. The hint hides again at the start of every turn so the player tries first. */
+const dText=x=>{const cd=getC(x);const r=cd.rid&&BYID.get(cd.rid);return (r&&(r.ps||r.tx))||cd.text||''};
+const dAttr=x=>{const cd=getC(x);const r=cd.rid&&BYID.get(cd.rid);return cd.attr||(r&&r.a)||''};
+const dNm=x=>getC(x).name;
+const canNormalC=x=>{const cd=getC(x);return isMonC(cd)&&!['synchro','fusion','token'].includes(cd.kind)&&!/Cannot be Normal Summoned/i.test(dText(x))};
+const selfSS=x=>/Special Summon this card \(from your hand\)|Must (first )?be Special Summoned \(from your hand\)|You can Special Summon this card(?! from your (GY|Graveyard))|If you take battle damage while this card is in your hand: You can Special Summon it/i.test(dText(x));
+const isFlip=x=>/^\s*①?\s*FLIP:/m.test(dText(x));
+const HOLD=['Gorz the Emissary of Darkness','Tragoedia','Battle Fader','Necro Gardna','Honest'];
+const HTIPS={
+ 'Mystical Space Typhoon':'A Quick-Play. Set it and you can use it on their turn too (not the turn you Set it), for example on a card they just flipped.',
+ 'Heavy Storm':'Destroys every Spell and Trap on the field, yours included. Best when they have more Set cards than you.',
+ 'Giant Trunade':'Returns every Spell and Trap to its owner’s hand, yours too. After it resolves, Set your own cards again.',
+ 'Solemn Judgment':'Costs half your LP. Save it for the summon or card that would swing the duel.',
+ 'Mirror Force':'When one of their monsters attacks, all their Attack Position monsters are destroyed. Set it and wait.',
+ 'Torrential Tribute':'Destroys every monster on the field when a monster is summoned. Best when they have more monsters than you.',
+ 'Bottomless Trap Hole':'Destroys and banishes a monster with 1500 or more ATK as it is summoned, so it can’t come back from the GY.',
+ 'Dimensional Prison':'Banishes the monster that attacks.',
+ 'Trap Dustshoot':'Only works while they hold 4 or more cards, so it is strongest early in the duel.',
+ 'Book of Moon':'Turns a face-up monster face-down. It stops an attack, or turns their big monster into a Defense Position target for your attack.',
+ 'Call of the Haunted':'Brings back a monster from your GY in Attack Position. A strong monster or a Tuner for a Synchro is the usual pick.',
+ 'Starlight Road':'Stops a card that would destroy 2 or more of your cards, like Heavy Storm or Torrential Tribute, and can bring out Stardust Dragon.',
+ 'Brain Control':'Pay 800 LP to take a face-up monster until the End Phase. Attack with it, then Tribute it or use it for a Synchro so it never goes back.',
+ 'Mind Control':'Takes a monster until the End Phase. It can’t attack or be Tributed, but it is off their field while you attack.',
+ 'Smashing Ground':'Destroys their face-up monster with the highest DEF. You don’t pick a target, so check which one that is.',
+ 'Allure of Darkness':'Draw 2, then banish a DARK from your hand. With no DARK in hand you lose your whole hand, so check first.',
+ 'Upstart Goblin':'Draws 1 card and gives them 1000 LP.',
+ 'Pot of Avarice':'Needs 5 monsters in your GY. Shuffles them back and draws 2.',
+ 'Gold Sarcophagus':'The card you banish comes to your hand in your second Standby Phase after this. Pick a card you will want then.',
+ 'Dust Tornado':'A Trap: destroy one of their Spells or Traps, then you can Set a card from your hand.',
+ 'Compulsory Evacuation Device':'A Trap that returns a monster to the hand. A Synchro sent back goes to the Extra Deck instead.',
+ 'Royal Oppression':'Either player can pay 800 LP to stop a Special Summon. Strong against decks that Special Summon a lot.',
+ 'Gorz the Emissary of Darkness':'Keep it in your hand. When their card deals you damage while you control no cards, it can come out for free.',
+ 'Tragoedia':'Keep it in your hand. When you take battle damage it can come out, and it gains 600 ATK and DEF for each card in your hand.',
+ 'Battle Fader':'Keep it in your hand. When they attack you directly, it comes out and ends the Battle Phase.',
+ 'Necro Gardna':'Its effect works from the GY: on their turn, banish it to stop one attack. Discarding it is fine.',
+ 'Caius the Shadow Monarch':'Tribute Summon it to banish any card on the field, with 1000 damage if that card is a DARK monster.',
+ 'Sangan':'When it goes from the field to the GY you add a monster with 1500 or less ATK from your Deck. Losing it in battle is a fair trade.',
+ 'Dark Armed Dragon':'Needs exactly 3 DARKs in your GY to Special Summon. Then it can banish a DARK from your GY to destroy any card.',
+ 'Cyber Dragon':'If only your opponent controls a monster, Special Summon it from your hand. It doesn’t use your Normal Summon.',
+ 'Chaos Sorcerer':'Special Summon it by banishing a LIGHT and a DARK monster from your GY. It can banish a face-up monster, but then it can’t attack that turn.',
+ 'Card Trooper':'Its effect sends up to 3 cards from your Deck to the GY for 500 ATK each, and you draw a card when it is destroyed.',
+ 'Spirit Reaper':'Can’t be destroyed by battle, so it blocks attacks well. It is destroyed if an effect targets it.',
+ 'Morphing Jar':'FLIP: both players discard their hands and draw 5. Set it when your hand is small.',
+ 'Ryko, Lightsworn Hunter':'FLIP: destroy a card on the field. Set it and let them attack into it, or Flip Summon it yourself.',
+ 'Super-Nimble Mega Hamster':'FLIP: Special Summon a Level 3 or lower Beast from your Deck face-down. Set it.',
+ 'Plaguespreader Zombie':'A Level 2 Tuner that can come back from the GY by putting a card from your hand on top of your Deck.',
+ 'Thunder King Rai-Oh':'1900 ATK for a Normal Summon, and while it is face-up neither player can search their Deck.',
+ 'D.D. Warrior Lady':'After it battles a monster you can banish both. Good against a monster you can’t beat.',
+ 'Honest':'Discard it when your LIGHT monster battles to add the opposing monster’s ATK. Keep it in hand.',
+};
+function dSynOptions(pool,must,extra){
+  const out=[];const n=pool.length;
+  for(let mask=1;mask<(1<<n);mask++){const mats=pool.filter((_,i)=>mask&(1<<i));if(mats.length<2||(must&&!mats.includes(must)))continue;
+    for(const ex of extra)if(getC(ex).kind==='synchro'&&checkSyn(mats,ex).ok)out.push({ex,mats})}
+  return out.sort((a,b)=>dAtk(b.ex)-dAtk(a.ex));
+}
+function dHint(){
+  const P=G.p[0],O=G.p[1];const steps=[];const tips=[];
+  const add=(t,why,us)=>steps.push({t,why,us:(us||[]).filter(Boolean).map(x=>x.u)});
+  const hand=P.hand,inH=n=>hand.find(x=>dNm(x)===n);
+  const myM=P.m.filter(Boolean),opM=O.m.filter(Boolean),opUp=opM.filter(z=>z.pos!=='set'),opDown=opM.filter(z=>z.pos==='set');
+  const opAtk=opUp.filter(z=>z.pos==='atk');const opST=O.st.filter(Boolean).length,myST=P.st.filter(Boolean).length;
+  const opBest=opAtk.slice().sort((a,b)=>dAtk(b)-dAtk(a))[0];const opBestAtk=opBest?dAtk(opBest):0;
+  const opThreat=opUp.slice().sort((a,b)=>dAtk(b)-dAtk(a))[0];
+  const canBattle=G.turnNo>1;const freeST=P.st.filter(z=>!z).length;
+  const nameList=a=>a.map(dNm).join(', ');
+  hand.forEach(x=>{const t=HTIPS[dNm(x)];if(t&&!tips.some(q=>q[0]===dNm(x)))tips.push([dNm(x),t])});
+  // Discarding at the End Phase
+  if(G.ui&&G.ui.mode==='discard'){
+    const val=x=>{const n=dNm(x);if(n==='Necro Gardna')return -1;if(HTIPS[n])return 3000;const cd=getC(x);return isMonC(cd)?dAtk(x)+(tribNeeded(cd)?-800:0):1200};
+    const w=hand.slice().sort((a,b)=>val(a)-val(b))[0];
+    add(`Discard ${dNm(w)}`,dNm(w)==='Necro Gardna'?'Necro Gardna works from the GY, so discarding it costs you nothing.':'It is the card you are least likely to need. Keep your staples and your best monsters.',[w]);
+    return {head:'End Phase: discard down to 6',steps,tips};
+  }
+  if(G.ui&&G.ui.mode==='target'){const a=myM.find(z=>z.u===G.ui.u);if(a){const beat=opM.filter(z=>z.pos==='atk'?dAtk(z)<dAtk(a):z.pos==='def'&&dDef(z)<dAtk(a));
+    if(!opM.length)add('Attack directly','They have no monsters, so all of its ATK goes to their LP.');
+    else if(beat.length){const t=beat.sort((x,y)=>dAtk(y)-dAtk(x))[0];add(`Attack ${dNm(t)}`,t.pos==='atk'?`${dAtk(a)} ATK beats its ${dAtk(t)} ATK: it is destroyed and they take ${dAtk(a)-dAtk(t)}.`:`${dAtk(a)} ATK beats its ${dDef(t)} DEF: it is destroyed (no damage to LP in Defense Position).`,[t])}
+    else if(opDown.length)add('Attack the face-down monster, or cancel','You can’t see its DEF. Nothing face-up is weaker than this attacker.',opDown);
+    else add('Cancel this attack',`${dNm(a)} beats none of their monsters, so the attack would cost you.`)}
+    return {head:'Choosing a target',steps,tips}}
+  // Battle Phase
+  if(G.phase==='battle'){
+    const atk=myM.filter(z=>z.pos==='atk'&&!z.attacked).sort((a,b)=>dAtk(a)-dAtk(b));
+    if(!atk.length){add('Go to Main Phase 2','None of your monsters can attack anymore.');return {head:'Battle Phase',steps,tips}}
+    if(!opM.length){const tot=atk.reduce((s,z)=>s+dAtk(z),0);
+      add(tot>=O.lp?`Attack directly with everything: that is game (${tot} damage, they have ${O.lp} LP)`:`Attack directly with ${atk.length>1?'every monster':dNm(atk[0])}`,`They control no monsters, so every attack hits their LP${tot<O.lp?` for ${tot} in total`:''}.`,atk);
+    }else{
+      const left=atk.slice();const plan=[];
+      const targets=opUp.slice().sort((a,b)=>(b.pos==='atk'?dAtk(b):dDef(b))-(a.pos==='atk'?dAtk(a):dDef(a)));
+      for(const t of targets){const v=t.pos==='atk'?dAtk(t):dDef(t);const a=left.find(z=>dAtk(z)>v);if(!a)continue;left.splice(left.indexOf(a),1);plan.push([a,t])}
+      plan.forEach(([a,t])=>add(`Attack ${dNm(t)} with ${dNm(a)}`,t.pos==='atk'?`${dAtk(a)} ATK beats ${dAtk(t)} ATK: it is destroyed and they take ${dAtk(a)-dAtk(t)}.`:`${dAtk(a)} ATK beats ${dDef(t)} DEF. It is in Defense Position, so it is destroyed but they take no damage.`,[a,t]));
+      const clearsUp=plan.length===opUp.length;
+      if(opDown.length&&left.length){const a=left[left.length-1];left.splice(left.length-1,1);
+        add(`Attack the face-down monster with ${dNm(a)}`,`You can’t see its DEF, so use your strongest free attacker. Set monsters are often FLIP monsters like Ryko or Morphing Jar.`,[a,...opDown])}
+      else if(clearsUp&&!opDown.length&&left.length)add(`Then attack directly with ${nameList(left)}`,'Once their field is empty, your remaining monsters hit their LP.',left);
+      const idle=left.filter(z=>!steps.some(s=>s.us.includes(z.u)));
+      if(idle.length)add(`Don’t attack with ${nameList(idle)}`,`${idle.length>1?'They beat':'It beats'} none of their face-up monsters, so attacking would lose ${idle.length>1?'them':'it'} or cost you LP.`,idle);
+      if(!plan.length&&!opDown.length)add('Go to Main Phase 2','No attack wins right now. Keep your monsters for defense.');
+    }
+    if(opST)tips.unshift(['Their Set cards',`They have ${opST} Set Spell/Trap card${opST>1?'s':''}. Attack with your weaker monster first: if it is a Trap like Dimensional Prison, you lose the smaller monster.`]);
+    return {head:'Battle Phase',steps,tips};
+  }
+  // Main Phases
+  const m1=G.phase==='main1';
+  if(m1&&opST>=2&&inH('Heavy Storm'))add('Activate Heavy Storm first',`They have ${opST} Set Spell/Trap cards. Clearing them before you summon or attack means no Bottomless Trap Hole or Mirror Force can stop you.${myST?` It hits your ${myST} too.`:''}`,[inH('Heavy Storm')]);
+  else if(m1&&opST>=2&&inH('Giant Trunade'))add('Activate Giant Trunade first',`It sends their ${opST} Set cards back to their hand, so none of them can stop your plays this turn.`,[inH('Giant Trunade')]);
+  else if(m1&&opST&&inH('Mystical Space Typhoon'))add('Mystical Space Typhoon one of their Set cards',`Removing a Set card before you summon or attack makes your play safer.`,[inH('Mystical Space Typhoon')]);
+  if(m1){const darkH=hand.some(x=>isMonC(getC(x))&&dAttr(x)==='DARK');const gyMon=P.gy.filter(x=>isMonC(getC(x))).length;
+    const draw=[inH('Upstart Goblin'),darkH&&inH('Allure of Darkness'),gyMon>=5&&inH('Pot of Avarice'),inH('Reinforcement of the Army'),inH('Charge of the Light Brigade'),inH('Foolish Burial'),inH('Gold Sarcophagus')].filter(Boolean);
+    if(draw.length)add(`Activate ${nameList(draw)}`,'Draw and search before you choose your summon: the new cards can change the best play.',draw);}
+  // Their monster is too big
+  const potential=Math.max(0,...myM.filter(z=>z.pos!=='set').map(dAtk),...(G.normalDone?[]:hand.filter(x=>canNormalC(x)&&tribNeeded(getC(x))<=myM.length).map(dAtk)));
+  if(m1&&canBattle&&opThreat&&dAtk(opThreat)>=potential){
+    const bc=inH('Brain Control'),sg=inH('Smashing Ground'),mc=inH('Mind Control'),bm=inH('Book of Moon');
+    const highDef=opUp.slice().sort((a,b)=>dDef(b)-dDef(a))[0];
+    if(bc&&P.lp>800)add(`Brain Control ${dNm(opThreat)}`,`Nothing you have beats its ${dAtk(opThreat)} ATK. Take it for 800 LP, attack with it, then Tribute it or use it as Synchro material so it never goes back.`,[bc,opThreat]);
+    else if(sg)add('Activate Smashing Ground',`It destroys their face-up monster with the highest DEF: ${dNm(highDef)} (${dDef(highDef)} DEF).`,[sg,highDef]);
+    else if(mc)add(`Mind Control ${dNm(opThreat)}`,`It takes their biggest monster off their field while you attack.`,[mc,opThreat]);
+    else if(bm)add(`Book of Moon ${dNm(opThreat)}`,`It turns face-down in Defense Position, so you attack its ${dDef(opThreat)} DEF instead of its ${dAtk(opThreat)} ATK.`,[bm,opThreat]);
+  }
+  // Special Summons from the hand that don't use the Normal Summon
+  const cy=inH('Cyber Dragon'),dad=inH('Dark Armed Dragon');
+  if(cy&&!myM.length&&opM.length&&freeZone(P.m)>-1)add('Special Summon Cyber Dragon','Only they control a monster, so it comes out from your hand and you still have your Normal Summon.',[cy]);
+  if(dad&&P.gy.filter(x=>isMonC(getC(x))&&dAttr(x)==='DARK').length===3)add('Special Summon Dark Armed Dragon','You have exactly 3 DARKs in your GY. Apply its destroy effect by hand: banish a DARK from your GY to destroy a card.',[dad]);
+  // Synchro with what is already on the field
+  const up=myM.filter(z=>z.pos!=='set');
+  const now=dSynOptions(up,null,P.extra)[0];
+  if(now&&dAtk(now.ex)>Math.max(...now.mats.map(dAtk)))add(`Synchro Summon ${dNm(now.ex)}`,`${nameList(now.mats)} add up to Level ${getC(now.ex).lv}. ${dNm(now.ex)} has ${dAtk(now.ex)} ATK, more than its materials.`,now.mats);
+  // The Normal Summon
+  if(!G.normalDone){
+    const cands=hand.filter(x=>canNormalC(x)&&!HOLD.includes(dNm(x))&&tribNeeded(getC(x))<=myM.length&&(tribNeeded(getC(x))>0||freeZone(P.m)>-1));
+    const worthIt=x=>{const n=tribNeeded(getC(x));if(!n)return true;const fod=myM.slice().sort((a,b)=>dAtk(a)-dAtk(b)).slice(0,n);return dAtk(x)>Math.max(...fod.map(dAtk))+500||dNm(x)==='Caius the Shadow Monarch'};
+    const ok=cands.filter(worthIt);
+    let synVia=null;if(!now&&freeZone(P.m)>-1)for(const c of ok.filter(x=>!tribNeeded(getC(x)))){const o=dSynOptions([...up,c],c,P.extra)[0];if(o&&(!synVia||dAtk(o.ex)>dAtk(synVia.ex)))synVia=o}
+    if(synVia&&(canBattle?dAtk(synVia.ex)>opBestAtk:true))
+      add(`Normal Summon ${dNm(synVia.mats.find(m=>hand.includes(m)))}, then Synchro Summon ${dNm(synVia.ex)}`,`${nameList(synVia.mats)} add up to Level ${getC(synVia.ex).lv} with one Tuner. ${dNm(synVia.ex)} has ${dAtk(synVia.ex)} ATK${opBestAtk?`, more than their best ${opBestAtk}`:''}.`,synVia.mats.filter(m=>hand.includes(m)));
+    else if(ok.length){
+      const byAtk=ok.slice().sort((a,b)=>dAtk(b)-dAtk(a)||tribNeeded(getC(a))-tribNeeded(getC(b)));
+      const beaters=byAtk.filter(x=>dAtk(x)>opBestAtk);
+      const flips=ok.filter(x=>isFlip(x)&&!tribNeeded(getC(x)));
+      const trib=x=>{const n=tribNeeded(getC(x));return n?` by Tributing ${nameList(myM.slice().sort((a,b)=>dAtk(a)-dAtk(b)).slice(0,n))}`:''};
+      if(!canBattle){const best=byAtk[0];
+        if(flips.length)add(`Set ${dNm(flips[0])} face-down`,`You go first and can’t attack this turn. Its FLIP effect triggers when they attack into it or when you flip it later.`,[flips[0]]);
+        else if(dAtk(best)>=1800)add(`Normal Summon ${dNm(best)}${trib(best)}`,`You can’t attack this turn, but ${dAtk(best)} ATK is hard for them to beat in battle next turn without a card effect.`,[best]);
+        else{const d=ok.slice().sort((a,b)=>dDef(b)-dDef(a))[0];add(`Set ${dNm(d)} face-down`,`You go first and can’t attack this turn. A Set monster hides what it is, and in Defense Position you take no damage when it is attacked. Its ${dDef(d)} DEF is your best.`,[d])}}
+      else if(!opM.length){const b=byAtk[0];add(`Normal Summon ${dNm(b)}${trib(b)}`,`They have no monsters. Summon in Attack Position and attack directly for ${dAtk(b)}.`,[b])}
+      else if(!beaters.length&&myM.some(z=>z.pos==='atk'&&dAtk(z)>opBestAtk)){const strong=myM.filter(z=>z.pos==='atk').sort((a,b)=>dAtk(b)-dAtk(a))[0];const d=(flips[0])||ok.slice().sort((a,b)=>dDef(b)-dDef(a))[0];
+        add(`Set ${dNm(d)} face-down`,`${dNm(strong)} already beats their monsters, and nothing in your hand would. Set ${dNm(d)} as an extra blocker in Defense Position.`,[d])}
+      else if(beaters.length){const b=beaters[0];add(`Normal Summon ${dNm(b)}${trib(b)}`,opBest?`Its ${dAtk(b)} ATK beats their strongest Attack Position monster, ${dNm(opBest)} (${opBestAtk}).`:`Their monsters are in Defense Position or face-down. ${dAtk(b)} ATK is your best attacker.`,[b])}
+      else{const d=(flips[0])||ok.slice().sort((a,b)=>dDef(b)-dDef(a))[0];add(`Set ${dNm(d)} face-down`,`${opBest?`Nothing in your hand beats ${dNm(opBest)} (${opBestAtk} ATK).`:'None of your monsters can attack well into their field.'} Set a monster in Defense Position so you take no damage, and look for removal.${isFlip(d)?' Its FLIP effect triggers if they attack it.':''}`,[d])}
+    }else if(hand.some(x=>canNormalC(x)&&!HOLD.includes(dNm(x))))tips.unshift(['Tributes',`Your Level 5 or higher monsters need Tributes: 1 for Level 5 and 6, 2 for Level 7 and up. Summon smaller monsters first.`]);
+  }
+  // Back to Attack Position when the way is clear
+  if(m1&&canBattle)myM.filter(z=>z.pos==='def'&&z.turn!==G.turnNo&&!z.posChanged&&dAtk(z)>(opM.length?Math.max(opBestAtk,...opUp.filter(q=>q.pos==='def').map(dDef)):0)&&!opDown.length).forEach(z=>add(`Switch ${dNm(z)} to Attack Position`,opM.length?`Its ${dAtk(z)} ATK beats their monsters, so it can attack.`:`They have no monsters, so it can attack directly for ${dAtk(z)}.`,[z]));
+  // Flip Summon
+  const flipNow=myM.filter(z=>z.pos==='set'&&z.turn!==G.turnNo&&canBattle&&m1&&(isFlip(z)||dAtk(z)>opBestAtk));
+  flipNow.forEach(z=>add(`Flip Summon ${dNm(z)}`,isFlip(z)?'Flipping it triggers its FLIP effect. Apply it by hand.':`Its ${dAtk(z)} ATK beats their strongest face-up attacker, so it can attack.`,[z]));
+  // Switch weak monsters to Defense (Main Phase 2)
+  if(!m1)myM.filter(z=>z.pos==='atk'&&z.turn!==G.turnNo&&!z.posChanged&&!z.attacked&&opBestAtk>dAtk(z)&&dDef(z)>=dAtk(z)).forEach(z=>add(`Switch ${dNm(z)} to Defense Position`,`${dNm(opBest)} (${opBestAtk} ATK) would beat it and deal damage. In Defense Position you take none.`,[z]));
+  // Set Spells and Traps
+  const setters=hand.filter(x=>{const cd=getC(x);return cd.kind==='trap'||(cd.kind==='spell'&&cd.sub==='Quick-Play')});
+  const attackLater=m1&&canBattle&&(myM.some(z=>z.pos==='atk')||steps.length);
+  if(setters.length&&freeST){const s=setters.slice(0,freeST);
+    if(attackLater)add(`After battle, Set ${nameList(s)}`,'Set Traps in Main Phase 2. They can’t be used the turn you Set them anyway, and holding them hides your plan during battle.',s);
+    else add(`Set ${nameList(s)}`,`A Trap or Quick-Play has to be Set before it can be used, and it is ready from their turn on.${s.some(x=>dNm(x)==='Trap Dustshoot')?' Trap Dustshoot needs them to hold 4 or more cards.':''}`,s)}
+  if(m1&&canBattle&&(myM.some(z=>z.pos==='atk'&&!z.attacked)||steps.some(s=>/Summon|Attack Position|Brain Control|Smashing Ground|Mind Control|Book of Moon/.test(s.t))))add('Go to the Battle Phase','Attack once your summons are done. Tap Hint again there for the best attacks.');
+  if(P.hand.length>6&&!m1)add('Set or use cards before you end','You hold more than 6 cards and will have to discard down to 6 at the end of your turn.');
+  if(!steps.length)add('End your turn',m1&&!canBattle?'You go first and can’t attack. Nothing else in your hand helps right now.':'Nothing else here improves your position. Keep your remaining cards for later.');
+  return {head:m1?'Main Phase 1':'Main Phase 2',steps,tips};
+}
+function hintPanel(h){
+  return `<div class="hhead"><b>💡 ${esc(h.head)}</b><button type="button" class="hx" id="dhintx" aria-label="Hide the hint">×</button></div>
+  <ol>${h.steps.map(s=>`<li><b>${esc(s.t)}</b><span>${esc(s.why)}</span></li>`).join('')}</ol>
+  ${h.tips.length?`<div class="htips">${h.tips.slice(0,3).map(([n,t])=>`<p><b>${esc(n)}:</b> ${esc(t)}</p>`).join('')}</div>`:''}
+  <p class="hnote">A suggestion from what you can see. It can’t know their hand or face-down cards.</p>`;
+}
 /* ---- screens ---- */
 function renderDuel(){if(!DB.length){app.innerHTML=noData();return}if(!G){renderDuelSetup();return}renderDuelGame()}
 function renderDuelSetup(){
@@ -2984,7 +3178,9 @@ function renderDuelGame(){
   else if(ui&&ui.mode==='place')bar=`<p class="amsg">Tap a glowing zone to place the card.</p><button class="btn" id="dcancel">Cancel</button>`;
   else bar=`${G.phase==='main1'?`<button class="btn" id="dbattle" ${G.turnNo===1?'disabled title="The first player can’t attack on turn 1"':''}>Battle Phase</button><button class="btn" id="dsyn">Synchro Summon</button>`:''}
     ${G.phase==='battle'?`<button class="btn" id="dmain2">Main Phase 2</button>`:''}${G.phase==='main2'?`<button class="btn" id="dsyn">Synchro Summon</button>`:''}<button class="btn primary" id="dend">End turn</button>`;
-  const hand=P.hand.map(x=>{const cd=getC(x);return cd.rid?`<button type="button" class="himg${ui&&ui.mode==='place'&&ui.u===x.u?' armed':''}" data-dh="${x.u}" aria-label="${esc(cd.name)}" style="background-image:url('${artURL({id:cd.rid})}')"></button>`:tile(cd,'',`data-dh="${x.u}"`)}).join('')||'<span class="empty">No cards in hand.</span>';
+  if(my&&!(ui&&['place','tribute','synchro'].includes(ui.mode)))bar+=`<button class="btn hintbtn${G.hint?' on':''}" id="dhint" aria-expanded="${!!G.hint}">💡 ${G.hint?'Hide hint':'Hint'}</button>`;
+  const hint=my&&G.hint?dHint():null;const lit=new Set(hint&&hint.steps[0]?hint.steps[0].us:[]);
+  const hand=P.hand.map(x=>{const cd=getC(x);return cd.rid?`<button type="button" class="himg${ui&&ui.mode==='place'&&ui.u===x.u?' armed':''}${lit.has(x.u)?' hinted':''}" data-dh="${x.u}" aria-label="${esc(cd.name)}" style="background-image:url('${artURL({id:cd.rid})}')"></button>`:tile(cd,'',`data-dh="${x.u}"`)}).join('')||'<span class="empty">No cards in hand.</span>';
   mountArena(arenaHTML({
     title:'Duel the computer',sub:`${DIFFS[G.diff][0]} · Tap your cards for actions. Card effects are applied by hand for now.`,
     tools:`<button class="btn small" id="dsetup2">New duel</button>`,
@@ -2993,7 +3189,8 @@ function renderDuelGame(){
     strip:ui&&ui.mode==='place'?'Tap a glowing zone to place the card · Esc to cancel':`Turn ${G.turnNo} · ${G.turn===0?'Your turn':"Computer's turn"} · ${phaseName}${G.normalDone?' · Normal Summon used':''}`,
     actions:bar,
     log:G.log.map(l=>`<div>${esc(l)}</div>`).join(''),
-    hand}));
+    hand,hint:hint?hintPanel(hint):''}));
+  if(lit.size)app.querySelectorAll('[data-dz]').forEach(b=>{const [pi,k,i]=b.dataset.dz.split('|');const z=G.p[+pi][k][+i];if(z&&lit.has(z.u))b.classList.add('hinted')});
   bindDuel(my);
 }
 function dSheet(title,sub,btns,anchor){
@@ -3004,6 +3201,7 @@ function dSheet(title,sub,btns,anchor){
 function bindDuel(my){
   const $=id=>document.getElementById(id);const P=G.p[0];const on=(id,f)=>{const el=$(id);if(el)el.onclick=f};
   on('dagain',()=>{startDuel();renderDuel()});on('dsetup',()=>{G=null;renderDuel()});on('dsetup2',()=>{if(G.winner!==null||confirm('Leave this duel and start a new one?')){G=null;renderDuel()}});
+  on('dhint',()=>{G.hint=!G.hint;renderDuel()});on('dhintx',()=>{G.hint=false;renderDuel()});
   on('dcancel',()=>{G.ui=null;renderDuel()});on('dend',()=>dEndTurn());on('dmain2',()=>{G.phase='main2';renderDuel()});
   on('dbattle',()=>{G.phase='battle';G.ui=null;renderDuel()});on('dsyn',()=>{G.ui={mode:'synchro',picked:[]};renderDuel()});
   on('ddirect',()=>{const e=dAttack(0,G.ui.u,null);if(e)dlog('⚠ '+e);G.ui=null;renderDuel()});
@@ -3017,7 +3215,8 @@ function bindDuel(my){
     const x=P.hand.find(h=>h.u==b.dataset.dh);const cd=getC(x);const view=['View card',()=>{setTimeout(()=>showCard(cd.id,cd),0)}];
     if(G.ui&&G.ui.mode==='discard'){P.hand=P.hand.filter(h=>h!==x);P.gy.push(x);dlog(`You discarded ${cd.name}.`);if(P.hand.length<=6){G.ui=null;dEndTurn();return}renderDuel();return}
     const main=my&&(G.phase==='main1'||G.phase==='main2')&&!G.ui;const btns=[view];
-    if(main&&isMonC(cd)&&cd.kind!=='synchro'&&cd.kind!=='fusion'){const need=tribNeeded(cd);
+    if(main&&isMonC(cd)&&selfSS(x))btns.push(['Special Summon (check its condition first)',()=>{if(freeZone(P.m)<0)return 'Your Monster Zones are full.';G.ui={mode:'place',u:x.u,how:'ss',kind:'m'}},'primary']);
+    if(main&&canNormalC(x)){const need=tribNeeded(cd);
       const go=mode=>()=>{if(!need){if(G.normalDone)return 'You already used your Normal Summon this turn.';if(freeZone(P.m)<0)return 'Your Monster Zones are full.';G.ui={mode:'place',u:x.u,how:mode,kind:'m'};return}if(G.normalDone)return 'You already used your Normal Summon this turn.';if(P.m.filter(Boolean).length<need)return `${cd.name} needs ${need} Tribute${need>1?'s':''}.`;G.ui={mode:'tribute',u:x.u,need,picked:[],sumMode:mode}};
       btns.push([need?`Tribute Summon (${need} Tribute${need>1?'s':''})`:'Normal Summon',go('atk'),'primary'],['Set face-down',go('set')])}
     if(main&&!isMonC(cd)){
@@ -3033,7 +3232,8 @@ function bindDuel(my){
     const [pi,kind,i]=b.dataset.dz.split('|');const X=G.p[+pi];const x=X[kind][+i];const ui=G.ui;
     if(ui&&ui.mode==='place'){
       if(b.classList.contains('can')){const y=P.hand.find(h=>h.u===ui.u);G.ui=null;
-        if(ui.kind==='m'){const e=dSummon(0,ui.u,ui.how,[],+i);if(e)dlog('⚠ '+e)}
+        if(ui.kind==='m'&&ui.how==='ss'&&y){P.hand=P.hand.filter(h=>h!==y);y.pos='atk';y.turn=G.turnNo;y.attacked=false;y.posChanged=false;P.m[+i]=y;dlog(`You Special Summoned ${getC(y).name}. It doesn\u2019t use your Normal Summon; apply any cost by hand.`)}
+        else if(ui.kind==='m'){const e=dSummon(0,ui.u,ui.how,[],+i);if(e)dlog('⚠ '+e)}
         else if(y){const yc=getC(y);P.hand=P.hand.filter(h=>h!==y);y.pos=ui.how;y.turn=G.turnNo;P.st[+i]=y;dlog(ui.how==='set'?'You Set a card.':`You activated ${yc.name}. Apply its effect by hand.`)}}
       else G.ui=null;
       renderDuel();return}
