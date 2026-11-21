@@ -49,11 +49,48 @@ const attr = c => D(c).a || '';
 const race = c => D(c).r || '';
 function lv(c) { if (c.flags.lv) return c.flags.lv; return num(D(c).lv); }
 function baseAtk(c) { if (c.flags.baseAtk != null) return c.flags.baseAtk; return num(D(c).atk); }
+/* ---------- static effects (scripts' "self" and "cont") ----------
+ A script can describe what is always true while its card is face-up:
+   self: { piercing, directAttack, noBattleDestroy, noEffectDestroy, cantAttack, noAttackTarget, noBattleDamage,
+           cantBeTargeted, unaffectedSpells, unaffectedTraps, atk(g,c), def(g,c) }  (each a value or a function (g,c))
+   cont: { atk(g,src,c), def(g,src,c), grant(g,src,c,flag), forbid(g,src,action), dmg(g,src,p,n,o), negates(g,src,c), loc }
+ cont works from the field (face-up), or from cont.loc ('gy'/'hand') when set. forbid() blocks actions:
+ {type:'activate',c,eff,p}, {type:'ns',c,p}, {type:'set',c,p}, {type:'ss',c,p,how}, {type:'search',p}, {type:'attack',c},
+ {type:'setST',c,p}, {type:'draw',p}, {type:'pos',c}. Temporary rules (g.rules) use the same forbid shape. */
+function statics(g) {
+  if (g._st && g._st.seq === g.seq && g._st.turn === g.turnNo) return g._st.list;
+  const out = [];
+  for (const c of allField(g)) { if (!faceUp(c)) continue; const sc = SC(c); if (sc && sc.cont && !sc.cont.loc && !(isMon(c) && c.flags.negated)) out.push([c, sc.cont]); }
+  for (const P of g.p) for (const z of ['gy', 'hand']) for (const c of P[z]) { const sc = SC(c); if (sc && sc.cont && sc.cont.loc === z) out.push([c, sc.cont]); }
+  g._st = { seq: g.seq, turn: g.turnNo, list: out };
+  return out;
+}
+let NEGDEPTH = 0;
+function negd(g, c) { // is this card's effect negated right now?
+  if (c.flags.negated) return true;
+  if (NEGDEPTH > 2) return false; NEGDEPTH++;
+  try { for (const [s, ct] of statics(g)) if (ct.negates && s !== c && ct.negates(g, s, c)) return true; } finally { NEGDEPTH--; }
+  return false;
+}
+function has(g, c, flag) {
+  const sc = SC(c);
+  if (sc && sc.self && sc.self[flag] != null && onField(c) && faceUp(c) && !negd(g, c)) { const v = sc.self[flag]; if (typeof v === 'function' ? v(g, c) : v) return true; }
+  if (c.flags[flag]) return true;
+  for (const [s, ct] of statics(g)) if (ct.grant && ct.grant(g, s, c, flag)) return true;
+  return false;
+}
+function forbid(g, a) {
+  for (const [s, ct] of statics(g)) if (ct.forbid && ct.forbid(g, s, a)) return true;
+  for (const r of g.rules) if (r.forbid(g, a)) return true;
+  return false;
+}
 function stat(g, c, which) { // current ATK or DEF
   const d = D(c); let v = which === 'atk' ? baseAtk(c) : num(d.def);
   if (c.flags.tokAtk != null) v = c.flags.tokAtk;
   if (!onField(c) || !faceUp(c) || c.zone !== 'm') return v;
-  const nm = d.n, neg = c.flags.negated;
+  const nm = d.n, neg = negd(g, c);
+  const sc = SC(c); if (!neg && sc && sc.self && sc.self[which]) v += sc.self[which](g, c) || 0;
+  for (const [s, ct] of statics(g)) if (ct[which]) v += ct[which](g, s, c) || 0;
   if (!neg) {
     if (nm === 'Colossal Fighter' && which === 'atk') v += 100 * allCards(g, 'gy').filter(x => isMon(x) && race(x) === 'Warrior').length;
     if (nm === 'Elemental HERO Absolute Zero' && which === 'atk') v += 500 * fieldMons(g).filter(x => x !== c && faceUp(x) && attr(x) === 'WATER').length;
@@ -96,7 +133,9 @@ function move(g, c, to, o = {}) {
   if (wasField && to !== 'm') {
     // equips on it go to the GY; its own equip link ends
     for (const P of g.p) for (const x of P.st) if (x && x.equipTo === c.u) { x.equipTo = null; g.later.push(x); }
-    c.mods = []; c.flags = to === 'ban' && o.faceUpBan ? {} : {}; c.attacks = 0; c.equipTo = null; c.counters = 0;
+    for (const x of allField(g)) if (x.linkTo === c.u) { x.linkTo = null; g.laterDestroy.push(x); }
+    if (c.linkTo) { const t = allField(g).find(x => x.u === c.linkTo); if (t) g.laterDestroy.push(t); }
+    c.mods = []; c.flags = {}; c.attacks = 0; c.equipTo = null; c.linkTo = null; c.ctr = {};
   }
   if (to === 'm' || to === 'st' || to === 'fz') {
     const P = g.p[o.ctrl != null ? o.ctrl : c.owner]; c.ctrl = o.ctrl != null ? o.ctrl : c.owner;
@@ -110,8 +149,14 @@ function move(g, c, to, o = {}) {
     else P[to].push(c);
   }
   const ev = emit(g, { type: 'move', c, from, to, wasField, snap: s, prevCtrl, ...o }, o.group);
-  if (g.later.length && !o.noLater) { const l = g.later; g.later = []; for (const x of l) if (onField(x)) move(g, x, 'gy', { reason: 'rule', group: ev.group }); }
+  if (!o.noLater) flushLater(g, ev.group);
   return ev;
+}
+function flushLater(g, group) {
+  for (let i = 0; i < 6 && (g.later.length || g.laterDestroy.length); i++) {
+    const l = g.later; g.later = []; for (const x of l) if (onField(x)) move(g, x, 'gy', { reason: 'rule', group, noLater: true });
+    const d = g.laterDestroy; g.laterDestroy = []; for (const x of d) if (onField(x)) move(g, x, 'gy', { reason: 'effect', destroyed: true, group, noLater: true });
+  }
 }
 function shuffleDeck(g, p) { const a = g.p[p].deck; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(g.rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } }
 
@@ -122,15 +167,15 @@ function emit(g, ev, group) {
   if (ev.type === 'summon') g.summoned[ev.p] = true;
   g.events.push(ev); if (g.events.length > 120) g.events.splice(0, 40);
   // collect triggers from every card that can see it
-  for (const P of g.p) for (const z of ['m', 'st', 'hand', 'gy', 'ban', 'deck', 'extra']) {
-    const arr = z === 'm' || z === 'st' ? P[z] : P[z]; if (!arr) continue;
+  for (const P of g.p) for (const z of ['m', 'st', 'fz', 'hand', 'gy', 'ban', 'deck', 'extra']) {
+    const arr = z === 'fz' ? (P.fz ? [P.fz] : []) : P[z]; if (!arr) continue;
     for (const c of arr) {
       if (!c) continue; const sc = SC(c); if (!sc || !sc.effs) continue;
       sc.effs.forEach((eff, ei) => {
         if (eff.type !== 'trig') return;
         const loc = eff.loc || 'm';
-        if (loc === 'any' ? false : loc === 'm' ? c.zone !== 'm' || !faceUp(c) && !eff.faceDownOk : loc !== c.zone) return;
-        if (loc === 'm' && c.flags.negated) return;
+        if (loc === 'any' ? false : loc === 'm' ? c.zone !== 'm' || !faceUp(c) && !eff.faceDownOk : loc !== c.zone || ((loc === 'st' || loc === 'fz') && !faceUp(c))) return;
+        if (loc === 'm' && negd(g, c)) return;
         try { if (eff.on(g, ev, c)) g.pend.push({ c, eff, ei, ev, p: onField(c) ? c.ctrl : c.owner }); } catch (e) { throw e; }
       });
     }
@@ -165,6 +210,7 @@ function checkLP(g) {
   if (a || b) { g.p[0].lp = Math.max(0, g.p[0].lp); g.p[1].lp = Math.max(0, g.p[1].lp); g.winner = a && b ? -1 : a ? 1 : 0; g.why = a && b ? 'Both players hit 0 LP' : `${PN(g, a ? 0 : 1)} hit 0 LP`; log(g, g.why + '.'); throw new Over(); }
 }
 function damage(g, p, n, o = {}) {
+  for (const [s, ct] of statics(g)) if (ct.dmg) { const r = ct.dmg(g, s, p, n, o); if (r && r.gain) { gain(g, p, r.gain); return 0; } if (typeof r === 'number') n = r; }
   if (n <= 0) return 0; g.p[p].lp -= n;
   log(g, `${PN(g, p)} took ${n} ${o.battle ? 'battle ' : ''}damage.`);
   emit(g, { type: 'damage', p, n, battle: !!o.battle, src: o.src, srcP: o.srcP, direct: !!o.direct });
@@ -174,6 +220,7 @@ function gain(g, p, n) { if (n <= 0) return; g.p[p].lp += n; log(g, `${PN(g, p)}
 function pay(g, p, n) { g.p[p].lp -= n; log(g, `${PN(g, p)} paid ${n} LP.`); }
 function draw(g, p, n = 1) {
   for (let i = 0; i < n; i++) {
+    if (forbid(g, { type: 'draw', p })) return;
     const P = g.p[p]; if (!P.deck.length) { g.winner = 1 - p; g.why = `${PN(g, p)} couldn't draw`; log(g, g.why + '.'); throw new Over(); }
     const c = P.deck[P.deck.length - 1]; move(g, c, 'hand', { reason: 'draw' });
   }
@@ -181,6 +228,7 @@ function draw(g, p, n = 1) {
 }
 function mill(g, p, n) { const out = []; for (let i = 0; i < n && g.p[p].deck.length; i++) { const c = g.p[p].deck[g.p[p].deck.length - 1]; move(g, c, 'gy', { reason: 'effect' }); out.push(c); } if (out.length) log(g, `${PN(g, p)} sent ${out.map(name).join(', ')} from the Deck to the GY.`); return out; }
 function* search(g, p, filter, text, to = 'hand') {
+  if (to === 'hand' && forbid(g, { type: 'search', p })) { log(g, 'Cards can\u2019t be added from the Deck right now.'); return null; }
   const cands = g.p[p].deck.filter(filter); if (!cands.length) { shuffleDeck(g, p); return null; }
   const [c] = yield* pick(g, p, text, cands, 1, 1, 'good');
   if (c) { if (to === 'hand') { move(g, c, 'hand', { reason: 'effect' }); log(g, `${PN(g, p)} added ${name(c)} from the Deck to the hand.`); } else { move(g, c, to, { reason: 'effect' }); log(g, `${PN(g, p)} sent ${name(c)} from the Deck to the GY.`); } }
@@ -192,23 +240,33 @@ function destroy(g, cards, o = {}) {
   for (const c of cards) {
     if (!c || !onField(c)) continue;
     if (o.battle && cantBattleDestroy(g, c)) continue;
+    if (!o.battle && !o.rule && faceUp(c) && has(g, c, 'noEffectDestroy')) continue;
+    if (replaced(g, c, o)) continue;
+    if (!o.battle && o.src && faceUp(c) && isST(o.src) && has(g, c, isSpell(o.src) ? 'unaffectedSpells' : 'unaffectedTraps')) continue;
     move(g, c, o.banish ? 'ban' : 'gy', { reason: o.battle ? 'battle' : 'effect', destroyed: true, battle: !!o.battle, killer: o.killer, by: o.by, group, noLater: true });
     out.push(c);
   }
-  if (g.later.length) { const l = g.later; g.later = []; for (const x of l) if (onField(x)) move(g, x, 'gy', { reason: 'rule', group }); }
+  flushLater(g, group);
   if (out.length && !o.quietLog) log(g, `${out.map(x => x.snapName || name(x)).join(', ')} ${out.length > 1 ? 'were' : 'was'} destroyed${o.banish ? ' and banished' : ''}.`);
   return out;
 }
+function replaced(g, c, o) { // "destroy X instead" style effects
+  const sc = SC(c); if (sc && sc.self && sc.self.replaceDestroy && faceUp(c) && !negd(g, c) && sc.self.replaceDestroy(g, c, o)) return true;
+  for (const [s, ct] of statics(g)) if (ct.replaceDestroy && ct.replaceDestroy(g, s, c, o)) return true;
+  return false;
+}
 function cantBattleDestroy(g, c) {
   if (!faceUp(c) && c.pos !== 'def') return false;
-  const n = D(c).n, neg = c.flags.negated;
+  const n = D(c).n, neg = negd(g, c);
   if (!neg && (n === 'Spirit Reaper' || n === 'Blackwing Armor Master')) return true;
+  if (has(g, c, 'noBattleDestroy')) return true;
   if (isFrog(c) && monsOf(g, c.ctrl).some(x => faceUp(x) && D(x).n === 'Substitoad' && !x.flags.negated)) return true;
   if (isBW(c) && g.tp !== c.ctrl && !g.silverwindUsed[c.ctrl] && monsOf(g, c.ctrl).some(x => faceUp(x) && D(x).n === 'Blackwing - Silverwind the Ascendant' && !x.flags.negated)) { g.silverwindUsed[c.ctrl] = true; return true; }
   return false;
 }
 function ss(g, p, c, pos = 'atk', o = {}) { // Special Summon by an effect (no negation window of its own)
   const zi = freeM(g, p); if (zi < 0) return false;
+  if (forbid(g, { type: 'ss', c, p, how: o.how || 'special' })) { log(g, `${name(c)} can\u2019t be Special Summoned right now.`); return false; }
   move(g, c, 'm', { ctrl: p, pos, reason: 'summon', group: o.group });
   c.summonType = o.how || 'special'; c.attacks = 0;
   if (o.negate) c.flags.negated = true;
@@ -223,7 +281,7 @@ function takeControl(g, p, c, untilEnd) {
   detach(g, c); c.ctrl = p; g.p[p].m[zi] = c; c.flags.ctrlUntil = untilEnd ? g.turnNo : null; if (untilEnd) c.flags.ctrlFrom = 1 - p;
   log(g, `${PN(g, p)} took control of ${name(c)}.`); return true;
 }
-function setFaceDown(g, c) { c.pos = 'set'; c.mods = []; c.flags = { banishOnLeave: c.flags.banishOnLeave }; log(g, `${D(c).n} was turned face-down.`); }
+function setFaceDown(g, c) { g.seq++; c.pos = 'set'; c.mods = []; c.flags = { banishOnLeave: c.flags.banishOnLeave }; log(g, `${D(c).n} was turned face-down.`); }
 function negate(g, L, destroyIt) {
   L.negated = true; log(g, `${name(L.c)}'s ${L.eff.type === 'act' ? 'activation' : 'effect'} was negated.`);
   if (destroyIt && onField(L.c)) destroy(g, [L.c], { by: L.negBy });
@@ -272,12 +330,14 @@ function canNormal(c) { const d = D(c); if (!isMonD(d) || isExtraD(d) || d.k ===
 function tribNeed(g, p, c) { // [standard, alternatives...]
   const L = lv(c), need = L >= 7 ? 2 : L >= 5 ? 1 : 0, n = D(c).n, oppHas = monsOf(g, 1 - p).length > 0;
   const alts = [need];
+  const sc0 = SC(c); if (sc0 && sc0.self && sc0.self.tributes) for (const n2 of [].concat(sc0.self.tributes(g, c, p) || [])) alts.push(n2);
+  for (const [s, ct] of statics(g)) if (ct.tributes) { const n2 = ct.tributes(g, s, c, p, need); if (n2 != null) alts.push(n2); }
   if (n === 'Blackwing - Sirocco the Dawn' && !monsOf(g, p).length && oppHas) alts.push(0);
   if (n === 'Evil HERO Malicious Edge' && oppHas) alts.push(1);
   return [...new Set(alts)];
 }
 function tributeCands(g, p) {
-  const own = monsOf(g, p).filter(c => D(c).n !== 'Sheep Token');
+  const own = monsOf(g, p).filter(c => D(c).n !== 'Sheep Token' && !c.flags.noTribute);
   const extra = g.soulEx[p] ? monsOf(g, 1 - p).filter(c => c.u === g.soulEx[p]) : [];
   return [...own, ...extra];
 }
@@ -308,18 +368,21 @@ function usable(g, p, c, eff, ei, mode) {
       if (d.k === 'trap') return false;
       if (g.tp !== p) return false;
       if (d.sub === 'Field' ? false : freeST(g, p) < 0) return false;
-    } else if (c.zone === 'st' && c.ctrl === p && c.pos === 'set') {
+    } else if ((c.zone === 'st' || c.zone === 'fz') && c.ctrl === p && c.pos === 'set') {
       if ((d.k === 'trap' || d.sub === 'Quick-Play') && c.turnIn === g.turnNo) return false;
       if (d.k === 'spell' && d.sub !== 'Quick-Play' && (g.tp !== p)) return false;
     } else return false;
   } else {
-    if (isMonD(d) && c.flags.negated) return false;
+    if (isMonD(d) && (eff.loc || 'm') === 'm' && negd(g, c)) return false;
+    if (isMonD(d) && c.flags.gemini === false && eff.gemini) return false;
     const loc = eff.loc || 'm';
     if (loc === 'm') { if (c.zone !== 'm' || !faceUp(c)) return false; }
-    else if (loc === 'st') { if (c.zone !== 'st' || !faceUp(c)) return false; }
+    else if (loc === 'st' || loc === 'fz') { if (c.zone !== loc || !faceUp(c)) return false; }
     else if (c.zone !== loc) return false;
   }
   if (eff.type === 'ign' && (mode !== 'idle' && mode !== 'ign')) return false;
+  if (eff.gemini && !c.flags.gemini) return false;
+  if (forbid(g, { type: 'activate', c, eff, p })) return false;
   try { return eff.cond ? !!eff.cond(g, c, p, { top, mode }) : true; } catch (e) { throw e; }
 }
 function activatable(g, p, mode) {
@@ -327,8 +390,8 @@ function activatable(g, p, mode) {
   const seen = new Set();
   const consider = (c) => { if (!c || seen.has(c.u)) return; seen.add(c.u); const sc = SC(c); if (!sc || !sc.effs) return; sc.effs.forEach((eff, ei) => { if (usable(g, p, c, eff, ei, mode)) out.push({ c, eff, ei }); }); };
   const P = g.p[p];
-  P.hand.forEach(consider); P.st.forEach(consider); P.m.forEach(consider); P.gy.forEach(consider);
-  for (const x of [...g.p[1 - p].st, ...g.p[p].st]) if (x && faceUp(x) && SC(x) && SC(x).effs.some(e => e.anyPlayer)) { seen.delete(x.u); consider(x); }
+  P.hand.forEach(consider); P.st.forEach(consider); P.m.forEach(consider); P.gy.forEach(consider); if (P.fz) consider(P.fz); P.ban.forEach(consider);
+  for (const x of [...g.p[1 - p].st, ...g.p[p].st, g.p[1 - p].fz, g.p[p].fz]) if (x && faceUp(x) && SC(x) && SC(x).effs && SC(x).effs.some(e => e.anyPlayer)) { seen.delete(x.u); consider(x); }
   return out;
 }
 function actLabel(g, a) { const sc = SC(a.c); const lab = a.eff.label || (a.eff.type === 'act' ? (a.c.zone === 'hand' || a.c.pos === 'set' ? 'Activate' : 'Activate') : 'Use effect'); return `${lab}: ${name(a.c)}`; }
@@ -338,8 +401,8 @@ function* activate(g, p, c, eff, ei) {
   const d = D(c);
   const L = { c, eff, ei, p, speed: speedOf(c, eff), t: [], data: {}, negated: false, cardAct: eff.type === 'act', tags: eff.tags || {}, link: g.chain.length + 1 };
   if (eff.type === 'act') {
-    if (c.zone === 'hand') { if (d.sub === 'Field') move(g, c, 'fz', { ctrl: p, pos: 'up', reason: 'activate' }); else move(g, c, 'st', { ctrl: p, pos: 'up', reason: 'activate' }); }
-    else c.pos = 'up';
+    if (c.zone === 'hand') { if (d.sub === 'Field') { if (g.p[p].fz) move(g, g.p[p].fz, 'gy', { reason: 'rule' }); move(g, c, 'fz', { ctrl: p, pos: 'up', reason: 'activate' }); } else move(g, c, 'st', { ctrl: p, pos: 'up', reason: 'activate' }); }
+    else { c.pos = 'up'; g.seq++; }
   }
   c.used[ei] = g.turnNo;
   log(g, `${PN(g, p)} activated ${name(c)}${eff.type !== 'act' ? "'s effect" : ''}${g.chain.length ? ` (Chain Link ${g.chain.length + 1})` : ''}.`);
@@ -368,9 +431,11 @@ function* resolveChain(g) {
       const d = D(L.c);
       const stillThere = L.eff.type !== 'act' || onField(L.c) || !['Continuous', 'Equip', 'Field'].includes(d.sub);
       const monGone = isMonD(d) && L.eff.type !== 'trig' && L.eff.needsSelf && !onField(L.c);
-      if (stillThere && !monGone && !(isMonD(d) && L.c.flags.negated && onField(L.c) && L.eff.loc !== 'gy' && L.eff.loc !== 'hand')) yield* L.eff.res(g, L.c, L.p, L);
+      if (stillThere && !monGone && !(isMonD(d) && onField(L.c) && negd(g, L.c) && L.eff.loc !== 'gy' && L.eff.loc !== 'hand')) yield* L.eff.res(g, L.c, L.p, L);
     }
     if (L.eff.type === 'act' && onField(L.c) && L.c.zone === 'st' && !['Continuous', 'Equip', 'Field'].includes(D(L.c).sub) && !L.keep) move(g, L.c, 'gy', { reason: 'rule' });
+    if (L.eff.type === 'act' && onField(L.c) && D(L.c).sub === 'Equip' && !L.c.equipTo && !L.c.linkTo) move(g, L.c, 'gy', { reason: 'rule' });
+    if (L.eff.type === 'act' && !L.negated && onField(L.c) && D(L.c).sub === 'Field') { const o = g.p[1 - L.p].fz; if (o && o.pos !== 'set') destroy(g, [o], { rule: true }); }
     for (const t of L.t) if (t && D(t).n === 'Spirit Reaper' && onField(t) && faceUp(t) && !t.flags.negated && !L.negated) destroy(g, [t]);
   }
 }
@@ -391,6 +456,7 @@ function* processTriggers(g) {
     for (const t of order) {
       if (!t.eff.mand && !(yield* yn(g, t.p, `Use ${name(t.c)}'s effect?${t.eff.label ? ' (' + t.eff.label + ')' : ''}`))) continue;
       if (t.eff.ok && !t.eff.ok(g, t.c, t.p, { ev: t.ev })) continue;
+      if (forbid(g, { type: 'activate', c: t.c, eff: t.eff, p: t.p })) continue;
       const L = yield* activate(g, t.p, t.c, t.eff, t.ei); L.ev = t.ev;
     }
     if (g.chain.length) { yield* respondLoop(g, 1 - g.chain[g.chain.length - 1].p); yield* resolveChain(g); }
@@ -460,7 +526,7 @@ E.newDuel = function (cfg) {
   const seed = cfg.seed != null ? cfg.seed : Math.floor(Math.random() * 2 ** 31);
   cfg = { ...cfg, seed };
   const g = {
-    cfg, rnd: mulberry(seed), nextU: 1, p: [], tp: cfg.first || 0, turnNo: 0, phase: 'start', chain: [], events: [], pend: [], later: [],
+    cfg, rnd: mulberry(seed), nextU: 1, p: [], tp: cfg.first || 0, turnNo: 0, phase: 'start', chain: [], events: [], pend: [], later: [], laterDestroy: [], rules: [],
     group: 0, seq: 0, summoned: [false, false], history: [], log: [], winner: null, why: '', ns: [0, 0], frogNS: [false, false], soulEx: [null, null],
     noBP: [false, false], noSummon: [false, false], onlyAttacker: [null, null], silverwindUsed: [false, false], roar: null,
     coldWave: null, goldSarc: [], attempt: null, sw: null, aw: null, inDS: false, battle: null, quiet: !!cfg.quiet,
@@ -519,6 +585,7 @@ function* duel(g) {
 function* turn(g) {
   const tp = g.tp; g.turnNo++; g.ns = [0, 0]; g.summoned = [false, false]; g.frogNS = [false, false]; g.noBP = [false, false]; g.noSummon = [false, false]; g.onlyAttacker = [null, null]; g.silverwindUsed = [false, false]; g.roar = null; g.bpEnd = false; g.goBattle = false; g.soulEx = [null, null];
   if (g.coldWave && g.coldWave.p === tp) g.coldWave = null;
+  g.rules = g.rules.filter(r => r.startOf !== tp);
   for (const c of fieldMons(g)) { c.attacks = 0; c.posChanged = false; c.declared = false; }
   log(g, `— Turn ${g.turnNo}: ${PN(g, tp)} —`);
   g.phase = 'draw'; beginOp(g); draw(g, tp, 1); yield* processTriggers(g);
@@ -533,6 +600,7 @@ function* turn(g) {
   yield* openWindow(g, 1 - tp, { text: 'End Phase. Activate a card or effect?' });
   // end of turn: "until the End Phase" effects end, control returns
   for (const c of fieldMons(g)) { c.mods = c.mods.filter(m => !m.end); if (c.flags.lvUntil) { c.flags.lv = null; c.flags.lvUntil = null; } }
+  g.rules = g.rules.filter(r => !(r.end != null && r.end <= g.turnNo));
   for (const c of fieldMons(g)) if (c.flags.ctrlUntil != null) { const back = c.flags.ctrlFrom; c.flags.ctrlUntil = null; c.flags.ctrlFrom = null; const zi = freeM(g, back); if (zi >= 0) { detach(g, c); c.ctrl = back; g.p[back].m[zi] = c; log(g, `${name(c)} returned to ${PN(g, back)}.`); } else move(g, c, 'gy', { reason: 'rule' }); }
   // hand limit
   const P = g.p[tp];
@@ -550,26 +618,30 @@ function idleOpts(g) {
     if (canNormal(c) && (g.ns[p] < 1 || (g.frogNS[p] && isFrog(c) && !['Swap Frog', 'Frog the Jam'].includes(D(c).n)))) {
       const alts = tribNeed(g, p, c), cands = tributeCands(g, p);
       if (alts.some(n => cands.length >= n && (n > 0 || freeM(g, p) >= 0))) {
-        out.push({ key: 'ns:' + c.u, u: c.u, kind: 'ns', label: Math.min(...alts.filter(n => cands.length >= n)) ? 'Tribute Summon' : 'Normal Summon' });
-        out.push({ key: 'set:' + c.u, u: c.u, kind: 'set', label: 'Set face-down' });
+        if (!forbid(g, { type: 'ns', c, p })) out.push({ key: 'ns:' + c.u, u: c.u, kind: 'ns', label: Math.min(...alts.filter(n => cands.length >= n)) ? 'Tribute Summon' : 'Normal Summon' });
+        if (!forbid(g, { type: 'set', c, p })) out.push({ key: 'set:' + c.u, u: c.u, kind: 'set', label: 'Set face-down' });
       }
     }
     const sc = SC(c);
-    if (sc && sc.proc && freeM(g, p) >= 0 && sc.proc.cond(g, c, p)) out.push({ key: 'sp:' + c.u, u: c.u, kind: 'sp', label: sc.proc.label || 'Special Summon' });
+    if (sc && sc.proc && !sc.proc.extra && freeM(g, p) >= 0 && sc.proc.cond(g, c, p) && !forbid(g, { type: 'ss', c, p, how: 'special' })) out.push({ key: 'sp:' + c.u, u: c.u, kind: 'sp', label: sc.proc.label || 'Special Summon' });
   }
   if (!g.noSummon[p] && freeM(g, p) >= 0 || monsOf(g, p).length) {
     for (const x of P.extra) {
       if (g.noSummon[p]) break;
-      if (D(x).k === 'synchro' && synCombos(g, p, x).length) out.push({ key: 'syn:' + x.u, u: x.u, kind: 'syn', label: 'Synchro Summon' });
+      if (forbid(g, { type: 'ss', c: x, p, how: D(x).k })) continue;
+      const xs = SC(x); if (xs && xs.proc && xs.proc.extra && xs.proc.cond(g, x, p)) out.push({ key: 'sp:' + x.u, u: x.u, kind: 'sp', label: xs.proc.label || 'Special Summon' });
+      if (D(x).k === 'synchro' && !(xs && xs.noSynchro) && synCombos(g, p, x).length) out.push({ key: 'syn:' + x.u, u: x.u, kind: 'syn', label: 'Synchro Summon' });
       if (D(x).k === 'fusion' && cfCombos(g, p, x).length) out.push({ key: 'cf:' + x.u, u: x.u, kind: 'cf', label: 'Special Summon' });
     }
   }
   for (const c of monsOf(g, p)) {
     if (c.pos === 'set' && c.turnIn !== g.turnNo && !c.posChanged) out.push({ key: 'flip:' + c.u, u: c.u, kind: 'flip', label: 'Flip Summon' });
-    if (c.pos !== 'set' && c.turnIn !== g.turnNo && !c.posChanged && !c.attacks) out.push({ key: 'pos:' + c.u, u: c.u, kind: 'pos', label: c.pos === 'atk' ? 'Change to Defense' : 'Change to Attack' });
+    if (c.pos === 'atk' && isGemini(c) && !c.flags.gemini && (g.ns[p] < 1) && !g.noSummon[p] && !forbid(g, { type: 'ns', c, p })) out.push({ key: 'gem:' + c.u, u: c.u, kind: 'gem', label: 'Gemini Summon (gain its effect)' });
+    if (c.pos !== 'set' && c.turnIn !== g.turnNo && !c.posChanged && !c.attacks && !forbid(g, { type: 'pos', c })) out.push({ key: 'pos:' + c.u, u: c.u, kind: 'pos', label: c.pos === 'atk' ? 'Change to Defense' : 'Change to Attack' });
   }
   for (const a of activatable(g, p, 'idle')) out.push({ key: `a:${a.c.u}:${a.ei}`, u: a.c.u, kind: 'act', label: a.eff.label || (a.eff.type === 'act' ? 'Activate' : 'Use effect') });
-  if (freeST(g, p) >= 0 && !(g.coldWave)) for (const c of P.hand) if (isST(c) && D(c).sub !== 'Field') out.push({ key: 'setst:' + c.u, u: c.u, kind: 'setst', label: 'Set' });
+  if (!g.coldWave) for (const c of P.hand) if (isST(c) && D(c).sub === 'Field' && !forbid(g, { type: 'setST', c, p })) out.push({ key: 'setst:' + c.u, u: c.u, kind: 'setst', label: 'Set' });
+  if (freeST(g, p) >= 0 && !(g.coldWave)) for (const c of P.hand) if (isST(c) && D(c).sub !== 'Field' && !forbid(g, { type: 'setST', c, p })) out.push({ key: 'setst:' + c.u, u: c.u, kind: 'setst', label: 'Set' });
   if (g.phase === 'main1' && g.turnNo > 1 && !g.noBP[p]) out.push({ key: 'bp', kind: 'phase', label: 'Battle Phase' });
   out.push({ key: 'end', kind: 'phase', label: 'End turn' });
   return out;
@@ -581,16 +653,16 @@ function* mainPhase(g) {
     const k = (yield* ask(g, g.tp, 'idle', g.phase === 'main1' ? 'Main Phase 1' : 'Main Phase 2', opts))[0];
     if (k === 'bp') { g.goBattle = true; return; }
     if (k === 'end') return;
-    g.mainStart = false; beginOp(g);
+    g.mainStart = false; { const sw = g.sw; beginOp(g); if (k.startsWith('a:')) g.sw = sw; } // a response to the last summon keeps it
     yield* doIdle(g, k);
   }
 }
 function* doIdle(g, k) {
   const p = g.tp, P = g.p[p]; const [kind, a, b] = k.split(':'); const u = +a;
-  const find = u => [...P.hand, ...P.extra, ...monsOf(g, p), ...stOf(g, p), ...P.gy, ...P.ban].find(c => c.u === u);
+  const find = u => [...P.hand, ...P.extra, ...monsOf(g, p), ...stOf(g, p), ...P.gy, ...P.ban, ...fieldOf(g, 1 - p)].find(c => c.u === u);
   const c = find(u);
   if (kind === 'ns' || kind === 'set') return yield* normalSummon(g, p, c, kind === 'set');
-  if (kind === 'sp') { const pr = SC(c).proc; return yield* specialProc(g, p, c, 'special', pr.cost ? (grp) => pr.cost(g, c, p, grp) : null, pr.pos || 'atk'); }
+  if (kind === 'sp') { const pr = SC(c).proc; return yield* specialProc(g, p, c, pr.how || 'special', pr.cost ? (grp) => pr.cost(g, c, p, grp) : null, pr.pos || 'atk'); }
   if (kind === 'syn') {
     const cs = synCombos(g, p, c); let mats = cs[0];
     if (cs.length > 1) { const i = yield* choose(g, p, `Synchro Summon ${name(c)} with which monsters?`, cs.map(m => m.map(name).join(' + '))); mats = cs[i]; }
@@ -607,8 +679,14 @@ function* doIdle(g, k) {
     emit(g, { type: 'flip', c, p }, group); const ev = emit(g, { type: 'summon', cs: [c], how: 'flip', p }, group);
     g.sw = { cs: [c], p, how: 'flip', group: ev.group }; return yield* afterAction(g);
   }
-  if (kind === 'pos') { c.pos = c.pos === 'atk' ? 'def' : 'atk'; c.posChanged = true; log(g, `${PN(g, p)} changed ${name(c)} to ${c.pos === 'atk' ? 'Attack' : 'Defense'} Position.`); return; }
-  if (kind === 'setst') { move(g, c, 'st', { ctrl: p, pos: 'set', reason: 'set' }); log(g, `${PN(g, p)} Set a card.`); return; }
+  if (kind === 'gem') {
+    const group = g.group; g.ns[p]++; log(g, `${PN(g, p)} Gemini Summoned ${name(c)}.`);
+    if (!(yield* summonAttempt(g, p, [c], 'normal'))) { yield* processTriggers(g); return; }
+    c.flags.gemini = true; const ev = emit(g, { type: 'summon', cs: [c], how: 'gemini', p }, group);
+    g.sw = { cs: [c], p, how: 'gemini', group: ev.group }; return yield* afterAction(g);
+  }
+  if (kind === 'pos') { c.pos = c.pos === 'atk' ? 'def' : 'atk'; c.posChanged = true; log(g, `${PN(g, p)} changed ${name(c)} to ${c.pos === 'atk' ? 'Attack' : 'Defense'} Position.`); emit(g, { type: 'pos', c, p }); yield* processTriggers(g); return; }
+  if (kind === 'setst') { if (D(c).sub === 'Field') { if (P.fz) move(g, P.fz, 'gy', { reason: 'rule' }); move(g, c, 'fz', { ctrl: p, pos: 'set', reason: 'set' }); log(g, `${PN(g, p)} Set a Field Spell.`); return; } move(g, c, 'st', { ctrl: p, pos: 'set', reason: 'set' }); log(g, `${PN(g, p)} Set a card.`); return; }
   if (kind === 'a') {
     const ei = +b; const eff = SC(c).effs[ei];
     yield* activate(g, p, c, eff, ei); yield* respondLoop(g, 1 - p); yield* resolveChain(g); yield* afterAction(g);
@@ -617,15 +695,17 @@ function* doIdle(g, k) {
 
 /* ---------- battle ---------- */
 function canAttack(g, c) {
-  if (c.ctrl !== g.tp || c.pos !== 'atk' || c.attacks >= 1) return false;
+  if (c.ctrl !== g.tp || c.pos !== 'atk' || c.attacks >= (c.flags.maxAttacks && c.flags.maxAttacksTurn === g.turnNo ? c.flags.maxAttacks : c.flags.extraAttack && c.flags.extraAttack === g.turnNo ? 2 : 1)) return false;
+  if (has(g, c, 'cantAttack') || forbid(g, { type: 'attack', c })) return false;
   if (g.onlyAttacker[g.tp] && g.onlyAttacker[g.tp] !== c.u) return false;
   return true;
 }
 function attackTargets(g, c) {
   const opp = monsOf(g, 1 - g.tp);
   const dupe = opp.filter(x => faceUp(x) && D(x).n === 'Dupe Frog' && !x.flags.negated);
-  const out = (dupe.length ? dupe : opp).map(t => t.u);
-  if (!opp.length || (D(c).n === 'Unifrog' && !c.flags.negated)) out.push('d');
+  const targetable = opp.filter(t => !(faceUp(t) && has(g, t, 'noAttackTarget')));
+  const out = (dupe.length ? dupe : targetable).map(t => t.u);
+  if (!opp.length || (D(c).n === 'Unifrog' && !negd(g, c)) || has(g, c, 'directAttack') || (!targetable.length && !dupe.length)) out.push('d');
   return out;
 }
 function battleOpts(g) {
@@ -645,12 +725,12 @@ function* battlePhase(g) {
   for (let guard = 0; guard < 60 && !g.bpEnd; guard++) {
     const k = (yield* ask(g, g.tp, 'idle', 'Battle Phase', battleOpts(g)))[0];
     if (k === 'endbp') break;
-    beginOp(g);
-    if (k.startsWith('a:')) { const [, u, ei] = k.split(':'); const c = [...g.p[g.tp].hand, ...fieldOf(g, g.tp)].find(x => x.u === +u); yield* activate(g, g.tp, c, SC(c).effs[+ei], +ei); yield* respondLoop(g, 1 - g.tp); yield* resolveChain(g); yield* processTriggers(g); continue; }
+    { const sw = g.sw; beginOp(g); if (k.startsWith('a:')) g.sw = sw; }
+    if (k.startsWith('a:')) { const [, u, ei] = k.split(':'); const c = [...g.p[g.tp].hand, ...allField(g), ...g.p[g.tp].gy, ...g.p[g.tp].ban].find(x => x.u === +u); yield* activate(g, g.tp, c, SC(c).effs[+ei], +ei); yield* respondLoop(g, 1 - g.tp); yield* resolveChain(g); yield* processTriggers(g); continue; }
     const [, au, tu] = k.split(':'); const a = fieldMons(g).find(x => x.u === +au); const t = tu === 'd' ? null : fieldMons(g).find(x => x.u === +tu);
     yield* attack(g, a, t);
   }
-  g.bpEnd = false;
+  g.bpEnd = false; beginOp(g); emit(g, { type: 'phase', ph: 'bpEnd', tp: g.tp }); yield* processTriggers(g);
 }
 function* attack(g, a, t) {
   const tp = g.tp, op = 1 - tp;
@@ -663,6 +743,7 @@ function* attack(g, a, t) {
     yield* processTriggers(g);
     if (g.aw) yield* openWindow(g, op, { text: `${name(a)} is attacking. Respond?` });
     g.aw = null;
+    if (g.attackNegated) { g.attackNegated = false; log(g, 'The attack was negated.'); return; }
     if (g.bpEnd || !onField(a) || a.ctrl !== tp || a.pos !== 'atk') return;
     const now = monsOf(g, op).length;
     if (now !== before || (t && (!onField(t) || t.ctrl !== op))) { // replay
@@ -685,13 +766,13 @@ function* damageStep(g, a, t) {
   const alive = () => onField(a) && a.ctrl === tp && (!t || (onField(t) && t.ctrl === op));
   if (!alive()) { g.inDS = false; g.battle = null; return; }
   let flipped = false;
-  if (t && t.pos === 'set') { t.pos = 'def'; flipped = true; log(g, `The face-down monster was ${name(t)}.`); }
+  if (t && t.pos === 'set') { t.pos = 'def'; flipped = true; g.seq++; log(g, `The face-down monster was ${name(t)}.`); }
   yield* openWindow(g, op, { text: 'Before damage calculation. Activate a card or effect?' });
   if (!alive()) { g.inDS = false; g.battle = null; return; }
   beginOp(g);
   const A = stat(g, a, 'atk') + (t && t.pos !== 'atk' && D(a).n === 'Blackwing Armed Wing' && !a.flags.negated ? 500 : 0);
-  const pierce = c => !c.flags.negated && ['Blackwing - Bora the Spear', 'Blackwing Armed Wing', 'Flamvell Uruquizas', 'Evil HERO Malicious Edge'].includes(D(c).n);
-  const noDmg = (p, c1, c2) => [c1, c2].some(c => c && c.ctrl === p && D(c).n === 'Blackwing Armor Master' && !c.flags.negated && faceUp(c));
+  const pierce = c => (!negd(g, c) && ['Blackwing - Bora the Spear', 'Blackwing Armed Wing', 'Flamvell Uruquizas', 'Evil HERO Malicious Edge'].includes(D(c).n)) || has(g, c, 'piercing');
+  const noDmg = (p, c1, c2) => [c1, c2].some(c => c && c.ctrl === p && faceUp(c) && ((D(c).n === 'Blackwing Armor Master' && !negd(g, c)) || has(g, c, 'noBattleDamage'))) || g.p[p].noBattleDamage === g.turnNo;
   let killA = false, killT = false, dmgTo = null, dmg = 0;
   const tDef = t && t.pos !== 'atk';
   if (!t) { dmgTo = op; dmg = A; }
@@ -709,8 +790,8 @@ function* damageStep(g, a, t) {
   yield* processTriggers(g);
   beginOp(g);
   const grp = g.group;
-  for (const [v, k] of victims) if (onField(v) && v.flags.battleDoomed) { v.flags.battleDoomed = false; move(g, v, 'gy', { reason: 'battle', destroyed: true, battle: true, killer: k, group: grp, noLater: true }); log(g, `${D(v).n} was destroyed by battle.`); }
-  if (g.later.length) { const l = g.later; g.later = []; for (const x of l) if (onField(x)) move(g, x, 'gy', { reason: 'rule', group: grp }); }
+  for (const [v, k] of victims) if (onField(v) && v.flags.battleDoomed) { v.flags.battleDoomed = false; if (replaced(g, v, { battle: true, killer: k })) continue; move(g, v, 'gy', { reason: 'battle', destroyed: true, battle: true, killer: k, group: grp, noLater: true }); log(g, `${D(v).n} was destroyed by battle.`); }
+  flushLater(g, grp);
   emit(g, { type: 'dsEnd', a, t, attackedMonster: !!t });
   yield* processTriggers(g);
   g.inDS = false; g.battle = null;
@@ -721,7 +802,7 @@ const opp = p => 1 - p;
 const evSummoned = (ev, c, hows) => ev.type === 'summon' && ev.cs.includes(c) && (!hows || hows.includes(ev.how));
 const fromFieldToGY = (ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.to === 'gy';
 const battleKill = (ev, c) => ev.type === 'move' && ev.battle && ev.killer === c && ev.to === 'gy' && ev.c.zone === 'gy';
-function* tgt(g, p, L, text, cands, min = 1, max = 1, hint) { const t = yield* pick(g, p, text, cands, min, max, hint); L.t = t; return t; }
+function* tgt(g, p, L, text, cands, min = 1, max = 1, hint) { cands = cands.filter(x => !(onField(x) && faceUp(x) && has(g, x, 'cantBeTargeted') && (!L || !L.c || !(SC(x) && SC(x).self && SC(x).self.targetFilter) || SC(x).self.targetFilter(g, x, L)))); const t = yield* pick(g, p, text, cands, min, max, hint); L.t = t; return t; }
 const live = (L) => L.t.filter(x => onField(x));
 const oppFaceUp = (g, p) => monsOf(g, opp(p)).filter(faceUp);
 const stOnField = g => [...stOf(g, 0), ...stOf(g, 1)];
@@ -1026,6 +1107,95 @@ SCRIPTS['Cyber Dragon'] = { proc: { cond: (g, c, p) => monsOf(g, p).length === 0
 // Gemini (Neos Alius) and the 2010-only monsters plays as their printed stats.
 ['Elemental HERO Neos Alius', 'Evil HERO Malicious Edge', 'Superalloy Beast Raptinus', 'Blackwing Armed Wing', 'Blackwing - Bora the Spear'].forEach(n => { SCRIPTS[n] = SCRIPTS[n] || { effs: [] }; });
 SCRIPTS['Blackwing - Bora the Spear'].effs = SCRIPTS['Blackwing - Bora the Spear'].effs || [];
+
+/* ---------- helpers for card scripts (also used by js/cards/*.js) ---------- */
+function equip(g, eq, target) { if (!onField(eq) || !onField(target)) return false; eq.equipTo = target.u; log(g, `${name(eq)} was equipped to ${name(target)}.`); return true; }
+const equippedTo = (g, eq) => eq.equipTo ? fieldMons(g).find(x => x.u === eq.equipTo) || null : null;
+function link(g, st, m) { st.linkTo = m.u; }
+function addCtr(g, c, kind, n = 1) { c.ctr = c.ctr || {}; c.ctr[kind] = Math.max(0, (c.ctr[kind] || 0) + n); }
+const ctr = (c, kind) => (c.ctr && c.ctr[kind]) || 0;
+function negateAttack(g) { g.attackNegated = true; }
+function endBattle(g) { g.bpEnd = true; g.aw = null; g.attackNegated = true; log(g, 'The Battle Phase ended.'); }
+/* A temporary rule: forbid(g, action) like cont.forbid; end: the turn number at whose End Phase it ends; startOf: the player whose next turn ends it */
+function addRule(g, forbidFn, o = {}) { g.rules.push({ forbid: forbidFn, end: o.end, startOf: o.startOf }); }
+function token(g, p, t, pos = 'def', o = {}) {
+  const id = 'tok-' + t.n.replace(/\s+/g, '-').toLowerCase();
+  if (!DATA.has(id)) { const d = { id, n: t.n, k: 'token', a: t.a || 'EARTH', r: t.r || 'Fiend', lv: t.lv || 1, atk: String(t.atk || 0), def: String(t.def || 0) }; DATA.set(id, d); BYNAME.set(d.n, d); }
+  if (freeM(g, p) < 0) return null;
+  if (forbid(g, { type: 'ss', c: { id, owner: p, flags: {}, zone: 'tok' }, p, how: 'special' })) return null;
+  const c = mk(g, id, p); c.zone = 'tok'; move(g, c, 'm', { ctrl: p, pos, reason: 'summon', group: o.group });
+  if (o.noTribute) c.flags.noTribute = true;
+  return c;
+}
+function tokens(g, p, t, n, pos = 'def', o = {}) {
+  const grp = g.group, out = [];
+  for (let i = 0; i < n; i++) { const c = token(g, p, t, pos, { ...o, group: grp }); if (c) out.push(c); }
+  if (out.length) { log(g, `${PN(g, p)} Special Summoned ${out.length} ${t.n}${out.length > 1 ? 's' : ''}.`); const ev = emit(g, { type: 'summon', cs: out, how: 'special', p, byEffect: true }, grp); g.sw = { cs: out, p, how: 'special', group: ev.group }; }
+  return out;
+}
+/* Fusion materials: a script's `mats` (array of predicates) or the first line of the Fusion's text. */
+const ATTRS = ['DARK', 'LIGHT', 'FIRE', 'WATER', 'EARTH', 'WIND'];
+function fusionRecipe(fx) {
+  const sc = SCRIPTS[D(fx).n]; if (sc && sc.mats) return sc.mats;
+  const first = (D(fx).ps || D(fx).tx || '').split('\n')[0].replace(/^①\s*/, '');
+  const parts = first.split(/\s\+\s/); const out = [];
+  for (let part of parts) {
+    part = part.trim(); let n = 1; const m = part.match(/^(\d+)\s+/); if (m) { n = +m[1]; part = part.slice(m[0].length); }
+    let f = null; const q = part.match(/^"([^"]+)"$/) || part.match(/^"?([^"]+?)"?$/);
+    const qq = part.match(/"([^"]+)"/);
+    if (/^"[^"]+"$/.test(part) || (!/monster/i.test(part) && qq)) { const nm = qq ? qq[1] : q[1]; f = c => D(c).n === nm || name(c) === nm; }
+    else if (qq && /monster/i.test(part)) { const nm = qq[1]; f = c => name(c).includes(nm); }
+    else { const at = ATTRS.find(a => part.includes(a)); const rc = part.match(/([A-Z][a-z]+(?: [A-Z][a-z]+)?)-Type/); if (at) f = c => attr(c) === at; else if (rc) f = c => race(c) === rc[1]; }
+    if (!f || /or more/.test(part)) return null;
+    for (let i = 0; i < n; i++) out.push(f);
+  }
+  return out.length >= 2 ? out : null;
+}
+function assignMats(preds, pool, limit = 12) {
+  const out = [];
+  const rec = (i, used) => { if (out.length >= limit) return; if (i === preds.length) { out.push(used.slice()); return; } for (const c of pool) if (!used.includes(c) && isMon(c) && preds[i](c)) { used.push(c); rec(i + 1, used); used.pop(); } };
+  rec(0, []);
+  const seen = new Set(); return out.filter(m => { const k = m.map(c => c.u).sort().join(','); if (seen.has(k)) return false; seen.add(k); return true; });
+}
+function fusionPool(g, p, from) { const out = []; for (const z of from) { if (z === 'hand') out.push(...g.p[p].hand); else if (z === 'm') out.push(...monsOf(g, p).filter(faceUp)); else if (z === 'gy') out.push(...g.p[p].gy); else if (z === 'deck') out.push(...g.p[p].deck); } return out; }
+function canFusion(g, p, o = {}) { const from = o.from || ['hand', 'm']; const pool = fusionPool(g, p, from); return g.p[p].extra.some(fx => D(fx).k === 'fusion' && (!o.filter || o.filter(fx)) && fusionRecipe(fx) && assignMats(fusionRecipe(fx), pool, 1).length); }
+function* fusionSummon(g, p, o = {}) {
+  const from = o.from || ['hand', 'm']; const pool = fusionPool(g, p, from);
+  const fs = g.p[p].extra.filter(fx => D(fx).k === 'fusion' && (!o.filter || o.filter(fx)) && fusionRecipe(fx) && assignMats(fusionRecipe(fx), pool, 1).length);
+  if (!fs.length) return null;
+  const [fx] = yield* pick(g, p, 'Fusion Summon which monster?', fs, 1, 1, 'good');
+  const cs = assignMats(fusionRecipe(fx), pool); let mats = cs[0];
+  if (cs.length > 1) { const i = yield* choose(g, p, 'Use which Fusion Materials?', cs.map(m => m.map(c => D(c).n + (c.zone === 'hand' ? ' (hand)' : c.zone === 'm' ? ' (field)' : c.zone === 'gy' ? ' (GY)' : ' (Deck)')).join(' + '))); mats = cs[i]; }
+  const grp = g.group; for (const m of mats) move(g, m, o.banish ? 'ban' : 'gy', { reason: 'fusion', group: grp });
+  log(g, `${PN(g, p)} used ${mats.map(c => D(c).n).join(' + ')} as Fusion Material.`);
+  if (freeM(g, p) < 0) return null;
+  ss(g, p, fx, 'atk', { how: 'fusion', group: grp }); return fx;
+}
+/* Ritual Summon: o.monster (predicate for the Ritual Monster), o.exact (levels must equal) or at least its Level. */
+function ritualCombos(g, p, rm, o = {}) {
+  const L = lv(rm); const pool = [...g.p[p].hand.filter(c => c !== rm && isMon(c)), ...monsOf(g, p)];
+  const out = []; const rec = (i, cur, sum) => { if (out.length > 10) return; if (o.exact ? sum === L : sum >= L) { if (cur.length) out.push(cur.slice()); if (!o.exact) return; } if (sum >= L) return; for (let j = i; j < pool.length; j++) { cur.push(pool[j]); rec(j + 1, cur, sum + lv(pool[j])); cur.pop(); } };
+  rec(0, [], 0); return out;
+}
+function canRitual(g, p, o) { return g.p[p].hand.some(c => isMon(c) && D(c).k === 'ritual' && o.monster(c) && ritualCombos(g, p, c, o).length); }
+function* ritualSummon(g, p, o) {
+  const rms = g.p[p].hand.filter(c => isMon(c) && D(c).k === 'ritual' && o.monster(c) && ritualCombos(g, p, c, o).length); if (!rms.length) return null;
+  const [rm] = yield* pick(g, p, 'Ritual Summon which monster?', rms, 1, 1, 'good');
+  const cs = ritualCombos(g, p, rm, o); let trib = cs[0];
+  if (cs.length > 1) { const i = yield* choose(g, p, 'Tribute which monsters?', cs.map(m => m.map(c => `${D(c).n} (Lv ${lv(c)})`).join(' + '))); trib = cs[i]; }
+  const grp = g.group; for (const t of trib) move(g, t, 'gy', { reason: 'ritual', group: grp });
+  if (freeM(g, p) < 0) return null;
+  ss(g, p, rm, 'atk', { how: 'ritual', group: grp }); return rm;
+}
+E.lib = {
+  ask, pick, yn, choose, tgt: null, move, destroy, ss, draw, damage, gain, pay, mill, search, takeControl, setFaceDown, negate, addMod,
+  equip, equippedTo, link, addCtr, ctr, negateAttack, endBattle, addRule, token, tokens, fusionSummon, canFusion, fusionRecipe, ritualSummon, canRitual,
+  stat, atk: (g, c) => stat(g, c, 'atk'), def: (g, c) => stat(g, c, 'def'), name, D, isMon, isMonD, isST, isSpell, isTrap, isExtraD, onField, faceUp, attr, race, lv, baseAtk,
+  monsOf, stOf, fieldOf, allField, fieldMons, freeM, freeST, nFreeM, allCards, shuffleDeck, log, PN, has, forbid, negd, num, shown, emit, beginOp,
+  isBW, isFrog, isHERO, isEHERO, isGemini, evSummoned, fromFieldToGY, battleKill, oppFaceUp, stOnField, spellTrapAct, live, opp, tributeCands, synCombos,
+};
+E.lib.tgt = tgt;
+E.addScripts = obj => { for (const k in obj) SCRIPTS[k] = obj[k]; };
 E.SCRIPTS = SCRIPTS;
 root.EdisonEngine = E;
 E._internal = { stat, synCombos, activatable, fieldMons, monsOf, stOf, faceUp, isMon, isST, D };

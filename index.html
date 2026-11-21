@@ -235,6 +235,7 @@ body.noscroll{overflow:hidden}
 /* Duel (engine) */
 .himg.can{outline:3px solid #ffd77a;outline-offset:2px;box-shadow:0 0 14px rgba(255,215,122,.6)}
 .himg.sel{transform:translateY(-14px);outline:3px solid #fff}
+.arena .etok{position:absolute;inset:3px;display:grid;place-content:center;gap:2px;text-align:center;border-radius:6px;background:linear-gradient(135deg,#5d6577,#3b4150);color:#fff;font-size:10px;font-weight:700;padding:3px;line-height:1.15}.arena .etok small{font-weight:600;opacity:.85}
 .lpbox .lpnum{font-size:24px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;font-family:var(--display)}
 .ahint .hbest{margin:0 0 8px;padding:7px 9px;border-radius:8px;background:rgba(255,215,122,.12);color:#ffe7a6}
 .cthumb.on{outline:3px solid var(--accent);outline-offset:2px}
@@ -715,6 +716,13 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
 <script src="data/rules.js"></script>
 <script src="data/meta.js"></script>
 <script src="js/engine.js"></script>
+<script src="js/cards/batch-1.js"></script>
+<script src="js/cards/batch-2.js"></script>
+<script src="js/cards/batch-3.js"></script>
+<script src="js/cards/batch-4.js"></script>
+<script src="js/cards/batch-5.js"></script>
+<script src="js/cards/batch-6.js"></script>
+<script src="js/cards/batch-7.js"></script>
 <script src="js/ai.js"></script>
 <script>
 /* ============ STORAGE (safe) ============ */
@@ -2899,9 +2907,10 @@ function duelStep(){
 }
 function duelAct(keys){if(!G||G.busy)return;closePop();if(modal.innerHTML)closeModal();G.sel=[];EG().act(G.g,keys);duelStep()}
 const eFind=u=>{const g=G.g;for(const P of g.p)for(const z of ['hand','m','st','gy','ban','deck','extra'])for(const c of P[z])if(c&&c.u===u)return c;if(g.p[0].fz&&g.p[0].fz.u===u)return g.p[0].fz;if(g.p[1].fz&&g.p[1].fz.u===u)return g.p[1].fz;return null};
-const TOKEN_ART={'tok-sheep':73915052,'tok-gorz':44330099};
-const eArt=c=>{const id=TOKEN_ART[c.id]||c.id;const r=BYID.get(id);if(r&&r.arts)return artURL({id:r.arts[c.u%r.arts.length]});return artURL({id})};
-const eShow=c=>{const id=TOKEN_ART[c.id]||c.id;if(BYID.has(id))setTimeout(()=>showReal(id),0)};
+const TOKEN_ART={'tok-sheep':73915052,'tok-sheep-token':73915052,'tok-gorz':44330099,'tok-emissary-of-darkness-token':44330099,'tok-fluff-token':15341822};
+const eNoArt=c=>typeof c.id==='string'&&c.id.startsWith('tok-')&&!TOKEN_ART[c.id];
+const eArt=c=>{if(eNoArt(c))return BACK;const id=TOKEN_ART[c.id]||c.id;const r=BYID.get(id);if(r&&r.arts)return artURL({id:r.arts[c.u%r.arts.length]});return artURL({id})};
+const eShow=c=>{if(eNoArt(c))return;const id=TOKEN_ART[c.id]||c.id;if(BYID.has(id))setTimeout(()=>showReal(id),0)};
 /* ---- turn hints (Zack, 2026-11-17: "tooltips each turn that the player can reveal to see what they should do") ----
  The hint panel reads the engine's position through a small view (hintView) shaped like the first duel's state, so
  the teaching steps below work unchanged; it also shows the play the computer itself would pick in your seat. */
@@ -3098,7 +3107,7 @@ function renderDuel(){if(!DB.length){app.innerHTML=noData();return}if(!window.Ed
 function renderDuelSetup(){
   const opts=sel=>deckChoices().map(c=>`<option value="${esc(c.key)}" ${c.key===sel?'selected':''}>${esc(c.name)}${deckAuto(c.d)?' ✓':''}</option>`).join('');
   app.innerHTML=`<div class="read" style="max-width:860px"><h1 style="font-size:32px;margin-bottom:6px">Duel the computer</h1>
-  <p class="note" style="margin:0 0 16px">A full duel under the April 2010 rules: chains, Spell Speed, the Damage Step and card effects all happen on their own. Decks marked ✓ have every card's effect automated (the 5 Best decks so far, with more on the way); in other decks, cards without a script play without their effect. The computer only knows what you could see: it never peeks at your hand or face-down cards.</p>
+  <p class="note" style="margin:0 0 16px">A full duel under the April 2010 rules: chains, Spell Speed, the Damage Step and card effects all happen on their own. Every card in all 55 decks has its effect automated (decks you build yourself get a ✓ when every card in them is). The computer only knows what you could see: it never peeks at your hand or face-down cards.</p>
   <div class="dsetup">
     <label>Your deck<select id="ds-you">${opts(DSET.you)}</select></label>
     <label>Computer's deck<select id="ds-cpu"><option value="random" ${DSET.cpu==='random'?'selected':''}>Random deck ✓</option>${opts(DSET.cpu)}</select></label>
@@ -3123,7 +3132,7 @@ function eZone(pi,kind,i,can){
   const down=x.pos==='set',hidden=down&&pi===1;
   if(kind==='m'&&(x.pos==='def'||down))cls+=' def';
   if(can.has(x.u))cls+=' can';if(G.sel.includes(x.u))cls+=' sel';
-  const inner=down?`<span class="facedown">${hidden?'':esc(EG().name(x))}</span>`:`<span class="zimg" style="background-image:url('${eArt(x)}')"></span>`;
+  const inner=down?`<span class="facedown">${hidden?'':esc(EG().name(x))}</span>`:eNoArt(x)?`<span class="etok">${esc(EG().name(x))}<small>${EG().atk(g,x)}/${EG().def(g,x)}</small></span>`:`<span class="zimg" style="background-image:url('${eArt(x)}')"></span>`;
   const badge=kind==='m'&&!down?`<span class="lvbadge">${EG().atk(g,x)}</span>`:'';
   return `<button class="${cls}" data-eu="${x.u}" aria-label="${hidden?'Face-down card':esc(EG().name(x))}">${badge}${inner}</button>`;
 }

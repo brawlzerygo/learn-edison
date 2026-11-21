@@ -1,9 +1,5 @@
 // AI check: node build/test_ai.js [games] [level] [opponent: random|easy|normal|hard]
-const vm = require('vm'), fs = require('fs'), path = require('path');
-const root = path.join(__dirname, '..');
-const ctx = { window: {}, console, Math }; vm.createContext(ctx);
-for (const f of ['data/cards.js', 'data/decks.js', 'js/engine.js', 'js/ai.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx);
-const E = ctx.window.EdisonEngine, AI = ctx.window.EdisonAI; E.init(ctx.window.EDISON_CARDS);
+const { ctx, E, AI } = require('./load')({ ai: true });
 const N = +process.argv[2] || 10, lvl = process.argv[3] || 'normal', oppL = process.argv[4] || 'random';
 const decks = ctx.window.EDISON_DECKS.filter(d => d.tier === 'Best');
 const rand = pr => { const o = pr.opts; if (pr.type === 'idle') { const a = o.filter(x => !['end', 'endbp'].includes(x.key)); if (a.length && Math.random() < .7) return [a[Math.floor(Math.random() * a.length)].key]; return [(o.find(x => x.key === 'endbp') || o.find(x => x.key === 'end') || o[0]).key]; } if (pr.type === 'respond') return Math.random() < .6 ? ['pass'] : [o[0].key]; const n = pr.min; return o.slice().sort(() => Math.random() - .5).slice(0, Math.max(n, 1)).map(x => x.key); };

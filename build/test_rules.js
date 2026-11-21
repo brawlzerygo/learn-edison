@@ -1,10 +1,5 @@
 // Scripted rule checks: node build/test_rules.js
-const vm = require('vm'), fs = require('fs'), path = require('path');
-const root = path.join(__dirname, '..');
-const ctx = { window: {}, console }; vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(path.join(root, 'data/cards.js'), 'utf8'), ctx);
-vm.runInContext(fs.readFileSync(path.join(root, 'js/engine.js'), 'utf8'), ctx);
-const E = ctx.window.EdisonEngine; const C = ctx.window.EDISON_CARDS; E.init(C);
+const { ctx, E, C } = require('./load')();
 const id = n => { const c = C.find(x => x.n === n); if (!c) throw new Error('no card ' + n); return c.id; };
 const FILL = 'Gene-Warped Warwolf';
 function duel(h0, h1, o = {}) { // h0/h1: first cards drawn (5 hand + turn-1 draw for P0); o.board: a preset position

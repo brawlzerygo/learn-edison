@@ -1,12 +1,6 @@
 // Engine soak test: node build/test_engine.js [games] [tier]
 // Plays full duels between random legal players (any answer from each prompt) and reports crashes, stuck games and stats.
-const vm = require('vm'), fs = require('fs'), path = require('path');
-const root = path.join(__dirname, '..');
-const ctx = { window: {}, console }; vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(path.join(root, 'data/cards.js'), 'utf8'), ctx);
-vm.runInContext(fs.readFileSync(path.join(root, 'data/decks.js'), 'utf8'), ctx);
-vm.runInContext(fs.readFileSync(path.join(root, 'js/engine.js'), 'utf8'), ctx);
-const E = ctx.window.EdisonEngine; E.init(ctx.window.EDISON_CARDS);
+const { ctx, E } = require('./load')();
 const N = +process.argv[2] || 200, tier = process.argv[3] || 'Best';
 const decks = ctx.window.EDISON_DECKS.filter(d => tier === 'all' || d.tier === tier);
 let rnd = 12345; const R = () => { rnd = (rnd * 1103515245 + 12345) & 0x7fffffff; return rnd / 0x7fffffff; };
