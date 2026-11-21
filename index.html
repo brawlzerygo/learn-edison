@@ -232,6 +232,13 @@ body.noscroll{overflow:hidden}
 .arena .hintbtn.on{background:rgba(255,215,122,.16)}
 .ahand>.hinted,.arena .zone.hinted{outline:3px dashed #ffd77a;outline-offset:2px}
 @media(max-width:819px){.ahint{width:auto;min-width:0;max-height:none;margin:8px 10px 0}}
+/* Duel (engine) */
+.himg.can{outline:3px solid #ffd77a;outline-offset:2px;box-shadow:0 0 14px rgba(255,215,122,.6)}
+.himg.sel{transform:translateY(-14px);outline:3px solid #fff}
+.lpbox .lpnum{font-size:24px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;font-family:var(--display)}
+.ahint .hbest{margin:0 0 8px;padding:7px 9px;border-radius:8px;background:rgba(255,215,122,.12);color:#ffe7a6}
+.cthumb.on{outline:3px solid var(--accent);outline-offset:2px}
+.aacts .btn{white-space:normal;line-height:1.25}
 /* Duel */
 .dsetup{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .dsetup label{display:grid;gap:4px;font-weight:600;font-size:14px;color:var(--muted)}
@@ -707,6 +714,8 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
 <script src="data/lessons-301b.js"></script>
 <script src="data/rules.js"></script>
 <script src="data/meta.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ai.js"></script>
 <script>
 /* ============ STORAGE (safe) ============ */
 const store={
@@ -2849,140 +2858,60 @@ function picker(opt){
   });
 }
 
-/* ============ DUEL THE COMPUTER (first version) ============
- A playable shell. Automated: the draw, Normal/Tribute/Set/Flip/Synchro Summons, battle and damage, the hand
- limit, and winning (LP 0 or an empty Deck). Not automated yet: card effects. A Spell or Trap you activate goes to
- the GY and you apply it by hand with the card actions (destroy, banish, return to hand) and the LP boxes.
- The computer plays monsters only; its difficulty decides how well it summons and attacks.
- Cards use the board's ids (simId), so getC, tile and checkSyn work on them unchanged. */
-const DIFFS={easy:['Easy','Plays at random and makes bad attacks.'],normal:['Normal','Summons its strongest monster and only makes attacks it wins.'],hard:['Hard','Also Synchro Summons, switches weak monsters to defense and picks the best targets.']};
+/* ============ DUEL THE COMPUTER (on the rules engine, 2026-11-20) ============
+ The duel runs on js/engine.js: every rule and every scripted card effect is automatic. The page only shows the
+ board and answers the engine's prompts: your free actions (tap a card for its menu), responses (Activate or Pass),
+ picks (tap the glowing cards), and yes/no or option choices (buttons). The computer (js/ai.js) answers its own
+ prompts, a short pause apart so you can follow. Cards from decks beyond the 5 Best decks may play without their
+ effect until they are scripted; the setup screen marks which decks are fully automated. */
+const DIFFS={easy:['Easy','Often plays at random and walks into traps.'],normal:['Normal','Tries every play it has and picks the one that leaves it best off.'],hard:['Hard','Also looks a move further ahead and attacks carefully into Set cards.']};
 let G=null;
 let DSET=Object.assign({you:'d:Blackwing',cpu:'random',diff:'normal',first:'random'},store.get('duelsetup',{}));
 const dnum=v=>{const x=parseInt(v,10);return isNaN(x)?0:x};
 const dAtk=x=>dnum(getC(x).atk),dDef=x=>dnum(getC(x).def);
 const isMonC=cd=>!['spell','trap'].includes(cd.kind);
-function deckChoices(){const saved=Object.values(BS.saved||{}).filter(d=>d.main.length>=20).map(d=>({key:'s:'+d.name,name:d.name+' (yours)',d}));return [...saved,...DECKS.map(d=>({key:'d:'+d.name,name:d.name,d}))]}
-function pickDeck(key){const all=deckChoices();if(key==='random')return all.filter(c=>c.key.startsWith('d:'))[Math.floor(Math.random()*DECKS.length)];return all.find(c=>c.key===key)||all.find(c=>c.key.startsWith('d:'))}
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function newPlayer(name,d){return {name,deckName:d.name,lp:8000,deck:shuffle(d.d.main.map(id=>inst(simId(id)))),extra:d.d.extra.map(id=>inst(simId(id))).filter(x=>getC(x).kind==='synchro'||getC(x).kind==='fusion'),hand:[],m:[null,null,null,null,null],st:[null,null,null,null,null],gy:[],ban:[]}}
-function dlog(t){G.log.unshift(t);G.log=G.log.slice(0,60)}
-function startDuel(){
-  const you=pickDeck(DSET.you),cpu=pickDeck(DSET.cpu);
-  G={p:[newPlayer('You',you),newPlayer('The computer',cpu)],diff:DSET.diff,turn:DSET.first==='you'?0:DSET.first==='cpu'?1:Math.round(Math.random()),turnNo:0,phase:'main1',normalDone:false,log:[],winner:null,ui:null,busy:false};
-  dlog(`Duel start. You play ${you.name}, the computer plays ${cpu.name} (${DIFFS[G.diff][0]}).`);
-  for(let k=0;k<5;k++){dDraw(0,true);dDraw(1,true)}
-  dlog(`${G.turn===0?'You go':'The computer goes'} first.`);
-  G.turnNo=0;dStartTurn();
-}
-function dDraw(pi,quiet){const P=G.p[pi];if(!P.deck.length){dWin(1-pi,`${P.name==='You'?'Your':"The computer's"} Deck is empty`);return false}P.hand.push(P.deck.pop());if(!quiet)dlog(`${P.name} drew a card.`);return true}
-function dWin(pi,why){if(G.winner!==null)return;G.winner=pi;dlog(`${why}. ${pi===0?'You win!':'The computer wins.'}`)}
-function dCheckLP(){for(const pi of [0,1])if(G.p[pi].lp<=0){G.p[pi].lp=0;dWin(1-pi,`${G.p[pi].name==='You'?'Your':"The computer's"} LP hit 0`)}}
-function dStartTurn(){
-  if(G.winner!==null)return;
-  G.turnNo++;G.phase='draw';G.normalDone=false;G.ui=null;G.hint=false;
-  const P=G.p[G.turn];P.m.forEach(x=>{if(x){x.attacked=false;x.posChanged=false}});
-  dlog(`— Turn ${G.turnNo}: ${G.turn===0?'your turn':"the computer's turn"} —`);
-  if(!dDraw(G.turn))return;
-  G.phase='main1';
-  if(G.turn===1){G.busy=true;renderDuel();setTimeout(cpuTurn,700)}
-}
 const tribNeeded=cd=>cd.lv>=7?2:cd.lv>=5?1:0;
 const freeZone=a=>a.findIndex(z=>!z);
-function dSummon(pi,u,mode,tribs,zi){
-  const P=G.p[pi];const x=P.hand.find(h=>h.u===u);const cd=getC(x);
-  if(G.normalDone)return 'You already used your Normal Summon this turn.';
-  if(!isMonC(cd)||cd.kind==='synchro'||cd.kind==='fusion')return 'That card can’t be Normal Summoned.';
-  const need=tribNeeded(cd);tribs=tribs||[];
-  if(tribs.length!==need)return `${cd.name} needs ${need} Tribute${need===1?'':'s'}.`;
-  tribs.forEach(t=>{const i=P.m.findIndex(z=>z&&z.u===t);const y=P.m[i];P.m[i]=null;dToGY(pi,y)});
-  const i=zi!=null&&!P.m[zi]?zi:freeZone(P.m);if(i<0)return 'Your Monster Zones are full.';
-  P.hand=P.hand.filter(h=>h!==x);x.pos=mode==='set'?'set':'atk';x.turn=G.turnNo;x.attacked=false;x.posChanged=false;P.m[i]=x;G.normalDone=true;
-  dlog(mode==='set'?`${P.name} Set a monster.`:`${P.name} ${need?'Tribute ':'Normal '}Summoned ${cd.name}${need?` (${need} Tribute${need>1?'s':''})`:''}.`);
-  return null;
+const EG=()=>window.EdisonEngine;
+let ENGINE_READY=false;
+function engineReady(){if(!ENGINE_READY&&window.EdisonEngine){EG().init(DB);ENGINE_READY=true}return ENGINE_READY}
+function deckChoices(){const saved=Object.values(BS.saved||{}).filter(d=>d.main.length>=20).map(d=>({key:'s:'+d.name,name:d.name+' (yours)',d}));return [...saved,...DECKS.map(d=>({key:'d:'+d.name,name:d.name,d}))]}
+const deckAuto=d=>engineReady()&&[...d.main,...(d.extra||[])].every(id=>{const r=BYID.get(id);return !r||EG().scripted(r.n)});
+function pickDeck(key){const all=deckChoices();if(key==='random'){const auto=all.filter(c=>c.key.startsWith('d:')&&deckAuto(c.d));const pool=auto.length?auto:all.filter(c=>c.key.startsWith('d:'));return pool[Math.floor(Math.random()*pool.length)]}return all.find(c=>c.key===key)||all.find(c=>c.key.startsWith('d:'))}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startDuel(){
+  engineReady();
+  const you=pickDeck(DSET.you),cpu=pickDeck(DSET.cpu);
+  const first=DSET.first==='you'?0:DSET.first==='cpu'?1:Math.round(Math.random());
+  const g=EG().newDuel({decks:[{name:you.name,main:you.d.main,extra:you.d.extra||[]},{name:cpu.name,main:cpu.d.main,extra:cpu.d.extra||[]}],first,names:['You','The computer']});
+  G={g,level:DSET.diff,sel:[],hint:false,lastTurn:0,busy:false,auto:[deckAuto(you.d),deckAuto(cpu.d)]};
+  duelStep();
 }
-function dToGY(pi,x){const cd=getC(x);if(cd.kind==='token')return;x.pos='atk';if(cd.kind==='synchro'||cd.kind==='fusion'){}G.p[pi].gy.push(x)}
-function dSynchro(pi,matU,ex){
-  const P=G.p[pi];const mats=matU.map(u=>P.m.find(z=>z&&z.u===u));const r=checkSyn(mats,ex);if(!r.ok)return r.why;
-  const zi=P.m.findIndex(z=>z&&z.u===mats[0].u);
-  mats.forEach(m=>{const i=P.m.indexOf(m);P.m[i]=null;dToGY(pi,m)});
-  P.extra=P.extra.filter(e=>e!==ex);ex.pos='atk';ex.turn=G.turnNo;ex.attacked=false;ex.posChanged=false;P.m[zi]=ex;
-  dlog(`${P.name} Synchro Summoned ${getC(ex).name} using ${mats.map(m=>getC(m).name).join(' + ')}.`);return null;
-}
-function dAttack(pi,u,tu){
-  const P=G.p[pi],O=G.p[1-pi];const a=P.m.find(z=>z&&z.u===u);const ca=getC(a);
-  if(G.turnNo===1)return 'The player who goes first can’t attack on turn 1.';
-  if(a.pos!=='atk'||a.attacked)return `${ca.name} can’t attack now.`;
-  if(tu==null&&O.m.some(Boolean))return 'You can only attack directly when the opponent has no monsters.';
-  a.attacked=true;
-  if(tu==null){O.lp-=dAtk(a);dlog(`${ca.name} attacked directly for ${dAtk(a)}.`);dCheckLP();return null}
-  const ti=O.m.findIndex(z=>z&&z.u===tu);const t=O.m[ti];const ct=getC(t);
-  if(t.pos==='set'){t.pos='def';dlog(`${ca.name} attacked a face-down monster: it was ${ct.name}.`)}else dlog(`${ca.name} attacked ${ct.name}.`);
-  const A=dAtk(a);
-  if(t.pos==='atk'){const T=dAtk(t);
-    if(A>T){O.m[ti]=null;dToGY(1-pi,t);O.lp-=A-T;dlog(`${ct.name} was destroyed. ${O.name} took ${A-T} damage.`)}
-    else if(A<T){const ai=P.m.indexOf(a);P.m[ai]=null;dToGY(pi,a);P.lp-=T-A;dlog(`${ca.name} was destroyed. ${P.name} took ${T-A} damage.`)}
-    else{O.m[ti]=null;dToGY(1-pi,t);const ai=P.m.indexOf(a);P.m[ai]=null;dToGY(pi,a);dlog('Both monsters were destroyed.')}}
-  else{const D=dDef(t);
-    if(A>D){O.m[ti]=null;dToGY(1-pi,t);dlog(`${ct.name} was destroyed.`)}
-    else if(A<D){P.lp-=D-A;dlog(`${ct.name} held. ${P.name} took ${D-A} damage.`)}
-    else dlog('Nothing was destroyed.')}
-  dCheckLP();return null;
-}
-function dEndTurn(){
-  const P=G.p[G.turn];G.phase='end';
-  while(P.hand.length>6){ // the player picks their discards; the computer drops its weakest cards
-    if(G.turn===0){G.ui={mode:'discard'};renderDuel();return}
-    const w=P.hand.reduce((b,x)=>(isMonC(getC(x))?dAtk(x):500)<(isMonC(getC(b))?dAtk(b):500)?x:b);P.hand=P.hand.filter(h=>h!==w);G.p[1].gy.push(w);dlog('The computer discarded down to 6.')}
-  G.turn=1-G.turn;dStartTurn();renderDuel();
-}
-/* ---- the computer ---- */
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
-async function cpuTurn(){
-  const me=1,opp=0,D=G.diff,P=G.p[me],O=G.p[opp];
-  const step=async()=>{renderDuel();await wait(650)};
-  if(G.winner!==null){G.busy=false;renderDuel();return}
-  cpuNormal();await step();
-  if(D==='hard'&&cpuSynchro())await step();
-  if(D==='hard'){P.m.forEach(x=>{if(!x||x.pos!=='atk'||x.turn===G.turnNo)return;const oppBest=Math.max(0,...O.m.filter(z=>z&&z.pos==='atk').map(dAtk));if(dAtk(x)<oppBest&&dDef(x)>dAtk(x)){x.pos='def';x.posChanged=true;dlog(`The computer switched ${getC(x).name} to Defense Position.`)}});await step()}
-  if(G.turnNo>1&&G.winner===null){G.phase='battle';await step();
-    const attackers=()=>P.m.filter(x=>x&&x.pos==='atk'&&!x.attacked).sort((a,b)=>dAtk(b)-dAtk(a));
-    for(const a of attackers()){if(G.winner!==null)break;
-      const targets=O.m.filter(Boolean);let t=null,go=false;
-      if(!targets.length)go=true;
-      else if(D==='easy'){t=targets[Math.floor(Math.random()*targets.length)];go=Math.random()<.8}
-      else{const A=dAtk(a);
-        const beats=targets.filter(z=>z.pos==='atk'?dAtk(z)<A:z.pos==='def'?dDef(z)<A:(D==='hard'?A>=1900:A>=1600));
-        if(beats.length){t=beats.sort((x,y)=>(y.pos==='atk'?dAtk(y)+1000:dDef(y))-(x.pos==='atk'?dAtk(x)+1000:dDef(x)))[0];go=true}}
-      if(go){dAttack(me,a.u,t?t.u:null);await step()}}}
-  G.phase='main2';
-  if(G.winner===null)dEndTurn();
+/* Run the computer's prompts, a short pause apart; stop on the player's prompt. */
+function duelStep(){
+  if(!G)return;const g=G.g;
+  if(G.lastTurn!==g.turnNo){G.hint=false;G.lastTurn=g.turnNo}
+  clearTimeout(G.timer);
+  if(g.prompt&&g.prompt.p===1){G.busy=true;renderDuel();const mine=G;
+    G.timer=setTimeout(()=>{if(G!==mine)return;let k;try{k=EdisonAI.decide(g,1,G.level)}catch(e){console.error(e);k=[g.prompt.opts.find(o=>o.key==='pass'||o.key==='end'||o.key==='endbp')?.key||g.prompt.opts[0].key]}
+      EG().act(g,k);duelStep()},g.prompt.type==='idle'?650:450);return}
   G.busy=false;renderDuel();
 }
-function cpuNormal(){
-  const P=G.p[1],O=G.p[0],D=G.diff;
-  const field=P.m.filter(Boolean);
-  const cands=P.hand.filter(x=>{const cd=getC(x);return isMonC(cd)&&cd.kind!=='synchro'&&cd.kind!=='fusion'&&cd.kind!=='token'&&tribNeeded(cd)<=field.length&&(tribNeeded(cd)>0||freeZone(P.m)>-1)});
-  if(!cands.length)return;
-  let pick;
-  if(D==='easy')pick=cands.filter(x=>tribNeeded(getC(x))===0)[0]||cands[0];
-  else pick=cands.filter(x=>{const n=tribNeeded(getC(x));if(!n)return true;const fod=field.map(dAtk).sort((a,b)=>a-b).slice(0,n);return dAtk(x)>Math.max(...fod)+500}).sort((a,b)=>dAtk(b)-dAtk(a))[0];
-  if(!pick)return;
-  const n=tribNeeded(getC(pick));const tribs=field.slice().sort((a,b)=>dAtk(a)-dAtk(b)).slice(0,n).map(z=>z.u);
-  const oppBest=Math.max(0,...O.m.filter(z=>z&&z.pos==='atk').map(dAtk));
-  const mode=D==='easy'?(Math.random()<.7?'atk':'set'):(dAtk(pick)>=oppBest||!O.m.some(Boolean)?'atk':'set');
-  dSummon(1,pick.u,mode,tribs);
-}
-function cpuSynchro(){
-  const P=G.p[1];const mons=P.m.filter(z=>z&&z.pos!=='set');let best=null;
-  for(let mask=1;mask<(1<<mons.length);mask++){const mats=mons.filter((_,i)=>mask&(1<<i));if(mats.length<2)continue;
-    for(const ex of P.extra){if(checkSyn(mats,ex).ok&&dAtk(ex)>Math.max(...mats.map(dAtk))&&(!best||dAtk(ex)>dAtk(best.ex)))best={ex,mats}}}
-  if(!best)return false;dSynchro(1,best.mats.map(m=>m.u),best.ex);return true;
-}
+function duelAct(keys){if(!G||G.busy)return;closePop();if(modal.innerHTML)closeModal();G.sel=[];EG().act(G.g,keys);duelStep()}
+const eFind=u=>{const g=G.g;for(const P of g.p)for(const z of ['hand','m','st','gy','ban','deck','extra'])for(const c of P[z])if(c&&c.u===u)return c;if(g.p[0].fz&&g.p[0].fz.u===u)return g.p[0].fz;if(g.p[1].fz&&g.p[1].fz.u===u)return g.p[1].fz;return null};
+const TOKEN_ART={'tok-sheep':73915052,'tok-gorz':44330099};
+const eArt=c=>{const id=TOKEN_ART[c.id]||c.id;const r=BYID.get(id);if(r&&r.arts)return artURL({id:r.arts[c.u%r.arts.length]});return artURL({id})};
+const eShow=c=>{const id=TOKEN_ART[c.id]||c.id;if(BYID.has(id))setTimeout(()=>showReal(id),0)};
 /* ---- turn hints (Zack, 2026-11-17: "tooltips each turn that the player can reveal to see what they should do") ----
- The Hint button reveals a suggested play for the current phase, worked out from what the player can see: their own
- hand and field, the opponent's face-up cards and how many cards they have Set. It never peeks at hidden cards.
- Each step says what to do and why; cards in the first step glow. Tips explain the staples in hand, in our own words
- from their Edison text. The hint hides again at the start of every turn so the player tries first. */
+ The hint panel reads the engine's position through a small view (hintView) shaped like the first duel's state, so
+ the teaching steps below work unchanged; it also shows the play the computer itself would pick in your seat. */
+let HG=null;
+function hintView(){
+  const g=G.g;const pr=g.prompt;
+  const conv=c=>c&&({u:c.u,id:simId(TOKEN_ART[c.id]||c.id),pos:c.pos==='up'?'atk':c.pos,turn:c.turnIn,attacked:c.attacks>0,posChanged:c.posChanged});
+  const side=P=>({lp:P.lp,hand:P.hand.map(conv),m:P.m.map(conv),st:P.st.map(conv),gy:P.gy.map(conv),extra:P.extra.map(conv),deck:P.deck});
+  return {p:[side(g.p[0]),side(g.p[1])],phase:g.phase,turnNo:g.turnNo,normalDone:g.ns[0]>=1,ui:pr&&pr.type==='pick'&&/hand limit/.test(pr.text)?{mode:'discard'}:null};
+}
 const dText=x=>{const cd=getC(x);const r=cd.rid&&BYID.get(cd.rid);return (r&&(r.ps||r.tx))||cd.text||''};
 const dAttr=x=>{const cd=getC(x);const r=cd.rid&&BYID.get(cd.rid);return cd.attr||(r&&r.a)||''};
 const dNm=x=>getC(x).name;
@@ -3039,31 +2968,31 @@ function dSynOptions(pool,must,extra){
   return out.sort((a,b)=>dAtk(b.ex)-dAtk(a.ex));
 }
 function dHint(){
-  const P=G.p[0],O=G.p[1];const steps=[];const tips=[];
+  const P=HG.p[0],O=HG.p[1];const steps=[];const tips=[];
   const add=(t,why,us)=>steps.push({t,why,us:(us||[]).filter(Boolean).map(x=>x.u)});
   const hand=P.hand,inH=n=>hand.find(x=>dNm(x)===n);
   const myM=P.m.filter(Boolean),opM=O.m.filter(Boolean),opUp=opM.filter(z=>z.pos!=='set'),opDown=opM.filter(z=>z.pos==='set');
   const opAtk=opUp.filter(z=>z.pos==='atk');const opST=O.st.filter(Boolean).length,myST=P.st.filter(Boolean).length;
   const opBest=opAtk.slice().sort((a,b)=>dAtk(b)-dAtk(a))[0];const opBestAtk=opBest?dAtk(opBest):0;
   const opThreat=opUp.slice().sort((a,b)=>dAtk(b)-dAtk(a))[0];
-  const canBattle=G.turnNo>1;const freeST=P.st.filter(z=>!z).length;
+  const canBattle=HG.turnNo>1;const freeST=P.st.filter(z=>!z).length;
   const nameList=a=>a.map(dNm).join(', ');
   hand.forEach(x=>{const t=HTIPS[dNm(x)];if(t&&!tips.some(q=>q[0]===dNm(x)))tips.push([dNm(x),t])});
   // Discarding at the End Phase
-  if(G.ui&&G.ui.mode==='discard'){
+  if(HG.ui&&HG.ui.mode==='discard'){
     const val=x=>{const n=dNm(x);if(n==='Necro Gardna')return -1;if(HTIPS[n])return 3000;const cd=getC(x);return isMonC(cd)?dAtk(x)+(tribNeeded(cd)?-800:0):1200};
     const w=hand.slice().sort((a,b)=>val(a)-val(b))[0];
     add(`Discard ${dNm(w)}`,dNm(w)==='Necro Gardna'?'Necro Gardna works from the GY, so discarding it costs you nothing.':'It is the card you are least likely to need. Keep your staples and your best monsters.',[w]);
     return {head:'End Phase: discard down to 6',steps,tips};
   }
-  if(G.ui&&G.ui.mode==='target'){const a=myM.find(z=>z.u===G.ui.u);if(a){const beat=opM.filter(z=>z.pos==='atk'?dAtk(z)<dAtk(a):z.pos==='def'&&dDef(z)<dAtk(a));
+  if(HG.ui&&HG.ui.mode==='target'){const a=myM.find(z=>z.u===HG.ui.u);if(a){const beat=opM.filter(z=>z.pos==='atk'?dAtk(z)<dAtk(a):z.pos==='def'&&dDef(z)<dAtk(a));
     if(!opM.length)add('Attack directly','They have no monsters, so all of its ATK goes to their LP.');
     else if(beat.length){const t=beat.sort((x,y)=>dAtk(y)-dAtk(x))[0];add(`Attack ${dNm(t)}`,t.pos==='atk'?`${dAtk(a)} ATK beats its ${dAtk(t)} ATK: it is destroyed and they take ${dAtk(a)-dAtk(t)}.`:`${dAtk(a)} ATK beats its ${dDef(t)} DEF: it is destroyed (no damage to LP in Defense Position).`,[t])}
     else if(opDown.length)add('Attack the face-down monster, or cancel','You can’t see its DEF. Nothing face-up is weaker than this attacker.',opDown);
     else add('Cancel this attack',`${dNm(a)} beats none of their monsters, so the attack would cost you.`)}
     return {head:'Choosing a target',steps,tips}}
   // Battle Phase
-  if(G.phase==='battle'){
+  if(HG.phase==='battle'){
     const atk=myM.filter(z=>z.pos==='atk'&&!z.attacked).sort((a,b)=>dAtk(a)-dAtk(b));
     if(!atk.length){add('Go to Main Phase 2','None of your monsters can attack anymore.');return {head:'Battle Phase',steps,tips}}
     if(!opM.length){const tot=atk.reduce((s,z)=>s+dAtk(z),0);
@@ -3085,7 +3014,7 @@ function dHint(){
     return {head:'Battle Phase',steps,tips};
   }
   // Main Phases
-  const m1=G.phase==='main1';
+  const m1=HG.phase==='main1';
   if(m1&&opST>=2&&inH('Heavy Storm'))add('Activate Heavy Storm first',`They have ${opST} Set Spell/Trap cards. Clearing them before you summon or attack means no Bottomless Trap Hole or Mirror Force can stop you.${myST?` It hits your ${myST} too.`:''}`,[inH('Heavy Storm')]);
   else if(m1&&opST>=2&&inH('Giant Trunade'))add('Activate Giant Trunade first',`It sends their ${opST} Set cards back to their hand, so none of them can stop your plays this turn.`,[inH('Giant Trunade')]);
   else if(m1&&opST&&inH('Mystical Space Typhoon'))add('Mystical Space Typhoon one of their Set cards',`Removing a Set card before you summon or attack makes your play safer.`,[inH('Mystical Space Typhoon')]);
@@ -3093,7 +3022,7 @@ function dHint(){
     const draw=[inH('Upstart Goblin'),darkH&&inH('Allure of Darkness'),gyMon>=5&&inH('Pot of Avarice'),inH('Reinforcement of the Army'),inH('Charge of the Light Brigade'),inH('Foolish Burial'),inH('Gold Sarcophagus')].filter(Boolean);
     if(draw.length)add(`Activate ${nameList(draw)}`,'Draw and search before you choose your summon: the new cards can change the best play.',draw);}
   // Their monster is too big
-  const potential=Math.max(0,...myM.filter(z=>z.pos!=='set').map(dAtk),...(G.normalDone?[]:hand.filter(x=>canNormalC(x)&&tribNeeded(getC(x))<=myM.length).map(dAtk)));
+  const potential=Math.max(0,...myM.filter(z=>z.pos!=='set').map(dAtk),...(HG.normalDone?[]:hand.filter(x=>canNormalC(x)&&tribNeeded(getC(x))<=myM.length).map(dAtk)));
   if(m1&&canBattle&&opThreat&&dAtk(opThreat)>=potential){
     const bc=inH('Brain Control'),sg=inH('Smashing Ground'),mc=inH('Mind Control'),bm=inH('Book of Moon');
     const highDef=opUp.slice().sort((a,b)=>dDef(b)-dDef(a))[0];
@@ -3105,13 +3034,13 @@ function dHint(){
   // Special Summons from the hand that don't use the Normal Summon
   const cy=inH('Cyber Dragon'),dad=inH('Dark Armed Dragon');
   if(cy&&!myM.length&&opM.length&&freeZone(P.m)>-1)add('Special Summon Cyber Dragon','Only they control a monster, so it comes out from your hand and you still have your Normal Summon.',[cy]);
-  if(dad&&P.gy.filter(x=>isMonC(getC(x))&&dAttr(x)==='DARK').length===3)add('Special Summon Dark Armed Dragon','You have exactly 3 DARKs in your GY. Apply its destroy effect by hand: banish a DARK from your GY to destroy a card.',[dad]);
+  if(dad&&P.gy.filter(x=>isMonC(getC(x))&&dAttr(x)==='DARK').length===3)add('Special Summon Dark Armed Dragon','You have exactly 3 DARKs in your GY. Then use its effect: banish a DARK from your GY to destroy any card.',[dad]);
   // Synchro with what is already on the field
   const up=myM.filter(z=>z.pos!=='set');
   const now=dSynOptions(up,null,P.extra)[0];
   if(now&&dAtk(now.ex)>Math.max(...now.mats.map(dAtk)))add(`Synchro Summon ${dNm(now.ex)}`,`${nameList(now.mats)} add up to Level ${getC(now.ex).lv}. ${dNm(now.ex)} has ${dAtk(now.ex)} ATK, more than its materials.`,now.mats);
   // The Normal Summon
-  if(!G.normalDone){
+  if(!HG.normalDone){
     const cands=hand.filter(x=>canNormalC(x)&&!HOLD.includes(dNm(x))&&tribNeeded(getC(x))<=myM.length&&(tribNeeded(getC(x))>0||freeZone(P.m)>-1));
     const worthIt=x=>{const n=tribNeeded(getC(x));if(!n)return true;const fod=myM.slice().sort((a,b)=>dAtk(a)-dAtk(b)).slice(0,n);return dAtk(x)>Math.max(...fod.map(dAtk))+500||dNm(x)==='Caius the Shadow Monarch'};
     const ok=cands.filter(worthIt);
@@ -3135,12 +3064,12 @@ function dHint(){
     }else if(hand.some(x=>canNormalC(x)&&!HOLD.includes(dNm(x))))tips.unshift(['Tributes',`Your Level 5 or higher monsters need Tributes: 1 for Level 5 and 6, 2 for Level 7 and up. Summon smaller monsters first.`]);
   }
   // Back to Attack Position when the way is clear
-  if(m1&&canBattle)myM.filter(z=>z.pos==='def'&&z.turn!==G.turnNo&&!z.posChanged&&dAtk(z)>(opM.length?Math.max(opBestAtk,...opUp.filter(q=>q.pos==='def').map(dDef)):0)&&!opDown.length).forEach(z=>add(`Switch ${dNm(z)} to Attack Position`,opM.length?`Its ${dAtk(z)} ATK beats their monsters, so it can attack.`:`They have no monsters, so it can attack directly for ${dAtk(z)}.`,[z]));
+  if(m1&&canBattle)myM.filter(z=>z.pos==='def'&&z.turn!==HG.turnNo&&!z.posChanged&&dAtk(z)>(opM.length?Math.max(opBestAtk,...opUp.filter(q=>q.pos==='def').map(dDef)):0)&&!opDown.length).forEach(z=>add(`Switch ${dNm(z)} to Attack Position`,opM.length?`Its ${dAtk(z)} ATK beats their monsters, so it can attack.`:`They have no monsters, so it can attack directly for ${dAtk(z)}.`,[z]));
   // Flip Summon
-  const flipNow=myM.filter(z=>z.pos==='set'&&z.turn!==G.turnNo&&canBattle&&m1&&(isFlip(z)||dAtk(z)>opBestAtk));
-  flipNow.forEach(z=>add(`Flip Summon ${dNm(z)}`,isFlip(z)?'Flipping it triggers its FLIP effect. Apply it by hand.':`Its ${dAtk(z)} ATK beats their strongest face-up attacker, so it can attack.`,[z]));
+  const flipNow=myM.filter(z=>z.pos==='set'&&z.turn!==HG.turnNo&&canBattle&&m1&&(isFlip(z)||dAtk(z)>opBestAtk));
+  flipNow.forEach(z=>add(`Flip Summon ${dNm(z)}`,isFlip(z)?'Flipping it triggers its FLIP effect.':`Its ${dAtk(z)} ATK beats their strongest face-up attacker, so it can attack.`,[z]));
   // Switch weak monsters to Defense (Main Phase 2)
-  if(!m1)myM.filter(z=>z.pos==='atk'&&z.turn!==G.turnNo&&!z.posChanged&&!z.attacked&&opBestAtk>dAtk(z)&&dDef(z)>=dAtk(z)).forEach(z=>add(`Switch ${dNm(z)} to Defense Position`,`${dNm(opBest)} (${opBestAtk} ATK) would beat it and deal damage. In Defense Position you take none.`,[z]));
+  if(!m1)myM.filter(z=>z.pos==='atk'&&z.turn!==HG.turnNo&&!z.posChanged&&!z.attacked&&opBestAtk>dAtk(z)&&dDef(z)>=dAtk(z)).forEach(z=>add(`Switch ${dNm(z)} to Defense Position`,`${dNm(opBest)} (${opBestAtk} ATK) would beat it and deal damage. In Defense Position you take none.`,[z]));
   // Set Spells and Traps
   const setters=hand.filter(x=>{const cd=getC(x);return cd.kind==='trap'||(cd.kind==='spell'&&cd.sub==='Quick-Play')});
   const attackLater=m1&&canBattle&&(myM.some(z=>z.pos==='atk')||steps.length);
@@ -3158,129 +3087,111 @@ function hintPanel(h){
   ${h.tips.length?`<div class="htips">${h.tips.slice(0,3).map(([n,t])=>`<p><b>${esc(n)}:</b> ${esc(t)}</p>`).join('')}</div>`:''}
   <p class="hnote">A suggestion from what you can see. It can’t know their hand or face-down cards.</p>`;
 }
+function hintPanelE(){
+  HG=hintView();let h;try{h=dHint()}catch(e){console.error(e);h={head:'Hint',steps:[],tips:[]}}
+  let best='';
+  try{const k=EdisonAI.decide(G.g,0,'normal');const o=G.g.prompt.opts.find(x=>x.key===k[0]);if(o){const c=o.u!=null?eFind(o.u):null;best=`${o.label}${c&&o.kind!=='atk'?': '+esc(EG().name(c)):''}`}}catch(e){console.error(e)}
+  return `${best?`<p class="hbest"><b>The computer's pick in your seat:</b> ${esc(best)}</p>`:''}${hintPanel(h)}`;
+}
 /* ---- screens ---- */
-function renderDuel(){if(!DB.length){app.innerHTML=noData();return}if(!G){renderDuelSetup();return}renderDuelGame()}
+function renderDuel(){if(!DB.length){app.innerHTML=noData();return}if(!window.EdisonEngine){app.innerHTML='<p class="note">Loading the duel…</p>';return}engineReady();if(!G){renderDuelSetup();return}renderDuelGame()}
 function renderDuelSetup(){
-  const opts=sel=>deckChoices().map(c=>`<option value="${esc(c.key)}" ${c.key===sel?'selected':''}>${esc(c.name)}</option>`).join('');
+  const opts=sel=>deckChoices().map(c=>`<option value="${esc(c.key)}" ${c.key===sel?'selected':''}>${esc(c.name)}${deckAuto(c.d)?' ✓':''}</option>`).join('');
   app.innerHTML=`<div class="read" style="max-width:860px"><h1 style="font-size:32px;margin-bottom:6px">Duel the computer</h1>
-  <p class="note" style="margin:0 0 16px">A first version for getting a feel for the game. Summoning, Synchros, battle and damage are automatic. Card effects aren’t yet: when you activate a Spell or Trap, apply it by hand with the card actions and the LP boxes. The computer plays monsters only.</p>
+  <p class="note" style="margin:0 0 16px">A full duel under the April 2010 rules: chains, Spell Speed, the Damage Step and card effects all happen on their own. Decks marked ✓ have every card's effect automated (the 5 Best decks so far, with more on the way); in other decks, cards without a script play without their effect. The computer only knows what you could see: it never peeks at your hand or face-down cards.</p>
   <div class="dsetup">
     <label>Your deck<select id="ds-you">${opts(DSET.you)}</select></label>
-    <label>Computer's deck<select id="ds-cpu"><option value="random" ${DSET.cpu==='random'?'selected':''}>Random deck</option>${opts(DSET.cpu)}</select></label>
+    <label>Computer's deck<select id="ds-cpu"><option value="random" ${DSET.cpu==='random'?'selected':''}>Random deck ✓</option>${opts(DSET.cpu)}</select></label>
     <label>Who goes first<select id="ds-first">${[['random','Random'],['you','You'],['cpu','The computer']].map(([v,t])=>`<option value="${v}" ${DSET.first===v?'selected':''}>${t}</option>`).join('')}</select></label>
   </div>
   <h2 style="font-size:18px;margin:18px 0 8px">Difficulty</h2>
   <div class="diffs">${Object.entries(DIFFS).map(([k,[t,b]])=>`<button type="button" class="diff ${DSET.diff===k?'on':''}" data-diff="${k}"><b>${t}</b><span>${b}</span></button>`).join('')}</div>
   <div class="hero-btns" style="margin-top:18px"><button class="btn primary" id="dstart">Start the duel</button><a class="btn" href="#builder">Build your own deck</a></div></div>`;
   app.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{DSET.diff=b.dataset.diff;app.querySelectorAll('[data-diff]').forEach(x=>x.classList.toggle('on',x===b))});
-  document.getElementById('dstart').onclick=()=>{DSET.you=document.getElementById('ds-you').value;DSET.cpu=document.getElementById('ds-cpu').value;DSET.first=document.getElementById('ds-first').value;store.set('duelsetup',DSET);startDuel();renderDuel()};
+  document.getElementById('dstart').onclick=()=>{DSET.you=document.getElementById('ds-you').value;DSET.cpu=document.getElementById('ds-cpu').value;DSET.first=document.getElementById('ds-first').value;store.set('duelsetup',DSET);startDuel()};
 }
-function dZone(pi,kind,i){
-  const P=G.p[pi];const x=P[kind][i];const ui=G.ui;
-  let cls='zone'+(kind==='st'?' st':'');
-  if(!x)return `<button class="${cls}${ui&&ui.mode==='place'&&pi===0&&kind===ui.kind?' can':''}" data-dz="${pi}|${kind}|${i}" aria-label="Empty zone"></button>`;
-  const cd=getC(x);const down=x.pos==='set';const hidden=down&&pi===1;
-  if(x.pos==='def'||(down&&kind==='m'))cls+=' def';
-  if(ui&&((ui.mode==='target'&&pi===1&&kind==='m')||(ui.mode==='tribute'&&pi===0&&kind==='m')||(ui.mode==='synchro'&&pi===0&&kind==='m'&&!down)))cls+=' can';
-  if(ui&&ui.picked&&ui.picked.includes(x.u))cls+=' sel';
-  const inner=down?`<span class="facedown">${hidden?'':esc(cd.name)}</span>`:cd.rid?`<span class="zimg" style="background-image:url('${artURL({id:tokenArt(x,cd)})}')"></span>`:tileSpan(cd);
-  const badge=kind==='m'&&!down?`<span class="lvbadge">${dAtk(x)}</span>`:'';
-  return `<button class="${cls}" data-dz="${pi}|${kind}|${i}" aria-label="${hidden?'Face-down card':esc(cd.name)}">${badge}${inner}</button>`;
+/* Which cards the current prompt lets the player use, and which are picked */
+function promptCards(){
+  const g=G.g,pr=g.prompt;const s=new Set();if(!pr||pr.p!==0||G.busy)return s;
+  for(const o of pr.opts)if(o.u!=null)s.add(o.u);
+  return s;
+}
+function eZone(pi,kind,i,can){
+  const g=G.g,P=g.p[pi];const x=kind==='fz'?P.fz:P[kind][i];
+  let cls='zone'+(kind==='st'||kind==='fz'?' st':'');
+  if(!x)return `<button class="${cls}" aria-label="Empty zone" disabled></button>`;
+  const down=x.pos==='set',hidden=down&&pi===1;
+  if(kind==='m'&&(x.pos==='def'||down))cls+=' def';
+  if(can.has(x.u))cls+=' can';if(G.sel.includes(x.u))cls+=' sel';
+  const inner=down?`<span class="facedown">${hidden?'':esc(EG().name(x))}</span>`:`<span class="zimg" style="background-image:url('${eArt(x)}')"></span>`;
+  const badge=kind==='m'&&!down?`<span class="lvbadge">${EG().atk(g,x)}</span>`:'';
+  return `<button class="${cls}" data-eu="${x.u}" aria-label="${hidden?'Face-down card':esc(EG().name(x))}">${badge}${inner}</button>`;
 }
 function renderDuelGame(){
-  const P=G.p[0],O=G.p[1];const my=G.turn===0&&!G.busy&&G.winner===null;const ui=G.ui;
-  const zones=(pi,k)=>[0,1,2,3,4].map(i=>dZone(pi,k,i)).join('');
-  const top=a=>{const x=a[a.length-1];const cd=x&&getC(x);return cd&&cd.rid?artURL({id:cd.rid}):null};
-  const slots=pi=>{const X=G.p[pi];return {deck:pileZ('disabled','Deck',X.deck.length,null,true),gy:pileZ(`data-dp="${pi}|gy"`,'GY',X.gy.length,top(X.gy)),
-    extra:pileZ(pi===0?'data-dp="0|extra"':'disabled','Extra',X.extra.length,null,true),field:pileZ('disabled','Field',null)}};
-  const phaseName={draw:'Draw Phase',main1:'Main Phase 1',battle:'Battle Phase',main2:'Main Phase 2',end:'End Phase'}[G.phase];
+  const g=G.g,P=g.p[0],O=g.p[1],pr=g.prompt,mine=pr&&pr.p===0&&!G.busy;
+  const can=promptCards();
+  const zones=(pi,k)=>[0,1,2,3,4].map(i=>eZone(pi,k,i,can)).join('');
+  const top=a=>a.length?eArt(a[a.length-1]):null;
+  const slots=pi=>{const X=g.p[pi];return {deck:pileZ('disabled','Deck',X.deck.length,null,true),gy:pileZ(`data-dp="${pi}|gy"`,'GY',X.gy.length+X.ban.length?X.gy.length:0,top(X.gy)),
+    extra:pileZ(pi===0?'data-dp="0|extra"':'disabled','Extra',X.extra.length,null,true),field:X.fz?eZone(pi,'fz',0,can):pileZ(X.ban.length?`data-dp="${pi}|ban"`:'disabled','Banished',X.ban.length,top(X.ban))}};
+  const phaseName={draw:'Draw Phase',standby:'Standby Phase',main1:'Main Phase 1',battle:'Battle Phase',main2:'Main Phase 2',end:'End Phase'}[g.phase]||'';
   let bar='';
-  if(G.winner!==null)bar=`<p class="amsg">${G.winner===0?'You win!':'The computer wins.'}</p><button class="btn primary" id="dagain">Play again</button><button class="btn" id="dsetup">Change decks</button>`;
-  else if(!my)bar=`<p class="amsg">The computer is playing…</p>`;
-  else if(ui&&ui.mode==='target')bar=`<p class="amsg">Pick a monster to attack${O.m.some(Boolean)?'':', or attack directly'}.</p>${O.m.some(Boolean)?'':'<button class="btn primary" id="ddirect">Attack directly</button>'}<button class="btn" id="dcancel">Cancel</button>`;
-  else if(ui&&ui.mode==='tribute')bar=`<p class="amsg">Pick ${ui.need} monster${ui.need>1?'s':''} to Tribute (${ui.picked.length}/${ui.need}).</p><button class="btn" id="dcancel">Cancel</button>`;
-  else if(ui&&ui.mode==='synchro'){const mats=ui.picked.map(u=>P.m.find(z=>z&&z.u===u));const ok=P.extra.filter(e=>getC(e).kind==='synchro'&&mats.length>1&&checkSyn(mats,e).ok);
-    bar=`<p class="amsg">Pick your Tuner and non-Tuners${mats.length?`: ${mats.map(m=>getC(m).lv).join(' + ')} = Level ${mats.reduce((a,m)=>a+(getC(m).lv||0),0)}`:''}.</p>${ok.map(e=>`<button class="btn primary" data-syn2="${e.u}">${esc(getC(e).name)}</button>`).join('')}<button class="btn" id="dcancel">Cancel</button>`}
-  else if(ui&&ui.mode==='discard')bar=`<p class="amsg">Discard down to 6: tap a card in your hand.</p>`;
-  else if(ui&&ui.mode==='place')bar=`<p class="amsg">Tap a glowing zone to place the card.</p><button class="btn" id="dcancel">Cancel</button>`;
-  else bar=`${G.phase==='main1'?`<button class="btn" id="dbattle" ${G.turnNo===1?'disabled title="The first player can’t attack on turn 1"':''}>Battle Phase</button><button class="btn" id="dsyn">Synchro Summon</button>`:''}
-    ${G.phase==='battle'?`<button class="btn" id="dmain2">Main Phase 2</button>`:''}${G.phase==='main2'?`<button class="btn" id="dsyn">Synchro Summon</button>`:''}<button class="btn primary" id="dend">End turn</button>`;
-  if(my&&!(ui&&['place','tribute','synchro'].includes(ui.mode)))bar+=`<button class="btn hintbtn${G.hint?' on':''}" id="dhint" aria-expanded="${!!G.hint}">💡 ${G.hint?'Hide hint':'Hint'}</button>`;
-  const hint=my&&G.hint?dHint():null;const lit=new Set(hint&&hint.steps[0]?hint.steps[0].us:[]);
-  const hand=P.hand.map(x=>{const cd=getC(x);return cd.rid?`<button type="button" class="himg${ui&&ui.mode==='place'&&ui.u===x.u?' armed':''}${lit.has(x.u)?' hinted':''}" data-dh="${x.u}" aria-label="${esc(cd.name)}" style="background-image:url('${artURL({id:cd.rid})}')"></button>`:tile(cd,'',`data-dh="${x.u}"`)}).join('')||'<span class="empty">No cards in hand.</span>';
+  if(g.winner!=null)bar=`<p class="amsg">${g.winner===0?'You win!':g.winner===1?'The computer wins.':'The duel is a draw.'} ${esc(g.why)}.</p><button class="btn primary" id="dagain">Play again</button><button class="btn" id="dsetup">Change decks</button>`;
+  else if(!mine)bar=`<p class="amsg">The computer is thinking…</p>`;
+  else if(pr.type==='idle'){const glob=pr.opts.filter(o=>o.u==null);bar=`<p class="amsg">${esc(pr.text)}: tap a glowing card to use it.</p>${glob.map(o=>`<button class="btn ${o.key==='end'||o.key==='endbp'?'primary':''}" data-k="${o.key}">${esc(o.label)}</button>`).join('')}`}
+  else if(pr.type==='respond')bar=`<p class="amsg">${esc(pr.text)}</p>${pr.opts.map(o=>`<button class="btn ${o.key==='pass'?'primary':''}" data-k="${o.key}">${esc(o.label)}</button>`).join('')}`;
+  else if(pr.type==='yesno'||pr.type==='choose')bar=`<p class="amsg">${esc(pr.text)}</p>${pr.opts.map((o,i)=>`<button class="btn ${i===0?'primary':''}" data-k="${o.key}">${esc(o.label)}</button>`).join('')}`;
+  else if(pr.type==='pick'){const n=G.sel.length;const okN=n>=pr.min&&n<=pr.max;
+    bar=`<p class="amsg">${esc(pr.text)}${pr.max>1?` (${n} of ${pr.min===pr.max?pr.max:pr.min+' to '+pr.max})`:''}. Tap the glowing cards.</p>${pickOffBoard()?`<button class="btn" id="dpickopen">Show the cards</button>`:''}${pr.max>1?`<button class="btn primary" id="dpickok" ${okN?'':'disabled'}>Confirm</button>`:''}`}
+  if(mine&&(pr.type==='idle'||pr.type==='respond'))bar+=`<button class="btn hintbtn${G.hint?' on':''}" id="dhint" aria-expanded="${!!G.hint}">💡 ${G.hint?'Hide hint':'Hint'}</button>`;
+  const hint=mine&&G.hint&&(pr.type==='idle')?hintPanelE():'';
+  const hand=P.hand.map(x=>`<button type="button" class="himg${can.has(x.u)?' can':''}${G.sel.includes(x.u)?' sel':''}" data-eu="${x.u}" aria-label="${esc(EG().name(x))}" style="background-image:url('${eArt(x)}')"></button>`).join('')||'<span class="empty">No cards in hand.</span>';
   mountArena(arenaHTML({
-    title:'Duel the computer',sub:`${DIFFS[G.diff][0]} · Tap your cards for actions. Card effects are applied by hand for now.`,
+    title:'Duel the computer',sub:`${DIFFS[G.level][0]} · ${esc(P.deckName)} vs ${esc(O.deckName)}${G.auto[0]&&G.auto[1]?'':' · some effects not automated'}`,
     tools:`<button class="btn small" id="dsetup2">New duel</button>`,
-    oppPanel:lpPanel('The computer',`${O.deckName} · Hand ${O.hand.length}`,'dlp1',O.lp,G.turn===1),youPanel:lpPanel('You',P.deckName,'dlp0',P.lp,G.turn===0),
+    oppPanel:lpRO('The computer',`Hand ${O.hand.length} · Deck ${O.deck.length}`,O.lp,g.tp===1),youPanel:lpRO('You',`Deck ${P.deck.length}`,P.lp,g.tp===0),
     opp:slots(1),you:slots(0),oppST:zones(1,'st'),oppM:zones(1,'m'),youM:zones(0,'m'),youST:zones(0,'st'),
-    strip:ui&&ui.mode==='place'?'Tap a glowing zone to place the card · Esc to cancel':`Turn ${G.turnNo} · ${G.turn===0?'Your turn':"Computer's turn"} · ${phaseName}${G.normalDone?' · Normal Summon used':''}`,
-    actions:bar,
-    log:G.log.map(l=>`<div>${esc(l)}</div>`).join(''),
-    hand,hint:hint?hintPanel(hint):''}));
-  if(lit.size)app.querySelectorAll('[data-dz]').forEach(b=>{const [pi,k,i]=b.dataset.dz.split('|');const z=G.p[+pi][k][+i];if(z&&lit.has(z.u))b.classList.add('hinted')});
-  bindDuel(my);
+    strip:`Turn ${g.turnNo} · ${g.tp===0?'Your turn':"Computer's turn"} · ${phaseName}${g.chain.length?` · Chain ${g.chain.length}`:''}`,
+    actions:bar,log:g.log.slice().reverse().map(l=>`<div>${esc(l)}</div>`).join(''),hand,hint}));
+  bindDuel();
 }
-function dSheet(title,sub,btns,anchor){
-  if(anchor&&window.innerWidth>=820){popMenu(anchor,title,btns.map(b=>[b[0],()=>{const err=b[1]();if(typeof err==='string')dlog('⚠ '+err);dCheckLP();renderDuel()},b[2]]),sub);return}
-  openModal(`<button class="closex" data-close aria-label="Close">×</button><h3>${esc(title)}</h3><div class="meta">${sub}</div><div class="actions">${btns.map((b,i)=>`<button class="btn ${b[2]||''}" data-a="${i}">${b[0]}</button>`).join('')}</div>`,el=>{
-    el.querySelectorAll('[data-a]').forEach(x=>x.onclick=()=>{const f=btns[+x.dataset.a][1];closeModal();const err=f();if(typeof err==='string')dlog('⚠ '+err);dCheckLP();renderDuel()})});
+const lpRO=(who,sub,lp,isTurn)=>`<div class="lpbox ${isTurn?'turn':''}"><span class="who">${who}</span>${sub?`<span class="sub">${esc(sub)}</span>`:''}<div class="lpv"><span>LP</span><b class="lpnum">${lp}</b></div></div>`;
+/* Cards to pick that aren't on the board or in your hand (Deck, GY, Extra Deck, banished, the opponent's hand) */
+function pickOffBoard(){const pr=G.g.prompt;return pr&&pr.type==='pick'&&pr.opts.some(o=>{const c=eFind(o.u);return c&&!(EG().onField(c)||(c.zone==='hand'&&c.owner===0))})}
+function openPicker(){
+  const pr=G.g.prompt;
+  openModal(`<button class="closex" data-close aria-label="Close">×</button><h3>${esc(pr.text)}</h3><p class="note">${pr.max>1?`Pick ${pr.min===pr.max?pr.max:pr.min+' to '+pr.max}, then confirm.`:'Tap a card to pick it.'}</p>
+  <div class="cthumbs sm" style="margin-top:10px">${pr.opts.map(o=>{const c=eFind(o.u);return `<button type="button" class="cthumb ${G.sel.includes(o.u)?'on':''}" data-pk="${o.u}"><img src="${eArt(c)}" alt="">${esc(o.label)}</button>`}).join('')}</div>
+  ${pr.max>1?`<div class="actions" style="margin-top:12px"><button class="btn primary" id="pkok">Confirm</button></div>`:''}`,el=>{
+    el.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{const u=+b.dataset.pk;if(pr.max===1){closeModal();duelAct(['u'+u]);return}G.sel=G.sel.includes(u)?G.sel.filter(x=>x!==u):G.sel.length<pr.max?[...G.sel,u]:G.sel;b.classList.toggle('on',G.sel.includes(u))});
+    const ok=el.querySelector('#pkok');if(ok)ok.onclick=()=>{if(G.sel.length>=pr.min&&G.sel.length<=pr.max){closeModal();duelAct(G.sel.map(u=>'u'+u))}};
+  });modal.querySelector('.sheet').classList.add('wide');
 }
-function bindDuel(my){
-  const $=id=>document.getElementById(id);const P=G.p[0];const on=(id,f)=>{const el=$(id);if(el)el.onclick=f};
-  on('dagain',()=>{startDuel();renderDuel()});on('dsetup',()=>{G=null;renderDuel()});on('dsetup2',()=>{if(G.winner!==null||confirm('Leave this duel and start a new one?')){G=null;renderDuel()}});
+function bindDuel(){
+  const $=id=>document.getElementById(id);const on=(id,f)=>{const el=$(id);if(el)el.onclick=f};const g=G.g,pr=g.prompt;
+  on('dagain',startDuel);on('dsetup',()=>{G=null;renderDuel()});on('dsetup2',()=>{if(g.winner!=null||confirm('Leave this duel and start a new one?')){clearTimeout(G.timer);G=null;renderDuel()}});
   on('dhint',()=>{G.hint=!G.hint;renderDuel()});on('dhintx',()=>{G.hint=false;renderDuel()});
-  on('dcancel',()=>{G.ui=null;renderDuel()});on('dend',()=>dEndTurn());on('dmain2',()=>{G.phase='main2';renderDuel()});
-  on('dbattle',()=>{G.phase='battle';G.ui=null;renderDuel()});on('dsyn',()=>{G.ui={mode:'synchro',picked:[]};renderDuel()});
-  on('ddirect',()=>{const e=dAttack(0,G.ui.u,null);if(e)dlog('⚠ '+e);G.ui=null;renderDuel()});
-  app.querySelectorAll('[data-syn2]').forEach(b=>b.onclick=()=>{const ex=P.extra.find(e=>e.u==b.dataset.syn2);const e=dSynchro(0,G.ui.picked,ex);if(e)dlog('⚠ '+e);G.ui=null;renderDuel()});
-  [0,1].forEach(pi=>{const el=$('dlp'+pi);if(el)el.onchange=e=>{G.p[pi].lp=dnum(e.target.value);dlog(`${G.p[pi].name}'s LP set to ${G.p[pi].lp} by hand.`);dCheckLP();renderDuel()}});
-  app.querySelectorAll('[data-dp]').forEach(b=>b.onclick=()=>{const [pi,k]=b.dataset.dp.split('|');const list=G.p[+pi][k];
-    openModal(`<button class="closex" data-close aria-label="Close">×</button><h3>${G.p[+pi].name==='You'?'Your':"The computer's"} ${k==='gy'?'Graveyard':'Extra Deck'} (${list.length})</h3><div class="cthumbs sm" style="margin-top:10px">${list.map(x=>{const cd=getC(x);return cd.rid?thumb(BYID.get(cd.rid)):''}).join('')||'<p class="note">Empty.</p>'}</div>`);modal.querySelector('.sheet').classList.add('wide')});
-  // Hand
-  app.querySelectorAll('[data-dh]').forEach(b=>b.onclick=()=>{
-    if(G.ui&&G.ui.mode==='place'){G.ui=null;renderDuel();return}
-    const x=P.hand.find(h=>h.u==b.dataset.dh);const cd=getC(x);const view=['View card',()=>{setTimeout(()=>showCard(cd.id,cd),0)}];
-    if(G.ui&&G.ui.mode==='discard'){P.hand=P.hand.filter(h=>h!==x);P.gy.push(x);dlog(`You discarded ${cd.name}.`);if(P.hand.length<=6){G.ui=null;dEndTurn();return}renderDuel();return}
-    const main=my&&(G.phase==='main1'||G.phase==='main2')&&!G.ui;const btns=[view];
-    if(main&&isMonC(cd)&&selfSS(x))btns.push(['Special Summon (check its condition first)',()=>{if(freeZone(P.m)<0)return 'Your Monster Zones are full.';G.ui={mode:'place',u:x.u,how:'ss',kind:'m'}},'primary']);
-    if(main&&canNormalC(x)){const need=tribNeeded(cd);
-      const go=mode=>()=>{if(!need){if(G.normalDone)return 'You already used your Normal Summon this turn.';if(freeZone(P.m)<0)return 'Your Monster Zones are full.';G.ui={mode:'place',u:x.u,how:mode,kind:'m'};return}if(G.normalDone)return 'You already used your Normal Summon this turn.';if(P.m.filter(Boolean).length<need)return `${cd.name} needs ${need} Tribute${need>1?'s':''}.`;G.ui={mode:'tribute',u:x.u,need,picked:[],sumMode:mode}};
-      btns.push([need?`Tribute Summon (${need} Tribute${need>1?'s':''})`:'Normal Summon',go('atk'),'primary'],['Set face-down',go('set')])}
-    if(main&&!isMonC(cd)){
-      const keeps=['Continuous','Equip','Field'].includes(cd.sub);
-      const armST=how=>()=>{if(freeZone(P.st)<0)return 'Your Spell & Trap Zones are full.';G.ui={mode:'place',u:x.u,how,kind:'st'}};
-      if(cd.kind==='spell'&&!keeps)btns.push(['Activate (apply its effect by hand)',()=>{P.hand=P.hand.filter(h=>h!==x);P.gy.push(x);dlog(`You activated ${cd.name}. Apply its effect by hand.`)},'primary'],['Set face-down',armST('set')]);
-      else if(cd.kind==='spell')btns.push(['Activate',armST('atk'),'primary'],['Set face-down',armST('set')]);
-      else btns.push(['Set face-down',armST('set'),'primary']);
-    }
-    dSheet(cd.name,'In your hand',btns,b)});
-  // Field
-  app.querySelectorAll('[data-dz]').forEach(b=>b.onclick=()=>{
-    const [pi,kind,i]=b.dataset.dz.split('|');const X=G.p[+pi];const x=X[kind][+i];const ui=G.ui;
-    if(ui&&ui.mode==='place'){
-      if(b.classList.contains('can')){const y=P.hand.find(h=>h.u===ui.u);G.ui=null;
-        if(ui.kind==='m'&&ui.how==='ss'&&y){P.hand=P.hand.filter(h=>h!==y);y.pos='atk';y.turn=G.turnNo;y.attacked=false;y.posChanged=false;P.m[+i]=y;dlog(`You Special Summoned ${getC(y).name}. It doesn\u2019t use your Normal Summon; apply any cost by hand.`)}
-        else if(ui.kind==='m'){const e=dSummon(0,ui.u,ui.how,[],+i);if(e)dlog('⚠ '+e)}
-        else if(y){const yc=getC(y);P.hand=P.hand.filter(h=>h!==y);y.pos=ui.how;y.turn=G.turnNo;P.st[+i]=y;dlog(ui.how==='set'?'You Set a card.':`You activated ${yc.name}. Apply its effect by hand.`)}}
-      else G.ui=null;
-      renderDuel();return}
-    if(!x)return;const cd=getC(x);
-    if(ui&&ui.mode==='target'){if(+pi===1&&kind==='m'){const e=dAttack(0,ui.u,x.u);if(e)dlog('⚠ '+e);G.ui=null;renderDuel()}return}
-    if(ui&&(ui.mode==='tribute'||ui.mode==='synchro')){if(+pi!==0||kind!=='m')return;
-      ui.picked=ui.picked.includes(x.u)?ui.picked.filter(u=>u!==x.u):[...ui.picked,x.u];
-      if(ui.mode==='tribute'&&ui.picked.length===ui.need){const e=dSummon(0,ui.u,ui.sumMode,ui.picked);if(e)dlog('⚠ '+e);G.ui=null}
-      renderDuel();return}
-    const hidden=+pi===1&&x.pos==='set';const btns=[];
-    if(!hidden)btns.push(['View card',()=>{setTimeout(()=>showCard(cd.id,cd),0)}]);
-    if(my&&+pi===0&&kind==='m'){
-      if(G.phase==='battle'&&x.pos==='atk'&&!x.attacked)btns.push(['Attack',()=>{if(G.turnNo===1)return 'The player who goes first can’t attack on turn 1.';G.ui={mode:'target',u:x.u}},'primary']);
-      if((G.phase==='main1'||G.phase==='main2')){
-        if(x.pos==='set'&&x.turn!==G.turnNo)btns.push(['Flip Summon',()=>{x.pos='atk';x.posChanged=true;dlog(`You Flip Summoned ${cd.name}. Apply any FLIP effect by hand.`)},'primary']);
-        if(x.pos!=='set'&&x.turn!==G.turnNo&&!x.posChanged&&!x.attacked)btns.push([x.pos==='atk'?'Switch to Defense':'Switch to Attack',()=>{x.pos=x.pos==='atk'?'def':'atk';x.posChanged=true;dlog(`You switched ${cd.name} to ${x.pos==='atk'?'Attack':'Defense'} Position.`)}])}}
-    if(my&&+pi===0&&kind==='st'&&x.pos==='set'&&(x.turn!==G.turnNo||cd.kind==='spell'&&cd.sub!=='Quick-Play'))btns.push(['Activate (apply its effect by hand)',()=>{const keep=['Continuous','Equip','Field'].includes(cd.sub);if(keep)x.pos='atk';else{X.st[+i]=null;X.gy.push(x)}dlog(`You activated ${cd.name}. Apply its effect by hand.`)},'primary']);
-    // Apply an effect by hand: move any card on either side.
-    btns.push(['Destroy (send to GY)',()=>{X[kind][+i]=null;dToGY(+pi,x);dlog(`${cd.name} was sent to the GY by an effect.`)}],['Banish',()=>{X[kind][+i]=null;if(cd.kind!=='token')X.ban.push(x);dlog(`${hidden?'A card':cd.name} was banished by an effect.`)}],['Return to hand',()=>{X[kind][+i]=null;if(cd.kind==='synchro'||cd.kind==='fusion')X.extra.push(x);else if(cd.kind!=='token'){x.pos='atk';X.hand.push(x)}dlog(`${hidden?'A card':cd.name} was returned to the hand by an effect.`)}]);
-    dSheet(hidden?'Face-down card':cd.name,`${+pi===0?'Your':"The computer's"} ${kind==='m'?'monster':'Spell/Trap'}${!hidden&&kind==='m'?` · ATK ${dAtk(x)} / DEF ${dDef(x)}`:''}`,btns,b)});
+  on('dpickopen',openPicker);on('dpickok',()=>{if(G.sel.length>=pr.min&&G.sel.length<=pr.max)duelAct(G.sel.map(u=>'u'+u))});
+  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>duelAct([b.dataset.k]));
+  app.querySelectorAll('[data-dp]').forEach(b=>b.onclick=()=>{const [pi,k]=b.dataset.dp.split('|');const X=g.p[+pi];
+    const list=k==='extra'?X.extra:X[k];const title=`${+pi===0?'Your':"The computer's"} ${k==='gy'?'Graveyard':k==='ban'?'banished cards':'Extra Deck'} (${list.length})`;
+    openModal(`<button class="closex" data-close aria-label="Close">×</button><h3>${title}</h3>${k==='gy'&&X.ban.length?`<p class="note">Banished: ${X.ban.map(c=>esc(EG().name(c))).join(', ')}</p>`:''}<div class="cthumbs sm" style="margin-top:10px">${list.slice().reverse().map(c=>`<button type="button" class="cthumb" data-vu="${c.u}"><img src="${eArt(c)}" alt="">${esc(EG().name(c))}</button>`).join('')||'<p class="note">Empty.</p>'}</div>`,el=>el.querySelectorAll('[data-vu]').forEach(b=>b.onclick=()=>{closeModal();eShow(eFind(+b.dataset.vu))}));modal.querySelector('.sheet').classList.add('wide')});
+  if(pr&&pr.type==='pick'&&pickOffBoard()&&!G.busy&&pr.p===0&&!G.pickerShown){G.pickerShown=true;openPicker()}
+  if(!pr||pr.type!=='pick')G.pickerShown=false;
+  app.querySelectorAll('[data-eu]').forEach(b=>b.onclick=()=>{
+    const u=+b.dataset.eu;const c=eFind(u);if(!c)return;const pr=g.prompt;const hidden=c.ctrl===1&&c.pos==='set'&&EG().onField(c);
+    const view=hidden?[]:[['View card',()=>eShow(c)]];
+    if(pr&&pr.p===0&&!G.busy&&pr.type==='pick'&&pr.opts.some(o=>o.u===u)){
+      if(pr.max===1){duelAct(['u'+u]);return}
+      G.sel=G.sel.includes(u)?G.sel.filter(x=>x!==u):G.sel.length<pr.max?[...G.sel,u]:G.sel;renderDuel();return}
+    const mineOpts=pr&&pr.p===0&&!G.busy&&(pr.type==='idle'||pr.type==='respond')?pr.opts.filter(o=>o.u===u):[];
+    const btns=[...mineOpts.map((o,i)=>[esc(o.label),()=>duelAct([o.key]),i===0?'primary':'']),...view];
+    if(!btns.length)return;
+    if(btns.length===1&&!mineOpts.length){eShow(c);return}
+    const sub=EG().onField(c)&&c.zone==='m'&&c.pos!=='set'?`ATK ${EG().atk(g,c)} / DEF ${EG().def(g,c)}`:c.zone==='hand'?'In your hand':'';
+    if(window.innerWidth>=820)popMenu(b,hidden?'Face-down card':EG().name(c),btns,sub);
+    else openModal(`<button class="closex" data-close aria-label="Close">×</button><h3>${esc(hidden?'Face-down card':EG().name(c))}</h3><div class="meta">${sub}</div><div class="actions">${btns.map((x,i)=>`<button class="btn ${x[2]||''}" data-a="${i}">${x[0]}</button>`).join('')}</div>`,el=>el.querySelectorAll('[data-a]').forEach(x=>x.onclick=()=>{closeModal();btns[+x.dataset.a][1]()}));
+  });
 }
 
 route();
