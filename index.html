@@ -720,7 +720,7 @@ table.mchart2 td{border:1px solid var(--ml,var(--line));background:var(--mb,tran
 table.mchart2 td.self{border-color:transparent;color:var(--muted);padding:7px 4px}
 table.mchart2 td{padding:0}
 table.mchart2 .mcell{all:unset;box-sizing:border-box;display:block;width:100%;padding:7px 4px;text-align:center;cursor:pointer;border-radius:5px;font-family:var(--label,inherit);font-size:10.5px;font-weight:bold;color:var(--mc)}
-table.mchart2 .mcell:hover,table.mchart2 .mcell:focus-visible,table.mchart2 .mcell.on{background:var(--mc);color:#fff}
+table.mchart2 .mcell:focus-visible,table.mchart2 .mcell.on{background:var(--mc);color:#fff}
 #mpop{position:fixed;z-index:60;background:var(--surface);border:1px solid var(--ml);border-top:4px solid var(--mc);border-radius:12px;padding:12px 14px;box-shadow:0 16px 40px -12px rgba(0,0,0,.45);animation:opop .15s ease}
 #mpop .mp-decks{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px}
 #mpop .mthumb{width:30px;height:30px;border-radius:6px}
@@ -1950,15 +1950,15 @@ function renderOpponents(sel){
     <p class="note okey">Each deck shows how many matchups it's favored in, even in and unfavored in. Pick one to see them.</p>
     ${panel}
     <details class="mall" ${d?'':'open'}><summary>All matchups at once</summary>
-      <p class="note" style="max-width:780px">Read across a row. Green means the row's deck is favored against the column's deck, red means it's unfavored, grey is even. Hover or tap any square to see why.</p>
+      <p class="note" style="max-width:780px">Read across a row. Green means the row's deck is favored against the column's deck, red means it's unfavored, grey is even. Click any square to see why.</p>
       ${chart}</details>
     <p class="note" style="margin-top:16px;max-width:780px">Matchups are read from the cards and the deck lists on this site (which deck's common cards hit the other deck's engine), not from tournament results. A good player on the weaker side still wins plenty of games. Styles and what beats each one: <a href="#lesson-17">Lesson 17</a>. What to side in: <a href="#lesson-28">Lesson 28</a>.</p>`;
   oppPopover();
   if(d)setTimeout(()=>{const p=document.getElementById('opanel');if(p)window.scrollTo({top:p.getBoundingClientRect().top+window.scrollY-72,behavior:'auto'})},30);
 }
 
-/* The explainer card on the full chart: hover a square (mouse) or tap/click it (any device) to see both decks, the
- verdict and the reason. A tap pins it until a tap elsewhere, Escape, or a scroll. */
+/* The explainer card on the full chart: click or tap a square to see both decks, the verdict and the reason (click
+ only, no hover: Zack, 2026-11-22). It stays until another click elsewhere, Escape, or a scroll. */
 function oppPopover(){
   let pop=document.getElementById('mpop');
   if(!pop){pop=document.createElement('div');pop.id='mpop';pop.setAttribute('role','dialog');pop.hidden=true;document.body.appendChild(pop);
@@ -1982,12 +1982,8 @@ function oppPopover(){
     pop.style.left=left+'px';pop.style.top=top+'px';
   }
   app.querySelectorAll('.mcell').forEach(b=>{
-    b.addEventListener('mouseenter',()=>{if(!pinned)show(b,false)});
-    b.addEventListener('mouseleave',()=>{if(!pinned)setTimeout(()=>{if(!pinned&&!pop.matches(':hover'))hide()},120)});
-    b.addEventListener('focus',()=>{if(!pinned)show(b,false)});
     b.addEventListener('click',e=>{e.stopPropagation();if(pinned===b)hide();else show(b,true)});
   });
-  pop.onmouseleave=()=>{if(!pinned)hide()};
 }
 
 function renderLesson(key){
