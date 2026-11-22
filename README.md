@@ -1,8 +1,8 @@
-# Learn Edison
+# Learn Retro: Edison
 
 A free, open-source site for learning **Edison format**: Yu-Gi-Oh! as it was in April 2010, with the March 2010 banlist and the first Synchro era.
 
-**Live site:** https://brawlzerygo.github.io/learn-edison/
+**Live site:** https://edison.learnretro.com (part of https://learnretro.com)
 
 ## What's in it
 

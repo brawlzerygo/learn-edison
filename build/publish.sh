@@ -9,12 +9,25 @@
 # First run: signs in (in the browser), creates the public repo brawlzerygo/learn-edison, pushes the site and turns on
 # GitHub Pages. Later runs: commit any changes and push them; the live site updates a minute or two later.
 #
-# Usage: sh build/publish.sh ["what changed"]
+# Usage: sh build/publish.sh ["what changed"]                  the Edison site (this folder, edison.learnretro.com)
+#        sh build/publish.sh --site hub ["what changed"]       the learnretro.com hub (hub/, repo learn-retro)
+#        sh build/publish.sh --site redirect ["what changed"]  learnedison.com, redirecting (redirect/, repo learnedison-redirect)
+# hub/ and redirect/ are their own git repos inside this folder (ignored by this repo); same account, same checks.
 set -e
 cd "$(dirname "$0")/.."
 export GH_CONFIG_DIR="$HOME/.config/gh-brawlzerygo"
 OWNER=brawlzerygo
 REPO=learn-edison
+DESC="A free, open-source site for learning Edison format Yu-Gi-Oh! (April 2010)"
+if [ "$1" = "--site" ]; then
+  case "$2" in
+    hub) cd hub; REPO=learn-retro; DESC="Learn Retro Yu-Gi-Oh!: free courses for retro formats" ;;
+    redirect) cd redirect; REPO=learnedison-redirect; DESC="learnedison.com now lives at edison.learnretro.com" ;;
+    *) echo "Unknown site: $2 (use hub or redirect)"; exit 1 ;;
+  esac
+  shift 2
+  [ -d .git ] || git init -q -b main
+fi
 
 if ! gh auth status --hostname github.com >/dev/null 2>&1; then
   echo "Sign in to GitHub as $OWNER in the browser that opens."
@@ -30,7 +43,7 @@ push() { git -c credential.helper= -c 'credential.helper=!gh auth git-credential
 if ! git remote get-url origin >/dev/null 2>&1; then
   if ! gh repo view "$OWNER/$REPO" >/dev/null 2>&1; then
     gh repo create "$OWNER/$REPO" --public \
-      --description "A free, open-source site for learning Edison format Yu-Gi-Oh! (April 2010)" \
+      --description "$DESC" \
       --homepage "https://$OWNER.github.io/$REPO/"
   fi
   git remote add origin "https://github.com/$OWNER/$REPO.git"
@@ -52,7 +65,7 @@ if ! gh api "repos/$OWNER/$REPO/pages" >/dev/null 2>&1; then
   gh api -X POST "repos/$OWNER/$REPO/pages" -f "source[branch]=main" -f "source[path]=/" >/dev/null
   echo "GitHub Pages is on."
 fi
-# Custom domain (the CNAME file, learnedison.com since 2026-11-17): make sure Pages uses it, and turn on HTTPS once
+# Custom domain (the CNAME file: edison.learnretro.com since 2026-11-22, learnedison.com before): make sure Pages uses it, and turn on HTTPS once
 # GitHub has issued the certificate (that can take up to a day after the DNS change; until then this step just waits).
 if [ -f CNAME ]; then
   domain=$(head -n 1 CNAME | tr -d '[:space:]')

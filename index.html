@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Learn Edison</title>
+<title>Learn Retro: Edison Format</title>
 <meta name="robots" content="noindex, nofollow">
 <script>/* Private for now (Zack, 2026-11-17): a password screen hides the site until the right password is entered once on
    this browser. Only its SHA-256 hash is stored here. It keeps casual visitors out; it is not real security, because the
@@ -15,7 +15,7 @@ document.documentElement.classList.add('gated');
 function hex(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return('0'+x.toString(16)).slice(-2)}).join('')}
 document.addEventListener('DOMContentLoaded',function(){
   var g=document.createElement('form');g.id='gate';
-  g.innerHTML='<div class="gbox"><div class="glogo">Learn<span>Edison</span></div><p>This site is private for now.</p>'+
+  g.innerHTML='<div class="gbox"><div class="glogo">Learn<span>Retro</span></div><p>This site is private for now.</p>'+
     '<label for="gpw">Password</label><input id="gpw" type="password" autocomplete="current-password" autofocus>'+
     '<button type="submit">Enter</button><p class="gerr" role="alert"></p></div>';
   document.body.appendChild(g);
@@ -63,6 +63,7 @@ button{font:inherit;color:inherit}
 .top-in{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .brand{font-family:var(--display);font-weight:800;font-size:19px;text-decoration:none;color:var(--ink);display:flex;align-items:center;gap:8px}
 .brand em{font-style:normal;color:var(--brand-2,var(--accent))}
+.brand .bfmt{font-family:var(--label,inherit);font-size:.6em;font-weight:700;color:var(--muted);margin-left:8px;padding-left:8px;border-left:1px solid var(--line);align-self:center;line-height:1.4}
 .brand{gap:0}
 .nav{display:flex;gap:4px;overflow-x:auto}
 /* Site search (Zack, 2026-11-17): top right, live results grouped by kind as you type */
@@ -665,7 +666,7 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
 </head>
 <body>
 <header class="top"><div class="top-in">
-  <a class="brand" href="#home" aria-label="Learn Edison">Learn<em>Edison</em></a>
+  <a class="brand" href="#home" aria-label="Learn Retro: Edison">Learn<em>Retro</em><span class="bfmt">Edison</span></a>
   <nav class="nav" id="nav" aria-label="Sections">
     <a href="#home" data-v="home">Home</a>
     <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-learn" data-group="course lesson flashcards rules glossary library" aria-haspopup="true" aria-expanded="false">Learn ▾</button></div>
@@ -2104,7 +2105,7 @@ function testHand(main){
     modal.querySelector('.sheet').classList.add('wide');document.getElementById('redraw').onclick=show};
   show();
 }
-const toYDK=d=>['#created by Learn Edison','#main',...d.main,'#extra',...d.extra,'!side',...d.side].join('\n')+'\n';
+const toYDK=d=>['#created by Learn Retro','#main',...d.main,'#extra',...d.extra,'!side',...d.side].join('\n')+'\n';
 function downloadText(name,text){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
   a.download=name.replace(/[\\/:*?"<>|]/g,'');document.body.appendChild(a);a.click();
