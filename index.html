@@ -717,7 +717,19 @@ table.mchart2 thead th .mthumb{display:block;margin:0 auto 4px}
 table.mchart2 th.corner{text-align:left;vertical-align:bottom;font-weight:normal}
 table.mchart2 tbody th a{color:var(--ink);text-decoration:none;font-size:13px}
 table.mchart2 td{border:1px solid var(--ml,var(--line));background:var(--mb,transparent);color:var(--mc);border-radius:6px;text-align:center;padding:7px 4px;font-family:var(--label,inherit);font-size:10.5px;font-weight:bold;white-space:nowrap}
-table.mchart2 td.self{border-color:transparent;color:var(--muted)}
+table.mchart2 td.self{border-color:transparent;color:var(--muted);padding:7px 4px}
+table.mchart2 td{padding:0}
+table.mchart2 .mcell{all:unset;box-sizing:border-box;display:block;width:100%;padding:7px 4px;text-align:center;cursor:pointer;border-radius:5px;font-family:var(--label,inherit);font-size:10.5px;font-weight:bold;color:var(--mc)}
+table.mchart2 .mcell:hover,table.mchart2 .mcell:focus-visible,table.mchart2 .mcell.on{background:var(--mc);color:#fff}
+#mpop{position:fixed;z-index:60;background:var(--surface);border:1px solid var(--ml);border-top:4px solid var(--mc);border-radius:12px;padding:12px 14px;box-shadow:0 16px 40px -12px rgba(0,0,0,.45);animation:opop .15s ease}
+#mpop .mp-decks{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px}
+#mpop .mthumb{width:30px;height:30px;border-radius:6px}
+#mpop .mp-vs{color:var(--muted);font-size:12px;margin:0 2px}
+#mpop .mp-verdict{display:flex;align-items:center;gap:6px;margin:8px 0 4px;font-weight:700;color:var(--mc)}
+#mpop .mp-why{margin:0;font-size:14.5px;line-height:1.5}
+#mpop .mp-links{margin:8px 0 0;font-size:13px}
+#mpop .mp-links a{color:var(--accent)}
+
 table.mchart2 tr.on th a{color:var(--accent)}
 table.mchart2 tr.on td{box-shadow:inset 0 0 0 2px var(--accent)}
 @media(max-width:900px){.ogrid{grid-template-columns:repeat(3,1fr)}.mcols{grid-template-columns:1fr}}
@@ -1932,16 +1944,50 @@ function renderOpponents(sel){
     <thead><tr><th class="corner">Row deck vs. column deck</th>${OPP.decks.map(o=>`<th scope="col"><span class="mthumb sm" ${oppArt(o)}></span>${esc(OPPSHORT[o.id])}</th>`).join('')}</tr></thead>
     <tbody>${OPP.decks.map(r=>`<tr class="${d&&r.id===d.id?'on':''}"><th scope="row"><a href="#opponents-${r.id}"><span class="mthumb sm" ${oppArt(r)}></span>${esc(r.name)}</a></th>${OPP.decks.map(c=>{if(r.id===c.id)return '<td class="self"><span>·</span></td>';
       const x=oppEdge(r.id,c.id),k=x.e===1?'fav':x.e===-1?'unf':'even';
-      return `<td class="${k}" title="${esc(r.name)} vs ${esc(c.name)}: ${MATCHWORD[x.e]}. ${esc(x.why)}"><span>${MATCHWORD[x.e]}</span></td>`}).join('')}</tr>`).join('')}</tbody></table></div>`;
+      return `<td class="${k}"><button type="button" class="mcell" data-r="${r.id}" data-c="${c.id}" aria-label="${esc(r.name)} against ${esc(c.name)}: ${MATCHWORD[x.e]}. Show why">${MATCHWORD[x.e]}</button></td>`}).join('')}</tr>`).join('')}</tbody></table></div>`;
   app.innerHTML=`<div class="pagehead"><div><h1>Know your opponent</h1><p class="note" style="margin:4px 0 0;max-width:780px">Sit down, see what your opponent is playing, and know what to do. Pick their deck: how to spot it, what it's good at, what it's weak to, how to beat it, and how it matches up against every other deck.</p></div></div>
     <div class="ogrid" role="list">${OPP.decks.map(o=>`<div role="listitem">${tile(o)}</div>`).join('')}</div>
     <p class="note okey">Each deck shows how many matchups it's favored in, even in and unfavored in. Pick one to see them.</p>
     ${panel}
     <details class="mall" ${d?'':'open'}><summary>All matchups at once</summary>
-      <p class="note" style="max-width:780px">Read across a row. Green means the row's deck is favored against the column's deck, red means it's unfavored, grey is even. Hover a square for the reason, or pick a deck above.</p>
+      <p class="note" style="max-width:780px">Read across a row. Green means the row's deck is favored against the column's deck, red means it's unfavored, grey is even. Hover or tap any square to see why.</p>
       ${chart}</details>
     <p class="note" style="margin-top:16px;max-width:780px">Matchups are read from the cards and the deck lists on this site (which deck's common cards hit the other deck's engine), not from tournament results. A good player on the weaker side still wins plenty of games. Styles and what beats each one: <a href="#lesson-17">Lesson 17</a>. What to side in: <a href="#lesson-28">Lesson 28</a>.</p>`;
+  oppPopover();
   if(d)setTimeout(()=>{const p=document.getElementById('opanel');if(p)window.scrollTo({top:p.getBoundingClientRect().top+window.scrollY-72,behavior:'auto'})},30);
+}
+
+/* The explainer card on the full chart: hover a square (mouse) or tap/click it (any device) to see both decks, the
+ verdict and the reason. A tap pins it until a tap elsewhere, Escape, or a scroll. */
+function oppPopover(){
+  let pop=document.getElementById('mpop');
+  if(!pop){pop=document.createElement('div');pop.id='mpop';pop.setAttribute('role','dialog');pop.hidden=true;document.body.appendChild(pop);
+    document.addEventListener('click',e=>{if(!pop.hidden&&!pop.contains(e.target)&&!e.target.closest('.mcell'))hide()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')hide()});
+    window.addEventListener('scroll',()=>{if(!pop.hidden)hide()},{passive:true});
+    window.addEventListener('hashchange',()=>hide());}
+  let pinned=null;
+  function hide(){pop.hidden=true;pinned=null;document.querySelectorAll('.mcell.on').forEach(b=>b.classList.remove('on'))}
+  function show(b,pin){
+    const r=OPPBY[b.dataset.r],c=OPPBY[b.dataset.c],x=oppEdge(r.id,c.id),k=x.e===1?'fav':x.e===-1?'unf':'even';
+    document.querySelectorAll('.mcell.on').forEach(z=>z.classList.remove('on'));b.classList.add('on');
+    pop.className=k;pop.innerHTML=`<div class="mp-decks"><span class="mthumb" ${oppArt(r)}></span><b>${esc(r.name)}</b><span class="mp-vs">vs</span><span class="mthumb" ${oppArt(c)}></span><b>${esc(c.name)}</b></div>
+      <p class="mp-verdict"><span class="mdot"></span>${x.e===0?'Even matchup':(x.e===1?'Favored for ':'Unfavored for ')+esc(r.name)}</p>
+      <p class="mp-why">${esc(x.why)}</p>
+      <p class="mp-links"><a href="#opponents-${r.id}">Open ${esc(r.name)}</a> · <a href="#opponents-${c.id}">Open ${esc(c.name)}</a></p>`;
+    pop.hidden=false;pinned=pin?b:null;
+    const R=b.getBoundingClientRect(),W=Math.min(340,innerWidth-24),H=pop.offsetHeight;pop.style.width=W+'px';
+    let left=Math.max(12,Math.min(innerWidth-W-12,R.left+R.width/2-W/2)),top=R.bottom+8;
+    if(top+H>innerHeight-12)top=Math.max(12,R.top-H-8);
+    pop.style.left=left+'px';pop.style.top=top+'px';
+  }
+  app.querySelectorAll('.mcell').forEach(b=>{
+    b.addEventListener('mouseenter',()=>{if(!pinned)show(b,false)});
+    b.addEventListener('mouseleave',()=>{if(!pinned)setTimeout(()=>{if(!pinned&&!pop.matches(':hover'))hide()},120)});
+    b.addEventListener('focus',()=>{if(!pinned)show(b,false)});
+    b.addEventListener('click',e=>{e.stopPropagation();if(pinned===b)hide();else show(b,true)});
+  });
+  pop.onmouseleave=()=>{if(!pinned)hide()};
 }
 
 function renderLesson(key){
