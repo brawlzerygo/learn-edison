@@ -697,3 +697,6 @@ table.mchart2 tr.on td{box-shadow:inset 0 0 0 2px var(--accent)}
 }
 .cardpage{max-width:1000px;margin:8px auto 24px}
 .cv .cvh{font-size:30px;margin:0 0 6px}
+/* The wordmark goes back to the Learn Retro hub; the format name goes to this site's home (Zack, 2026-11-22). */
+.brand a{color:inherit;text-decoration:none}
+.brand .bhub:hover em,.brand a.bfmt:hover{text-decoration:underline;text-underline-offset:3px}
