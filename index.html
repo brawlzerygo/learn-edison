@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Learn Retro: Edison Format</title>
 <meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <script>/* Private for now (Zack, 2026-11-17): a password screen hides the site until the right password is entered once on
    this browser. Only its SHA-256 hash is stored here. It keeps casual visitors out; it is not real security, because the
    repo is public. To change the password, replace GATE_HASH with the new password's SHA-256; to open the site, delete
@@ -657,6 +658,38 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
 .form .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .note{font-size:14px;color:var(--muted)}
 .soon{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;color:var(--muted);font-size:15px;margin-top:14px}
+/* Know your opponent: at-a-glance blocks (deck lessons and #opponents) and the matchup chart */
+.glance{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;background:var(--surface);padding:16px 18px;margin:18px 0 24px}
+.glance h2{margin:0 0 2px;font-size:22px}
+.glance .gsub{color:var(--muted);font-size:14.5px;margin:0 0 12px}
+.glance .gsub b{color:var(--ink)}
+.glance .ggrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 22px}
+.glance h4{margin:0 0 4px;font-family:var(--label,inherit);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.glance p{margin:0}
+.glance ul{margin:0;padding-left:18px}
+.glance li{margin:2px 0}
+.glance .cref{text-align:left;display:inline}
+.glance .g-strong h4{color:var(--good)}
+.glance .g-weak h4,.glance .g-avoid h4{color:var(--bad)}
+.glance .g-beat h4{color:var(--accent)}
+.glance .gmatch{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:4px;font-size:15px}
+.glance .gmatch a{color:var(--accent)}
+.oppick{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+.oppick a.chip{text-decoration:none}
+.mchart-wrap{overflow-x:auto;margin:10px 0 6px;-webkit-overflow-scrolling:touch}
+table.mchart{border-collapse:separate;border-spacing:3px;font-size:13px;min-width:640px}
+table.mchart th{font-family:var(--label,inherit);font-size:11.5px;font-weight:bold;color:var(--muted);padding:4px 6px;white-space:nowrap;text-align:left;background:none;border:0}
+table.mchart thead th{text-align:center;vertical-align:bottom}
+table.mchart td{padding:0;border:0}
+table.mchart button{width:100%;min-width:44px;height:36px;border:1px solid var(--line);border-radius:7px;font:inherit;font-weight:700;cursor:pointer;background:var(--surface);color:var(--muted)}
+table.mchart button.fav{background:#e7f4e0;color:#2f6b14;border-color:#bfe0ad}
+table.mchart button.unf{background:#fbe6e4;color:#9b1c13;border-color:#f0bdb7}
+table.mchart button.on{outline:2px solid var(--accent);outline-offset:1px}
+table.mchart td.self{background:repeating-linear-gradient(45deg,var(--line) 0 2px,transparent 2px 6px);border-radius:7px}
+.mwhy{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 16px;min-height:52px}
+.mlegend{display:flex;flex-wrap:wrap;gap:14px;font-size:13.5px;color:var(--muted);margin:6px 0}
+.mlegend span b{display:inline-block;width:22px;text-align:center;border-radius:5px;margin-right:5px}
+
 @media(max-width:480px){
   body{font-size:16.5px}
   .zone .ctile .nm{font-size:8.5px}
@@ -671,7 +704,7 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
     <a href="#home" data-v="home">Home</a>
     <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-learn" data-group="course lesson flashcards rules glossary library" aria-haspopup="true" aria-expanded="false">Learn ▾</button></div>
     <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-cards" data-group="cards staples banlist rulings errata" aria-haspopup="true" aria-expanded="false">Cards ▾</button></div>
-    <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-decks" data-group="deck builder" aria-haspopup="true" aria-expanded="false">Decks ▾</button></div>
+    <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-decks" data-group="deck builder opponents" aria-haspopup="true" aria-expanded="false">Decks ▾</button></div>
     <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-play" data-group="duel simulator" aria-haspopup="true" aria-expanded="false">Play ▾</button></div>
   </nav>
   <div class="ndrop-menu" id="m-learn" role="menu" aria-label="Learn">
@@ -691,6 +724,7 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
   <div class="ndrop-menu" id="m-decks" role="menu" aria-label="Decks">
     <a href="#decks" role="menuitem">All Decks<small>55 deck lists, by tier</small></a>
     <a href="#builder" role="menuitem">Deck builder<small>Build, check and export</small></a>
+    <a href="#opponents" role="menuitem">Know your opponent<small>Every deck at a glance, and matchups</small></a>
   </div>
   <div class="ndrop-menu" id="m-play" role="menu" aria-label="Play">
     <a href="#duel" role="menuitem">Duel the computer<small>Play a game, three difficulties</small></a>
@@ -715,6 +749,7 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
 <script src="data/lessons-301.js"></script>
 <script src="data/lessons-301b.js"></script>
 <script src="data/rules.js"></script>
+<script src="data/opponents.js"></script>
 <script src="data/meta.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/cards/batch-1.js"></script>
@@ -1697,6 +1732,7 @@ function route(){
   else if(h==='decks')renderDecks();
   else if(h.startsWith('deck-'))renderDeck(decodeURIComponent(h.slice(5)));
   else if(h==='builder')renderBuilder();
+  else if(h==='opponents'||h.startsWith('opponents-'))renderOpponents(h.slice(10));
   else if(h==='staples')renderStaples();
   else if(h==='library')renderLibrary();
   else if(h==='banlist')renderBanlist();
@@ -1788,6 +1824,74 @@ function renderCourse(){
 }
 
 /* ============ LESSON ============ */
+/* ============ KNOW YOUR OPPONENT ============
+ data/opponents.js: one at-a-glance block per deck family from Edison 301, and a matchup chart (Zack, 2026-11-22:
+ "seeing what deck their opponent is playing, and instantly knowing what to do"). The blocks sit in each deck lesson
+ and on #opponents with the chart. A chart cell is read from the cards, not from tournament results. */
+const OPP=window.EDISON_OPPONENTS||{decks:[],pairs:[]};
+const OPPBY=Object.fromEntries(OPP.decks.map(d=>[d.id,d]));
+const oppText=t=>esc(t).replace(/\[\[(.+?)\]\]/g,(m,n)=>cn(n.replace(/&#39;|&apos;/g,"'").replace(/&amp;/g,'&')));
+/* the edge of deck a against deck b: 1 favored, 0 even, -1 unfavored, with the reason */
+function oppEdge(a,b){const p=OPP.pairs.find(x=>(x[0]===a&&x[1]===b)||(x[0]===b&&x[1]===a));if(!p)return null;
+  const e=p[2]==='even'?0:(p[2]==='a')===(p[0]===a)?1:-1;return{e,why:p[3]}}
+function glanceHTML(d){
+  const li=a=>`<ul>${a.map(x=>`<li>${oppText(x)}</li>`).join('')}</ul>`;
+  const others=OPP.decks.filter(o=>o.id!==d.id).map(o=>({o,...oppEdge(d.id,o.id)}));
+  const names=e=>others.filter(x=>x.e===e).map(x=>`<a href="#opponents-${x.o.id}">${esc(x.o.name)}</a>`).join(', ')||'none';
+  return `<section class="glance" data-deck="${d.id}"><h2>At a glance: ${esc(d.name)}</h2>
+    <p class="gsub"><b>${esc(d.style)}</b> · Lists: ${d.lists.map(n=>`<a href="#deck-${encodeURIComponent(n)}">${esc(n)}</a>`).join(', ')} · <a href="#lesson-${d.lesson}">Lesson ${d.lesson}</a></p>
+    <div class="ggrid">
+      <div><h4>How to spot it</h4><p>${oppText(d.spot)}</p></div>
+      <div><h4>What it wants</h4><p>${oppText(d.wants)}</p></div>
+      <div class="g-strong"><h4>Strengths</h4>${li(d.strong)}</div>
+      <div class="g-weak"><h4>Weaknesses</h4>${li(d.weak)}</div>
+      <div><h4>What to expect</h4>${li(d.expect)}</div>
+      <div class="g-beat"><h4>How to beat it</h4>${li(d.beat)}</div>
+      <div class="g-avoid"><h4>Don't</h4>${li(d.avoid)}</div>
+    </div>
+    <div class="gmatch"><div><b>Good against:</b> ${names(1)}</div><div><b>Even with:</b> ${names(0)}</div><div><b>Tough against:</b> ${names(-1)}</div>
+      <div class="note">Why each one: <a href="#opponents-${d.id}">the matchup chart</a>.</div></div>
+  </section>`;
+}
+/* deck lessons: each deck's block goes under the section named after it, or at the top of the lesson */
+function addGlances(main,n){
+  const ds=OPP.decks.filter(d=>d.lesson===n);
+  // one deck: its block opens the lesson; several (lesson 25): each goes under its own section
+  ds.slice().reverse().forEach(d=>{
+    const box=document.createElement('div');box.innerHTML=glanceHTML(d);const g=box.firstElementChild;
+    const key=d.name.replace(/s$/,'').toLowerCase();
+    const h=ds.length>1&&[...main.querySelectorAll('h2')].find(x=>x.textContent.toLowerCase().startsWith(key));
+    if(h)h.after(g);else main.prepend(g);
+  });
+}
+const OPPSHORT={bw:'Blackwings',vayu:'Vayu',qd:'Quickdraw',ls:'Lightsworn',hero:'HEROs',frog:'Frogs',gb:'Gladiators',gadget:'Gadget',zombie:'Zombies',dragon:'Dragons'};
+function renderOpponents(sel){
+  if(!OPP.decks.length){app.innerHTML=noData();return}
+  const d=OPPBY[sel]||OPP.decks[0];
+  const mark={1:['fav','▲','favored'],0:['','●','even'],'-1':['unf','▼','unfavored']};
+  const chart=`<div class="mchart-wrap"><table class="mchart" aria-label="Matchup chart: each row's deck against each column's deck">
+    <thead><tr><th></th>${OPP.decks.map(o=>`<th scope="col">${esc(OPPSHORT[o.id]||o.name)}</th>`).join('')}</tr></thead>
+    <tbody>${OPP.decks.map(r=>`<tr><th scope="row">${esc(r.name)}</th>${OPP.decks.map(c=>{if(r.id===c.id)return '<td class="self" aria-label="same deck"></td>';
+      const x=oppEdge(r.id,c.id);const m=mark[x.e];
+      return `<td><button type="button" class="${m[0]}" data-r="${r.id}" data-c="${c.id}" aria-label="${esc(r.name)} against ${esc(c.name)}: ${m[2]}">${m[1]}</button></td>`}).join('')}</tr>`).join('')}</tbody></table></div>`;
+  app.innerHTML=`<div class="pagehead"><div><h1>Know your opponent</h1><p class="note" style="margin:4px 0 0;max-width:780px">Sit down, see what your opponent is playing, and know what to do. Pick a deck for how to spot it, what it's good at, what it's weak to, what to expect and how to beat it. Each deck is taught in full in Edison 301.</p></div></div>
+    <div class="oppick" role="group" aria-label="Decks">${OPP.decks.map(o=>`<a class="chip ${o.id===d.id?'on':''}" href="#opponents-${o.id}">${esc(o.name)}</a>`).join('')}</div>
+    ${glanceHTML(d)}
+    <section class="bsec"><h2>Matchups</h2>
+      <p class="note" style="max-width:780px">Read across a row: how that deck does against each deck in the columns. Tap a square for the reason. These are read from the cards and the deck lists on this site (which deck's common cards hit the other deck's engine), not from tournament results, and a good player on the weaker side still wins plenty of games.</p>
+      <div class="mlegend"><span><b class="fav" style="background:#e7f4e0;color:#2f6b14">▲</b>favored</span><span><b>●</b>even</span><span><b style="background:#fbe6e4;color:#9b1c13">▼</b>unfavored</span></div>
+      ${chart}
+      <div class="mwhy" id="mwhy" aria-live="polite"><span class="note">Tap a square to see why.</span></div>
+      <p class="note" style="margin-top:14px">Styles and what beats each one: <a href="#lesson-17">Lesson 17</a>. Which cards to bring in between games: <a href="#lesson-28">Lesson 28</a>.</p>
+    </section>`;
+  const why=document.getElementById('mwhy');
+  const show=b=>{app.querySelectorAll('.mchart button.on').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    const r=OPPBY[b.dataset.r],c=OPPBY[b.dataset.c],x=oppEdge(r.id,c.id);
+    why.innerHTML=`<b>${esc(r.name)} against ${esc(c.name)}: ${mark[x.e][2]}.</b> ${esc(x.why)}`};
+  app.querySelectorAll('.mchart button').forEach(b=>b.onclick=()=>show(b));
+  const first=app.querySelector(`.mchart button[data-r="${d.id}"]`);if(first&&sel)show(first);
+}
+
 function renderLesson(key){
   const idx=ALL.findIndex(x=>String(x.n)===key);if(idx<0){renderCourse();return}
   const l=ALL[idx];const n=l.n;const basics=typeof n==='string';
@@ -1816,6 +1920,7 @@ function renderLesson(key){
   const main=app.querySelector('.lmain');
   // Goals move to the sidebar.
   const goals=main.querySelector('.goals');if(goals){goals.classList.add('sbox');document.getElementById('lgoals').replaceWith(goals)}
+  addGlances(main,n);
   // Callouts that follow each other sit side by side instead of stacking.
   let run=[];const flush=()=>{if(run.length>1){const g=document.createElement('div');g.className='callgrid';run[0].before(g);run.forEach(c=>g.appendChild(c))}run=[]};
   [...main.children].forEach(el=>{if(el.classList.contains('call'))run.push(el);else flush()});flush();

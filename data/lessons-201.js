@@ -308,10 +308,10 @@ flash:[
 ["Why is Dimensional Prison good against Synchros?","It banishes the attacker, so the Synchro does not go back to the Extra Deck."]
 ]},
 
-{n:16,title:'How Edison Thinks',sub:'Card advantage, one-for-one trades, and when to make a big play.',min:4,
+{n:16,title:'How Edison Thinks',sub:'Card advantage, tempo, which threat to answer, the order of your plays, and reading your opponent.',min:10,
 cards:['Mystical Space Typhoon','Heavy Storm','Black Rose Dragon','Sangan','Brain Control','Pot of Avarice','Plaguespreader Zombie','Starlight Road'],
 html:`
-<div class="goals"><h4>What you will learn</h4><ul><li>What card advantage means</li><li>How to judge a trade, one card for one card</li><li>How to decide when to make a big play</li></ul></div>
+<div class="goals"><h4>What you will learn</h4><ul><li>What card advantage means</li><li>How to judge a trade, one card for one card</li><li>How to decide when to make a big play</li><li>How tempo differs from card advantage</li><li>Which threat to answer, and which card to play first</li><li>How to read your opponent and their outs</li></ul></div>
 <h2>Cards are your resource</h2>
 <p>Count the cards you have: your hand plus your field. Do the same for your opponent. The player with more cards usually has more options.</p>
 <p><b>Card advantage</b> means having more of those cards than your opponent. Every card you play is a trade. You give up a card to take something away, or to gain something.</p>
@@ -341,6 +341,40 @@ ${call('analogy','Think of it like this','<p>Think of cards as coins. A good tra
 <h2>LP is a resource too</h2>
 <p>Many staples cost LP: Solemn Judgment costs half, Royal Oppression and Brain Control cost 800, Thought Ruler Archfiend costs 1000. LP you never use does not win games. Spend it when it buys you a card or a turn.</p>
 <p>But watch how low you go. Gorz and Tragoedia punish an attack you cannot afford.</p>
+<h2>Your Normal Summon and your Graveyard</h2>
+<p>Cards and LP are not your only resources. You get one Normal Summon a turn, and many engines start with it: ${cn('Black Whirlwind')}, ${cn('Deep Sea Diva')}, ${cn('Debris Dragon')}, ${cn('Junk Synchron')} and every Monarch. Spend it on the monster that does the most. A Normal Summon used on a plain beater can leave your Tuner stuck in your hand.</p>
+<p>Your Graveyard is a resource too. ${cn('Plaguespreader Zombie')}, ${cn('Blackwing - Vayu the Emblem of Honor')}, ${cn('Necro Gardna')} and ${cn('Miracle Fusion')} all use it, and ${cn('Pot of Avarice')} turns five used monsters into two new cards. Your opponent's Graveyard matters as well: ${cn('D.D. Crow')} is best saved for the card they plan to use from there.</p>
+<h2>Tempo and card advantage</h2>
+<p>Card advantage is how many cards you have. <b>Tempo</b> is how much the board is doing for you right now: who is attacking, and who is answering. You can be ahead on cards and still be losing, if the cards you hold are stuck in your hand while your opponent attacks every turn.</p>
+<p>Aggro decks like Blackwings trade card advantage for tempo. They put cards on the field early and attack before you can set up. Control decks do the opposite. They trade one for one and win once the opponent runs out. Know which one you are doing each turn. Ahead on tempo, keep attacking. Ahead on cards, don't rush, and make your opponent come to you.</p>
+<h2>Which threat to answer</h2>
+<p>You will rarely have an answer for everything. Before you spend removal, ask what the card will do to you if it stays.</p>
+<ul>
+<li><b>Engines first.</b> A card that makes more cards every turn, like ${cn('Black Whirlwind')} or a ${cn('Treeborn Frog')} in the Graveyard, does more over a game than one big monster.</li>
+<li><b>Locks next.</b> ${cn('Royal Oppression')} or ${cn('Skill Drain')} can stop your whole deck. Your ${cn('Mystical Space Typhoon')} belongs on the lock, not on a random Set card.</li>
+<li><b>Then the biggest attacker,</b> unless you can survive it for a turn and answer it better later.</li>
+<li><b>Save hard answers for hard threats.</b> ${cn('Bottomless Trap Hole')} on a 1600 ATK monster leaves you nothing for ${cn('Judgment Dragon')}.</li>
+</ul>
+<h2>Sequencing: which card first</h2>
+<p>The same cards played in a different order can win or lose a turn.</p>
+<ol class="steps">
+<li><div><b>Removal before summons.</b> Destroy a Set card with Mystical Space Typhoon before you Normal Summon, so a Trap can't meet your monster.</div></li>
+<li><div><b>Search before you decide.</b> Use ${cn('E - Emergency Call')}, ${cn('Charge of the Light Brigade')} or a Sangan search early. The card you find may change the best play.</div></li>
+<li><div><b>Bait with the smaller threat.</b> Summon the monster you can afford to lose first, and keep your best one for after their Trap is gone.</div></li>
+<li><div><b>Attack with your least important monster first.</b> Mirror Force and Dimensional Prison wait for an attack. Give them the worst target.</div></li>
+<li><div><b>Attack first, Synchro after.</b> In the Blackwing turn in Lesson 18, the Synchro comes in Main Phase 2, after the materials have done their damage.</div></li>
+</ol>
+<h2>Don't overextend</h2>
+<p>Overextending means putting more on the field than you need. Edison punishes it. ${cn('Torrential Tribute')} destroys every monster, ${cn('Heavy Storm')} every Spell and Trap, and ${cn('Black Rose Dragon')} and Judgment Dragon every card. Against a full field, one of them is one card for five of yours.</p>
+<p>Put out enough to win, or enough to stay safe, and keep the rest in your hand. Two monsters that beat what your opponent has are usually better than four.</p>
+<h2>Read your opponent</h2>
+<ul>
+<li><b>Hand size.</b> Many cards in hand means many options. One or two means they are close to out. Remember that ${cn('Blackwing - Kalut the Moon Shadow')}, ${cn('Honest')} and ${cn('Battle Fader')} work from the hand.</li>
+<li><b>Set cards.</b> Count them, and watch what they let through (Lesson 27).</li>
+<li><b>The banlist.</b> Mirror Force, Solemn Judgment, Torrential Tribute, Heavy Storm and Black Rose Dragon are Limited. Once one is in their Graveyard, there are no more.</li>
+<li><b>Their outs.</b> Ask which card would get them out of trouble, and play so that card does the least. If only Heavy Storm saves them, don't Set three Spells and Traps.</li>
+<li><b>Their deck.</b> Once you know what they play, you know what they need to happen. <a href="#opponents">Know your opponent</a> has every deck at a glance.</li>
+</ul>
 <h2>When to make a big play</h2>
 <p>A big play is a turn where you commit many cards at once, like a Synchro Summon followed by attacks. If it works, you get far ahead. If your opponent stops it, you lose several cards at once.</p>
 <ol class="steps">
@@ -352,7 +386,7 @@ ${call('analogy','Think of it like this','<p>Think of cards as coins. A good tra
 </ol>
 ${call('key','The big idea','<p>Ask two questions before every play. What do I spend? What does my opponent lose? If you spend more than they lose, you need a good reason.</p>')}
 ${call('mistake','Common beginner mistakes',`<ul><li>Making a Synchro every turn just because you can. Every Synchro costs materials.</li><li>Playing Black Rose Dragon or Heavy Storm when they hurt you more than your opponent.</li><li>Committing your whole hand into four Set cards.</li></ul>`)}
-<div class="recap"><h2>Recap</h2><ul><li>Count hand plus field for both players.</li><li>Most removal is one card for one card. A card that takes two is a big deal.</li><li>Sangan, Card Trooper and Pot of Avarice give you more than they cost.</li><li>Synchros cost materials. Cheap Tuners make the trade good.</li><li>Before a big play, count Set cards and clear the way.</li></ul></div>
+<div class="recap"><h2>Recap</h2><ul><li>Count hand plus field for both players.</li><li>Most removal is one card for one card. A card that takes two is a big deal.</li><li>Sangan, Card Trooper and Pot of Avarice give you more than they cost.</li><li>Synchros cost materials. Cheap Tuners make the trade good.</li><li>Before a big play, count Set cards and clear the way.</li><li>Tempo is what the board does for you now. Know whether you are racing or grinding.</li><li>Answer engines and locks before big monsters, and save hard answers for hard threats.</li><li>Removal before summons, small threats before big ones, and never more on the field than you need.</li><li>Count their hand, their Set cards and the Limited cards already used.</li></ul></div>
 <p class="soon">You finished Edison 201. Look up any card in the <a href="#cards">card search</a>, or check the full <a href="#staples">staples list</a>.</p>`,
 flash:[
 ["What is card advantage?","Having more cards (hand plus field) than your opponent, which gives you more options."],
@@ -360,7 +394,11 @@ flash:[
 ["Why is Sangan a plus card?","When it leaves the field, it adds a monster from your Deck to your hand, so it replaces itself."],
 ["A Synchro Summon uses two monsters for one. How do players make that trade good?","By using cheap materials, like Plaguespreader Zombie from the Graveyard or a Tuner that brings a second monster with it."],
 ["Your opponent has three Set cards. You hold a Tuner and MST. What should you do first?","Use MST, or other removal, on a Set card before committing to the Synchro."],
-["When is Black Rose Dragon's field wipe a good trade?","When your opponent has more cards on the field than you do."]
+["When is Black Rose Dragon's field wipe a good trade?","When your opponent has more cards on the field than you do."],
+["What is tempo?","How much the board is doing for you right now: who is attacking, and who is answering."],
+["Your opponent has Royal Oppression face-up and one Set card. You have one Mystical Space Typhoon. Which do you usually hit?","Royal Oppression. A lock can stop your whole deck; a Set card might be a bluff."],
+["Why is overextending risky in Edison?","Torrential Tribute, Heavy Storm, Black Rose Dragon and Judgment Dragon answer a whole field with one card."],
+["Mirror Force is already in your opponent's Graveyard. Can they have another?","No. It is Limited, so each deck has at most one."]
 ]}
 
 ]};
