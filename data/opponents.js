@@ -1,13 +1,13 @@
 /* Know your opponent (Zack, 2026-11-22: "seeing what deck their opponent is playing, and instantly knowing what to
  do"). One at-a-glance block per deck family taught in Edison 301 (lessons 18 to 25), all from the cards' own text and
  the deck lists on this site, and a matchup chart between them.
- [[Card Name]] links a card by its exact name. The matchup chart is a judgment read from the cards (which deck's common
+ art is the deck's signature card, shown as its picture on #opponents. [[Card Name]] links a card by its exact name. The matchup chart is a judgment read from the cards (which deck's common
  cards hit the other deck's engine), not tournament results: each pair says who has the edge and why. Zack reviews
  the chart before the site goes public. The deck guide videos use the same blocks and chart (CLAUDE.md, Know your
  opponent). */
 window.EDISON_OPPONENTS = {
 decks: [
-{id:'bw', name:'Blackwings', lesson:18, lists:['Blackwing','Hybrid'], style:'Aggro',
+{id:'bw', art:'Blackwing - Gale the Whirlwind', name:'Blackwings', lesson:18, lists:['Blackwing','Hybrid'], style:'Aggro',
  spot:'A Blackwing Normal Summoned with [[Black Whirlwind]] face-up, or [[Blackwing - Bora the Spear]] Special Summoning itself next to another bird. DARK Winged Beasts with 1700 to 2000 ATK and one or two Set cards.',
  wants:'Two or three attackers in one turn, a won battle every turn, and spare birds turned into Level 6 to 8 Synchros.',
  strong:['Fast pressure: Black Whirlwind turns every Normal Summon into a second bird.','Every battle is risky for you: [[Blackwing - Kalut the Moon Shadow]] adds 1400 ATK from the hand in the Damage Step.','A full Trap line behind the birds: 13 Traps in the Blackwing list, including 3 [[Dimensional Prison]].'],
@@ -16,7 +16,7 @@ decks: [
  beat:['Make them attack into [[Dimensional Prison]] and [[Mirror Force]].','Destroy [[Black Whirlwind]] with [[Mystical Space Typhoon]] or [[Dust Tornado]] to slow the searches.','Side [[Royal Oppression]], [[Fossil Dyna Pachycephalo]] or [[Consecrated Light]].'],
  avoid:['Setting a weak monster in front of Bora or Armed Wing: both pierce.','Trusting your ATK while they hold a card: Kalut is in the hand.','Counting only their field: Shura can bring a bird mid-battle.']},
 
-{id:'vayu', name:'Vayu Turbo', lesson:21, lists:['Vayu Turbo'], style:'Combo',
+{id:'vayu', art:'Blackwing - Vayu the Emblem of Honor', name:'Vayu Turbo', lesson:21, lists:['Vayu Turbo'], style:'Combo',
  spot:'[[Armageddon Knight]] or [[Dark Grepher]] sending a DARK from the Deck to the GY on turn one, then Blackwing Synchros with no Black Whirlwind in sight.',
  wants:'[[Blackwing - Vayu the Emblem of Honor]] and [[Blackwing - Sirocco the Dawn]] in the GY, then Armed Wing out of the Extra Deck, then a Level 7 or 8 Synchro on top.',
  strong:['Its plays start in the Graveyard, where most of your Traps can\'t reach.','Three monsters from three cards on a good turn.','[[Caius the Shadow Monarch]] and [[Dark Armed Dragon]] clear the way.'],
@@ -25,7 +25,7 @@ decks: [
  beat:['Count Vayus and Siroccos in their GY every turn, and save [[D.D. Crow]] for them.','[[Pulling the Rug]] negates [[Armageddon Knight]]\'s send when it is Normal Summoned.','Side [[Soul Release]], [[Kycoo the Ghost Destroyer]] or [[Consecrated Light]].'],
  avoid:['Using D.D. Crow on a random card.','Watching only their field.','Forgetting Burial: a banished Vayu can come back.']},
 
-{id:'qd', name:'Quickdraw Plants', lesson:19, lists:['Quickdraw Plant','Quickdraw Volcanic'], style:'Combo',
+{id:'qd', art:'Quickdraw Synchron', name:'Quickdraw Plants', lesson:19, lists:['Quickdraw Plant','Quickdraw Volcanic'], style:'Combo',
  spot:'[[Quickdraw Synchron]] Special Summoned by sending a monster from the hand, [[Dandylion]] making two Fluff Tokens, and several Synchros in one turn.',
  wants:'One big turn: Quickdraw, Dandylion and [[Debris Dragon]] become two Synchros and a field of tokens from three cards.',
  strong:['The biggest single turns in the format: two Synchros and three tokens from three cards.','[[Dandylion]] makes tokens however it reaches the GY, so destroying it helps them.','[[Tytannial, Princess of Camellias]] negates cards that target.'],
@@ -34,7 +34,7 @@ decks: [
  beat:['Stop the first step: a combo needs every link.','Against a Tytannial board, use cards that don\'t target, like [[Black Rose Dragon]] or [[Heavy Storm]].','Side [[Royal Oppression]], [[Fossil Dyna Pachycephalo]] or [[Pulling the Rug]].'],
  avoid:['Destroying Dandylion: it still makes tokens.','Ignoring Fluff Tokens: each one is a Level for the next Synchro.','Thinking Quickdraw can make Stardust Dragon. Only Debris or a generic Tuner can.']},
 
-{id:'ls', name:'Lightsworn', lesson:20, lists:['Lightsworn'], style:'Combo',
+{id:'ls', art:'Judgment Dragon', name:'Lightsworn', lesson:20, lists:['Lightsworn'], style:'Combo',
  spot:'LIGHT monsters that send cards from the top of their Deck to the GY at the End Phase. [[Solar Recharge]] and [[Charge of the Light Brigade]] early.',
  wants:'Four Lightsworn names in the GY, then [[Judgment Dragon]]: pay 1000 LP, destroy every other card, attack for 3000.',
  strong:['Judgment Dragon wipes your whole field from the hand.','The mill pays off: [[Wulf, Lightsworn Beast]] summons itself and [[Necro Gardna]] stops an attack from the GY.','2 [[Royal Decree]] turn off every other Trap on the field, yours included.'],
@@ -43,7 +43,7 @@ decks: [
  beat:['Count the different Lightsworn names in their GY: at three, one more mill brings Judgment Dragon.','Keep cards in your hand, not on the field.','[[Bottomless Trap Hole]] hits Judgment Dragon, Celestia and Wulf; side [[Light-Imprisoning Mirror]], [[D.D. Crow]] or [[Soul Release]].'],
  avoid:['Putting your whole hand on the field.','Forgetting Necro Gardna in their GY.','Relying on Traps when Royal Decree is face-up.']},
 
-{id:'hero', name:'HEROs', lesson:22, lists:['Diva Hero','Diva Hero Beat','Hero Beat'], style:'Combo or stun',
+{id:'hero', art:'Elemental HERO Absolute Zero', name:'HEROs', lesson:22, lists:['Diva Hero','Diva Hero Beat','Hero Beat'], style:'Combo or stun',
  spot:'[[E - Emergency Call]] or [[Elemental HERO Stratos]] searching a HERO. Diva Hero: [[Deep Sea Diva]] and [[Destiny HERO - Malicious]] into fast Synchros. Hero Beat: [[Elemental HERO Neos Alius]] behind a face-up [[Skill Drain]] or [[Royal Oppression]].',
  wants:'Diva Hero races to Level 5 and Level 8 Synchros. Hero Beat locks the game and wins with plain beaters. Both finish with [[Miracle Fusion]] into [[Elemental HERO Absolute Zero]].',
  strong:['[[Miracle Fusion]] uses the GY at any time, so Absolute Zero can appear out of nowhere.','Absolute Zero destroys all your monsters when it leaves the field.','Hero Beat\'s locks stop combo decks cold: 2 Skill Drain, 2 Royal Oppression and [[Thunder King Rai-Oh]].'],
@@ -52,7 +52,7 @@ decks: [
  beat:['Flip Absolute Zero face-down with [[Book of Moon]] first, then remove it.','Save your Spell and Trap removal for Skill Drain or Royal Oppression.','[[Pulling the Rug]] negates Deep Sea Diva and a Normal Summoned Stratos.'],
  avoid:['Destroying a face-up Absolute Zero while you have monsters out.','Ignoring their GY: Miracle Fusion can use it at any time.','Attacking a LIGHT monster while they hold a card: Honest.']},
 
-{id:'frog', name:'Frog Monarchs', lesson:23, lists:['Junk Frog','Hero Frog'], style:'Combo',
+{id:'frog', art:'Caius the Shadow Monarch', name:'Frog Monarchs', lesson:23, lists:['Junk Frog','Hero Frog'], style:'Combo',
  spot:'[[Treeborn Frog]] in the GY and an empty back row. [[Swap Frog]] and [[Substitoad]] moving Frogs around, then a Monarch Tribute Summoned off a Frog.',
  wants:'A free Tribute every turn: Treeborn comes back each Standby Phase, becomes a Monarch, and the Monarch takes one of your cards.',
  strong:['A free card every turn from the Monarch loop.','A battle wall with almost no Traps: [[Dupe Frog]], Substitoad, [[Battle Fader]] and [[Tragoedia]].','Junk Synchron turns Frogs into [[Goyo Guardian]] or [[Brionac, Dragon of the Ice Barrier]].'],
@@ -61,7 +61,7 @@ decks: [
  beat:['Banish Treeborn before their Standby Phase.','Remove Substitoad or Dupe Frog with an effect before you attack.','[[Solemn Judgment]] and [[Bottomless Trap Hole]] hit Monarchs as they land.'],
  avoid:['Attacking into Dupe Frog with Substitoad on the field: Frogs can\'t be destroyed by battle.','Holding D.D. Crow while Treeborn sits in their GY.','A direct attack into an empty field with no plan for Battle Fader or Tragoedia.']},
 
-{id:'gb', name:'Gladiator Beasts', lesson:24, lists:['Gladiator Beast'], style:'Control',
+{id:'gb', art:'Gladiator Beast Gyzarus', name:'Gladiator Beasts', lesson:24, lists:['Gladiator Beast'], style:'Control',
  spot:'A Gladiator Beast attacks, then shuffles itself into the Deck at the end of the Battle Phase and a different one comes out with a bonus effect.',
  wants:'Win a battle, tag out for a fresh Gladiator Beast with a bonus, and build to [[Gladiator Beast Gyzarus]] or [[Gladiator Beast Heraklinos]].',
  strong:['Each tag out is a free monster with a free effect.','[[Gladiator Beast War Chariot]] negates a monster effect while they control a Gladiator Beast.','Shrink, Book of Moon and Dimensional Prison protect its battles.'],
@@ -70,7 +70,7 @@ decks: [
  beat:['Make it attack into your Traps instead of attacking into it.','Hit a Normal Summoned Gladiator Beast before it battles: it has no bonus.','Use Spells and Traps against War Chariot, since it only negates monster effects.'],
  avoid:['Attacking into a Gladiator Beast with a monster it can beat: every win is a tag out.','Using a monster effect while War Chariot is Set.']},
 
-{id:'gadget', name:'Machina Gadget', lesson:25, lists:['Machina Gadget','Machina'], style:'Aggro',
+{id:'gadget', art:'Machina Fortress', name:'Machina Gadget', lesson:25, lists:['Machina Gadget','Machina'], style:'Aggro',
  spot:'[[Green Gadget]], [[Red Gadget]] or [[Yellow Gadget]] searching the next Gadget when summoned. Only Machines on the field and in the GY.',
  wants:'Never run out of monsters: each Gadget finds the next, two Gadgets in hand summon [[Machina Fortress]], and [[Solidarity]] adds 800 ATK.',
  strong:['A full hand all game: every summon replaces itself.','[[Machina Fortress]] comes back from the GY and destroys a card when it falls in battle.','Steady pressure that doesn\'t need a big turn.'],
@@ -79,7 +79,7 @@ decks: [
  beat:['Stop the first search and the chain of Gadgets breaks.','Fuse their Machines with Chimeratech Fortress Dragon.','Side [[Pulling the Rug]] and [[Cyber Dragon]].'],
  avoid:['Siding [[Rivalry of Warlords]]: they only play Machines, so it barely hurts them.','Destroying Machina Fortress by battle without a plan for its effect.']},
 
-{id:'zombie', name:'Diva Zombie', lesson:25, lists:['Diva Zombie','TeleDAD'], style:'Combo',
+{id:'zombie', art:'Revived King Ha Des', name:'Diva Zombie', lesson:25, lists:['Diva Zombie','TeleDAD'], style:'Combo',
  spot:'Zombies that keep coming back: [[Goblin Zombie]] searching, [[Zombie Master]] and [[Mezuki]] reviving, [[Plaguespreader Zombie]] returning to the field.',
  wants:'The Graveyard as a second hand: revive Zombies over and over, make Level 6 Zombie Synchros, and Tribute for Caius.',
  strong:['Hard to run out of monsters: they come back from the GY.','[[Book of Life]] revives a Zombie and banishes a monster from your GY.','[[Revived King Ha Des]] negates the effects of monsters it destroys, even in the GY.'],
@@ -88,7 +88,7 @@ decks: [
  beat:['Attack the Graveyard: banish Mezuki, Plaguespreader and Zombie Master targets.','Side [[Soul Release]], [[Shadow-Imprisoning Mirror]] or [[Mask of Restrict]].'],
  avoid:['Leaving your own good monsters in the GY: Zombie Master and Doomkaiser can take them.','Thinking two Divas can Synchro together: both are Tuners.']},
 
-{id:'dragon', name:'Dragon Turbo', lesson:25, lists:['Dragon Turbo','Dragon Aggro'], style:'Combo',
+{id:'dragon', art:'Red-Eyes Darkness Metal Dragon', name:'Dragon Turbo', lesson:25, lists:['Dragon Turbo','Dragon Aggro'], style:'Combo',
  spot:'Draw Spells that discard Dragons: [[Cards of Consonance]], [[Trade-In]] and [[Super Rejuvenation]], then [[Red-Eyes Darkness Metal Dragon]] reviving a [[Blue-Eyes White Dragon]].',
  wants:'Draw hard, fill the GY with big Dragons, then bring them back with Red-Eyes Darkness Metal Dragon, several times in one turn.',
  strong:['It draws two cards at a time, turn after turn: Trade-In, Cards of Consonance and Super Rejuvenation.','3000 ATK Blue-Eyes on the field fast.','[[The White Stone of Legend]] turns a discard into a Blue-Eyes search.'],

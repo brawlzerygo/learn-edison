@@ -674,21 +674,54 @@ select,input[type=text],input[type=number],input[type=search]{font:inherit;paddi
 .glance .g-beat h4{color:var(--accent)}
 .glance .gmatch{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:4px;font-size:15px}
 .glance .gmatch a{color:var(--accent)}
-.oppick{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
-.oppick a.chip{text-decoration:none}
+.ogrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0 6px}
+.otile{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);text-decoration:none;color:var(--ink);transition:transform .15s,box-shadow .15s,border-color .15s}
+.otile:hover,.otile:focus-visible{transform:translateY(-2px);box-shadow:0 10px 24px -12px rgba(0,0,0,.35);border-color:var(--accent);outline:none}
+.otile.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),0 10px 24px -12px rgba(0,0,0,.35)}
+.oart,.ohart,.mthumb{display:block;background-color:var(--mat,#2b2420);background-repeat:no-repeat;background-size:132% auto;background-position:50% 38%}
+.oart{aspect-ratio:1/1}
+.otile .oname{font-weight:700;font-size:15.5px;line-height:1.25;padding:8px 10px 0}
+.otile .ostyle{font-family:var(--label,inherit);font-size:11px;font-weight:bold;color:var(--muted);padding:2px 10px 0}
+.orec{display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px 10px}
+.orec i,.okey i{font-style:normal;font-family:var(--label,inherit);font-size:11.5px;font-weight:bold;min-width:24px;text-align:center;border-radius:5px;padding:1px 6px}
+.fav{--mc:#2f6b14;--mb:#e7f4e0;--ml:#bfe0ad}.even{--mc:#57534a;--mb:#efece6;--ml:#dcd8cf}.unf{--mc:#9b1c13;--mb:#fbe6e4;--ml:#f0bdb7}
+.orec i,.okey i{background:var(--mb);color:var(--mc)}
+.okey{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:13.5px}
+.okey span{display:inline-flex;align-items:center;gap:6px}.okey i{display:inline-block;width:14px;min-width:0;height:14px;padding:0;border:1px solid var(--ml)}
+.opanel{margin:18px 0 8px;border:1px solid var(--line);border-radius:16px;background:var(--bg);padding:18px;scroll-margin-top:72px;animation:opop .25s ease}
+@keyframes opop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ohead{display:flex;align-items:center;gap:16px}
+.ohead h2{margin:2px 0;font-size:28px}
+.ohart{width:84px;height:84px;border-radius:12px;flex:none;box-shadow:0 6px 16px -8px rgba(0,0,0,.5)}
+.oclose{margin-left:auto;align-self:flex-start;min-width:40px;justify-content:center}
+.mtitle{font-size:22px;margin:22px 0 10px}
+.mcols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.mcol{border:1px solid var(--ml);border-top:4px solid var(--mc);border-radius:12px;background:var(--surface);padding:12px}
+.mcol h3{display:flex;align-items:center;gap:8px;margin:0;font-size:17px;color:var(--mc)}
+.mcol h3 small{margin-left:auto;font-family:var(--label,inherit);font-size:12px;background:var(--mb);border-radius:99px;padding:1px 8px}
+.mdot{width:10px;height:10px;border-radius:50%;background:var(--mc)}
+.mblurb{margin:2px 0 8px;color:var(--muted);font-size:13.5px}
+.mrow{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:10px;text-decoration:none;color:var(--ink)}
+.mrow:hover{background:var(--mb)}
+.mrow b{display:block;font-size:15px}
+.mwhy2{display:block;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.mthumb{width:44px;height:44px;border-radius:8px;flex:none}
+.mthumb.sm{width:26px;height:26px;border-radius:6px;display:inline-block;vertical-align:middle;margin-right:6px}
+.mall{margin:20px 0 0;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:10px 14px}
+.mall summary{cursor:pointer;font-weight:700;font-size:17px;padding:4px 0}
 .mchart-wrap{overflow-x:auto;margin:10px 0 6px;-webkit-overflow-scrolling:touch}
-table.mchart{border-collapse:separate;border-spacing:3px;font-size:13px;min-width:640px}
-table.mchart th{font-family:var(--label,inherit);font-size:11.5px;font-weight:bold;color:var(--muted);padding:4px 6px;white-space:nowrap;text-align:left;background:none;border:0}
-table.mchart thead th{text-align:center;vertical-align:bottom}
-table.mchart td{padding:0;border:0}
-table.mchart button{width:100%;min-width:44px;height:36px;border:1px solid var(--line);border-radius:7px;font:inherit;font-weight:700;cursor:pointer;background:var(--surface);color:var(--muted)}
-table.mchart button.fav{background:#e7f4e0;color:#2f6b14;border-color:#bfe0ad}
-table.mchart button.unf{background:#fbe6e4;color:#9b1c13;border-color:#f0bdb7}
-table.mchart button.on{outline:2px solid var(--accent);outline-offset:1px}
-table.mchart td.self{background:repeating-linear-gradient(45deg,var(--line) 0 2px,transparent 2px 6px);border-radius:7px}
-.mwhy{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 16px;min-height:52px}
-.mlegend{display:flex;flex-wrap:wrap;gap:14px;font-size:13.5px;color:var(--muted);margin:6px 0}
-.mlegend span b{display:inline-block;width:22px;text-align:center;border-radius:5px;margin-right:5px}
+table.mchart2{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-width:880px}
+table.mchart2 th{font-family:var(--label,inherit);font-size:11px;font-weight:bold;color:var(--muted);padding:4px;white-space:nowrap;text-align:left;background:none;border:0}
+table.mchart2 thead th{text-align:center;vertical-align:bottom}
+table.mchart2 thead th .mthumb{display:block;margin:0 auto 4px}
+table.mchart2 th.corner{text-align:left;vertical-align:bottom;font-weight:normal}
+table.mchart2 tbody th a{color:var(--ink);text-decoration:none;font-size:13px}
+table.mchart2 td{border:1px solid var(--ml,var(--line));background:var(--mb,transparent);color:var(--mc);border-radius:6px;text-align:center;padding:7px 4px;font-family:var(--label,inherit);font-size:10.5px;font-weight:bold;white-space:nowrap}
+table.mchart2 td.self{border-color:transparent;color:var(--muted)}
+table.mchart2 tr.on th a{color:var(--accent)}
+table.mchart2 tr.on td{box-shadow:inset 0 0 0 2px var(--accent)}
+@media(max-width:900px){.ogrid{grid-template-columns:repeat(3,1fr)}.mcols{grid-template-columns:1fr}}
+@media(max-width:520px){.ogrid{grid-template-columns:repeat(2,1fr);gap:10px}.ohart{width:60px;height:60px}.ohead h2{font-size:23px}.opanel{padding:12px}}
 
 @media(max-width:480px){
   body{font-size:16.5px}
@@ -1864,32 +1897,51 @@ function addGlances(main,n){
     if(h)h.after(g);else main.prepend(g);
   });
 }
+/* #opponents: a gallery of deck tiles (each deck's signature card art); picking one expands its at-a-glance block and
+ its matchups in three plain columns (favored, even, unfavored), each with the reason. The full chart sits below,
+ folded, for comparing every deck at once. Zack, 2026-11-22: "more visually sensible with card/deck arts... the
+ matchup chart... can be easier to read". */
 const OPPSHORT={bw:'Blackwings',vayu:'Vayu',qd:'Quickdraw',ls:'Lightsworn',hero:'HEROs',frog:'Frogs',gb:'Gladiators',gadget:'Gadget',zombie:'Zombies',dragon:'Dragons'};
+const MATCHWORD={1:'Favored','0':'Even','-1':'Unfavored'};
+/* the artwork window of a full card image, as a CSS background (cards here are whole-card images) */
+const oppArt=d=>{const r=BYNAME.get(d.art);return r?`style="background-image:url('${artURL(r)}')"`:''};
+function oppRecord(id){const r={1:0,0:0,'-1':0};OPP.decks.forEach(o=>{if(o.id!==id)r[oppEdge(id,o.id).e]++});return r}
 function renderOpponents(sel){
   if(!OPP.decks.length){app.innerHTML=noData();return}
-  const d=OPPBY[sel]||OPP.decks[0];
-  const mark={1:['fav','▲','favored'],0:['','●','even'],'-1':['unf','▼','unfavored']};
-  const chart=`<div class="mchart-wrap"><table class="mchart" aria-label="Matchup chart: each row's deck against each column's deck">
-    <thead><tr><th></th>${OPP.decks.map(o=>`<th scope="col">${esc(OPPSHORT[o.id]||o.name)}</th>`).join('')}</tr></thead>
-    <tbody>${OPP.decks.map(r=>`<tr><th scope="row">${esc(r.name)}</th>${OPP.decks.map(c=>{if(r.id===c.id)return '<td class="self" aria-label="same deck"></td>';
-      const x=oppEdge(r.id,c.id);const m=mark[x.e];
-      return `<td><button type="button" class="${m[0]}" data-r="${r.id}" data-c="${c.id}" aria-label="${esc(r.name)} against ${esc(c.name)}: ${m[2]}">${m[1]}</button></td>`}).join('')}</tr>`).join('')}</tbody></table></div>`;
-  app.innerHTML=`<div class="pagehead"><div><h1>Know your opponent</h1><p class="note" style="margin:4px 0 0;max-width:780px">Sit down, see what your opponent is playing, and know what to do. Pick a deck for how to spot it, what it's good at, what it's weak to, what to expect and how to beat it. Each deck is taught in full in Edison 301.</p></div></div>
-    <div class="oppick" role="group" aria-label="Decks">${OPP.decks.map(o=>`<a class="chip ${o.id===d.id?'on':''}" href="#opponents-${o.id}">${esc(o.name)}</a>`).join('')}</div>
-    ${glanceHTML(d)}
-    <section class="bsec"><h2>Matchups</h2>
-      <p class="note" style="max-width:780px">Read across a row: how that deck does against each deck in the columns. Tap a square for the reason. These are read from the cards and the deck lists on this site (which deck's common cards hit the other deck's engine), not from tournament results, and a good player on the weaker side still wins plenty of games.</p>
-      <div class="mlegend"><span><b class="fav" style="background:#e7f4e0;color:#2f6b14">▲</b>favored</span><span><b>●</b>even</span><span><b style="background:#fbe6e4;color:#9b1c13">▼</b>unfavored</span></div>
-      ${chart}
-      <div class="mwhy" id="mwhy" aria-live="polite"><span class="note">Tap a square to see why.</span></div>
-      <p class="note" style="margin-top:14px">Styles and what beats each one: <a href="#lesson-17">Lesson 17</a>. Which cards to bring in between games: <a href="#lesson-28">Lesson 28</a>.</p>
-    </section>`;
-  const why=document.getElementById('mwhy');
-  const show=b=>{app.querySelectorAll('.mchart button.on').forEach(x=>x.classList.remove('on'));b.classList.add('on');
-    const r=OPPBY[b.dataset.r],c=OPPBY[b.dataset.c],x=oppEdge(r.id,c.id);
-    why.innerHTML=`<b>${esc(r.name)} against ${esc(c.name)}: ${mark[x.e][2]}.</b> ${esc(x.why)}`};
-  app.querySelectorAll('.mchart button').forEach(b=>b.onclick=()=>show(b));
-  const first=app.querySelector(`.mchart button[data-r="${d.id}"]`);if(first&&sel)show(first);
+  const d=OPPBY[sel];
+  const tile=o=>{const r=oppRecord(o.id);return `<a class="otile ${d&&o.id===d.id?'on':''}" href="#opponents-${o.id}" aria-current="${d&&o.id===d.id?'true':'false'}">
+    <span class="oart" ${oppArt(o)}></span>
+    <span class="oname">${esc(o.name)}</span><span class="ostyle">${esc(o.style)}</span>
+    <span class="orec" aria-label="${r[1]} favored, ${r[0]} even, ${r[-1]} unfavored"><i class="fav">${r[1]} fav</i><i class="even">${r[0]} even</i><i class="unf">${r[-1]} unfav</i></span></a>`};
+  let panel='';
+  if(d){
+    const rows=e=>OPP.decks.filter(o=>o.id!==d.id).map(o=>({o,...oppEdge(d.id,o.id)})).filter(x=>x.e===e);
+    const col=(e,cls,title,blurb)=>{const xs=rows(e);return `<section class="mcol ${cls}"><h3><span class="mdot"></span>${title} <small>${xs.length}</small></h3><p class="mblurb">${blurb}</p>
+      ${xs.length?xs.map(x=>`<a class="mrow" href="#opponents-${x.o.id}"><span class="mthumb" ${oppArt(x.o)}></span><span><b>${esc(x.o.name)}</b><span class="mwhy2">${esc(x.why)}</span></span></a>`).join(''):'<p class="note">None.</p>'}</section>`};
+    panel=`<div class="opanel" id="opanel">
+      <div class="ohead"><span class="ohart" ${oppArt(d)}></span><div><p class="crumbs" style="margin:0">Know your opponent</p><h2>${esc(d.name)}</h2><p class="note" style="margin:0">${esc(d.style)} · taught in <a href="#lesson-${d.lesson}">Lesson ${d.lesson}</a></p></div><a class="btn oclose" href="#opponents" aria-label="Close">✕</a></div>
+      ${glanceHTML(d).replace(/<div class="gmatch">[\s\S]*?<\/div>\s*<\/div>\s*<\/section>$/,'</section>').replace(/<h2>At a glance: [^<]*<\/h2>/,'')}
+      <h2 class="mtitle">How ${esc(d.name)} match up</h2>
+      <div class="mcols">
+        ${col(1,'fav','Favored against','This deck usually has the edge.')}
+        ${col(0,'even','Even with','Either side can win: it comes down to the draw and the play.')}
+        ${col(-1,'unf','Unfavored against',`The other deck usually has the edge. Side for it.`)}
+      </div></div>`;
+  }
+  const chart=`<div class="mchart-wrap"><table class="mchart2" aria-label="All matchups: each row's deck against each column's deck">
+    <thead><tr><th class="corner">Row deck vs. column deck</th>${OPP.decks.map(o=>`<th scope="col"><span class="mthumb sm" ${oppArt(o)}></span>${esc(OPPSHORT[o.id])}</th>`).join('')}</tr></thead>
+    <tbody>${OPP.decks.map(r=>`<tr class="${d&&r.id===d.id?'on':''}"><th scope="row"><a href="#opponents-${r.id}"><span class="mthumb sm" ${oppArt(r)}></span>${esc(r.name)}</a></th>${OPP.decks.map(c=>{if(r.id===c.id)return '<td class="self"><span>·</span></td>';
+      const x=oppEdge(r.id,c.id),k=x.e===1?'fav':x.e===-1?'unf':'even';
+      return `<td class="${k}" title="${esc(r.name)} vs ${esc(c.name)}: ${MATCHWORD[x.e]}. ${esc(x.why)}"><span>${MATCHWORD[x.e]}</span></td>`}).join('')}</tr>`).join('')}</tbody></table></div>`;
+  app.innerHTML=`<div class="pagehead"><div><h1>Know your opponent</h1><p class="note" style="margin:4px 0 0;max-width:780px">Sit down, see what your opponent is playing, and know what to do. Pick their deck: how to spot it, what it's good at, what it's weak to, how to beat it, and how it matches up against every other deck.</p></div></div>
+    <div class="ogrid" role="list">${OPP.decks.map(o=>`<div role="listitem">${tile(o)}</div>`).join('')}</div>
+    <p class="note okey">Each deck shows how many matchups it's favored in, even in and unfavored in. Pick one to see them.</p>
+    ${panel}
+    <details class="mall" ${d?'':'open'}><summary>All matchups at once</summary>
+      <p class="note" style="max-width:780px">Read across a row. Green means the row's deck is favored against the column's deck, red means it's unfavored, grey is even. Hover a square for the reason, or pick a deck above.</p>
+      ${chart}</details>
+    <p class="note" style="margin-top:16px;max-width:780px">Matchups are read from the cards and the deck lists on this site (which deck's common cards hit the other deck's engine), not from tournament results. A good player on the weaker side still wins plenty of games. Styles and what beats each one: <a href="#lesson-17">Lesson 17</a>. What to side in: <a href="#lesson-28">Lesson 28</a>.</p>`;
+  if(d)setTimeout(()=>{const p=document.getElementById('opanel');if(p)window.scrollTo({top:p.getBoundingClientRect().top+window.scrollY-72,behavior:'auto'})},30);
 }
 
 function renderLesson(key){
