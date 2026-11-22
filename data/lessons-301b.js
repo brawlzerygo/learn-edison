@@ -1,7 +1,7 @@
-/* Edison 301 lessons (24-29), written from the site's card data, rulings and deck lists. */
+/* Edison 301 lessons (25-30), written from the site's card data, rulings and deck lists. */
 window.EDISON_LESSONS_301B=function(h){const {cn,call}=h;return [
 
-{n:24,title:'Gladiator Beasts',sub:'Attack, then swap your monster for a fresh one from the Deck.',min:5,
+{n:25,title:'Gladiator Beasts',sub:'Attack, then swap your monster for a fresh one from the Deck.',min:5,
 cards:['Gladiator Beast Laquari','Gladiator Beast Bestiari','Gladiator Beast Darius','Test Tiger','Gladiator Beast Gyzarus','Gladiator Beast Heraklinos','Gladiator Beast War Chariot','Elemental HERO Prisma'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>How a Gladiator Beast "tags out" after battle</li><li>Why the Deck needs its monsters to battle and survive</li><li>The two Contact Fusions and how the deck reaches them</li><li>How to play against it</li></ul></div>
@@ -54,7 +54,7 @@ flash:[
 ["Why does a Gladiator Beast deck with no Tuners run Stardust Dragon?","Starlight Road summons Stardust Dragon from the Extra Deck."]
 ]},
 
-{n:25,title:'Machina Gadgets, Zombies and Dragons',sub:'Three second-tier decks, each with its own engine.',min:7,
+{n:26,title:'Machina Gadgets, Zombies and Dragons',sub:'Three second-tier decks, each with its own engine.',min:7,
 cards:['Green Gadget','Machina Fortress','Deep Sea Diva','Goblin Zombie','Revived King Ha Des','Red-Eyes Darkness Metal Dragon','The White Stone of Legend','Debris Dragon'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>How Machina Gadget keeps its hand full of Machines</li><li>How Diva Zombie recycles its Graveyard</li><li>How Dragon Turbo draws cards and brings back big Dragons</li><li>Which cards hurt each deck</li></ul></div>
@@ -123,7 +123,7 @@ flash:[
 ["Name a side card that hurts Diva Zombie and say why.","D.D. Crow or Soul Release, because the deck revives monsters from the Graveyard. Shadow-Imprisoning Mirror also works, since most of its monsters are DARK."]
 ]},
 
-{n:26,title:'Key Interactions',sub:'Which cards beat which, in one place.',min:5,
+{n:27,title:'Key Interactions',sub:'Which cards beat which, in one place.',min:5,
 cards:['Royal Oppression','Starlight Road','Solemn Judgment','Stardust Dragon','Thunder King Rai-Oh','Fossil Dyna Pachycephalo','Book of Moon','Mask of Restrict'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>What stops a Synchro Summon, and what doesn't</li><li>How to answer Royal Oppression</li><li>What Starlight Road and Stardust Dragon can stop</li><li>A handful of Edison rulings that decide games</li></ul></div>
@@ -187,7 +187,7 @@ flash:[
 ["Can Thunder King Rai-Oh negate a monster summoned by Call of the Haunted?","No. Rai-Oh only negates Summons that don't use the Chain, like a Synchro Summon."]
 ]},
 
-{n:27,title:'Playing Around Traps',sub:'What each trap needs, and how to read and bluff with Set cards.',min:5,
+{n:28,title:'Playing Around Traps',sub:'What each trap needs, and how to read and bluff with Set cards.',min:5,
 cards:['Mirror Force','Dimensional Prison','Bottomless Trap Hole','Torrential Tribute','Solemn Judgment','Mystical Space Typhoon','Gorz the Emissary of Darkness'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>What each common trap needs before it can be used</li><li>How to make plays that a trap can't punish</li><li>How to read your opponent's Set cards</li><li>How to bluff with your own</li></ul></div>
@@ -245,7 +245,7 @@ flash:[
 ["How can you bluff with Book of Moon?","Set it. Your opponent can't tell a Set Quick-Play Spell from a Set Trap."]
 ]},
 
-{n:28,title:'Side Decking',sub:'What to swap in between games, using the cards real lists side.',min:4,
+{n:29,title:'Side Decking',sub:'What to swap in between games, using the cards real lists side.',min:4,
 cards:['D.D. Crow','Cyber Dragon','Dust Tornado','Pulling the Rug','Fossil Dyna Pachycephalo','Royal Oppression','Nobleman of Crossout','Mask of Restrict'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>What the Side Deck is for</li><li>The side cards our deck lists use most, and what each one answers</li><li>How to choose what goes in and what comes out</li></ul></div>
@@ -283,7 +283,7 @@ ${call('rule','Card text check',`<p>${cn('Compulsory Evacuation Device')} return
 </tbody></table></div>
 <h2>How to side, step by step</h2>
 <ol class="steps">
-<li><div><b>Name their engine.</b> What does their deck need most? The Graveyard, Special Summons, Tributes or searches? Lesson 25 shows how to find it.</div></li>
+<li><div><b>Name their engine.</b> What does their deck need most? The Graveyard, Special Summons, Tributes or searches? Lesson 26 shows how to find it.</div></li>
 <li><div><b>Pick your side cards for it.</b> Use the table above. Bring in only cards that hit what their deck needs.</div></li>
 <li><div><b>Take out your weakest cards for this matchup.</b> A card that does nothing against them is the first to go. For example, Mask of Restrict is weak against a deck that never Tributes.</div></li>
 <li><div><b>Check your own deck still works.</b> Fossil Dyna and Royal Oppression stop your Synchros too. Don't side them in if your own plan needs Special Summons.</div></li>
@@ -302,7 +302,7 @@ flash:[
 ["Why does Rivalry of Warlords barely hurt Machina Gadget?","Every monster in the deck is a Machine, so they lose nothing when only one Type is allowed."]
 ]},
 
-{n:29,title:'Choosing Your Deck',sub:'Pick one deck, then learn it until you know every card.',min:3,
+{n:30,title:'Choosing Your Deck',sub:'Pick one deck, then learn it until you know every card.',min:3,
 cards:['Stardust Dragon','Mystical Space Typhoon','Brionac, Dragon of the Ice Barrier','Black Rose Dragon','Chimeratech Fortress Dragon','Heavy Storm'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>What the deck tiers on this site mean</li><li>How to pick a deck that fits you</li><li>A plan to learn one deck well, using the site's tools</li></ul></div>
@@ -317,23 +317,23 @@ html:`
 </tbody></table></div>
 <p>The top two tiers, and where this course covers them:</p>
 <div class="tbl-wrap"><table><thead><tr><th>Deck</th><th>Tier</th><th>Description</th></tr></thead><tbody>
-<tr><td><a href="#deck-Blackwing">Blackwing</a></td><td>Best</td><td>A midrange swarm. <a href="#lesson-18">Lesson 18</a>.</td></tr>
-<tr><td><a href="#deck-Vayu%20Turbo">Vayu Turbo</a></td><td>Best</td><td>Synchro Summons from the Graveyard. <a href="#lesson-21">Lesson 21</a>.</td></tr>
-<tr><td><a href="#deck-Hero%20Frog">Hero Frog</a></td><td>Best</td><td>HEROs with Frogs. <a href="#lesson-22">Lesson 22</a> and <a href="#lesson-23">Lesson 23</a>.</td></tr>
-<tr><td><a href="#deck-Junk%20Frog">Junk Frog</a></td><td>Best</td><td>Frogs with Synchros. <a href="#lesson-23">Lesson 23</a>.</td></tr>
+<tr><td><a href="#deck-Blackwing">Blackwing</a></td><td>Best</td><td>A midrange swarm. <a href="#lesson-19">Lesson 19</a>.</td></tr>
+<tr><td><a href="#deck-Vayu%20Turbo">Vayu Turbo</a></td><td>Best</td><td>Synchro Summons from the Graveyard. <a href="#lesson-22">Lesson 22</a>.</td></tr>
+<tr><td><a href="#deck-Hero%20Frog">Hero Frog</a></td><td>Best</td><td>HEROs with Frogs. <a href="#lesson-23">Lesson 23</a> and <a href="#lesson-24">Lesson 24</a>.</td></tr>
+<tr><td><a href="#deck-Junk%20Frog">Junk Frog</a></td><td>Best</td><td>Frogs with Synchros. <a href="#lesson-24">Lesson 24</a>.</td></tr>
 <tr><td><a href="#deck-Hybrid">Hybrid</a></td><td>Best</td><td>Open the list to see its cards.</td></tr>
-<tr><td><a href="#deck-Lightsworn">Lightsworn</a></td><td>Competitive</td><td>Mills itself for Judgment Dragon. <a href="#lesson-20">Lesson 20</a>.</td></tr>
-<tr><td><a href="#deck-Diva%20Hero">Diva Hero</a></td><td>Competitive</td><td>HEROs with Deep Sea Diva. <a href="#lesson-22">Lesson 22</a>.</td></tr>
-<tr><td><a href="#deck-Diva%20Hero%20Beat">Diva Hero Beat</a></td><td>Competitive</td><td>A Beat build of Diva Hero. <a href="#lesson-22">Lesson 22</a>.</td></tr>
-<tr><td><a href="#deck-Diva%20Zombie">Diva Zombie</a></td><td>Competitive</td><td>Zombies from the Graveyard. <a href="#lesson-25">Lesson 25</a>.</td></tr>
-<tr><td><a href="#deck-Dragon%20Turbo">Dragon Turbo</a></td><td>Competitive</td><td>Draws, discards and revives Dragons. <a href="#lesson-25">Lesson 25</a>.</td></tr>
-<tr><td><a href="#deck-Machina">Machina</a></td><td>Competitive</td><td>Machina monsters. <a href="#lesson-25">Lesson 25</a> covers the Gadget version.</td></tr>
+<tr><td><a href="#deck-Lightsworn">Lightsworn</a></td><td>Competitive</td><td>Mills itself for Judgment Dragon. <a href="#lesson-21">Lesson 21</a>.</td></tr>
+<tr><td><a href="#deck-Diva%20Hero">Diva Hero</a></td><td>Competitive</td><td>HEROs with Deep Sea Diva. <a href="#lesson-23">Lesson 23</a>.</td></tr>
+<tr><td><a href="#deck-Diva%20Hero%20Beat">Diva Hero Beat</a></td><td>Competitive</td><td>A Beat build of Diva Hero. <a href="#lesson-23">Lesson 23</a>.</td></tr>
+<tr><td><a href="#deck-Diva%20Zombie">Diva Zombie</a></td><td>Competitive</td><td>Zombies from the Graveyard. <a href="#lesson-26">Lesson 26</a>.</td></tr>
+<tr><td><a href="#deck-Dragon%20Turbo">Dragon Turbo</a></td><td>Competitive</td><td>Draws, discards and revives Dragons. <a href="#lesson-26">Lesson 26</a>.</td></tr>
+<tr><td><a href="#deck-Machina">Machina</a></td><td>Competitive</td><td>Machina monsters. <a href="#lesson-26">Lesson 26</a> covers the Gadget version.</td></tr>
 </tbody></table></div>
 ${call('key','Tier is not everything',`<p>A Best deck you don't understand loses to a Rogue deck you know by heart. Pick a strong deck, but pick one you want to play many times.</p>`)}
 <h2>Pick a deck that fits you</h2>
-<p>Lesson 17 sorted decks into styles: aggro, control, combo and stun. Ask yourself a few questions.</p>
+<p>Lesson 18 sorted decks into styles: aggro, control, combo and stun. Ask yourself a few questions.</p>
 <ul>
-<li><b>Do you like to win by battle?</b> Look at decks built around attacking, like Gladiator Beasts (Lesson 24).</li>
+<li><b>Do you like to win by battle?</b> Look at decks built around attacking, like Gladiator Beasts (Lesson 25).</li>
 <li><b>Do you like long turns with many steps?</b> Look at decks with a big engine, like Vayu Turbo or Dragon Turbo.</li>
 <li><b>Do you like to answer what your opponent does?</b> Look at control decks with many traps.</li>
 <li><b>Do you like to stop the other deck from playing?</b> Look at stun decks with cards like Royal Oppression.</li>
@@ -347,7 +347,7 @@ ${call('key','Tier is not everything',`<p>A Best deck you don't understand loses
 <li><div><b>Practice the combos.</b> Load the deck on the <a href="#simulator">practice board</a> and play out your best turns by hand.</div></li>
 <li><div><b>Play games.</b> Play people as much as you can: friends, online, or at locals.</div></li>
 <li><div><b>Watch the experts.</b> The <a href="#library">Library</a> has deck guides for Blackwings, Quickdraw, Dragons, Diva Hero, Hero Beat, Vayu Turbo and Frogs.</div></li>
-<li><div><b>Learn your side.</b> Know which Side Deck cards come in against each top deck (Lesson 28).</div></li>
+<li><div><b>Learn your side.</b> Know which Side Deck cards come in against each top deck (Lesson 29).</div></li>
 </ol>
 ${call('mistake','Common mistake',`<p>Switching decks after every loss. Each switch starts your learning over. Stay with one deck long enough to know why you lost.</p>`)}
 <div class="recap"><h2>Recap</h2><ul><li>The site has 55 lists in five tiers, from Best to Casual.</li><li>Pick a strong deck in a style you enjoy.</li><li>Learn it with test hands, the builder, the board and duels.</li><li>Stay with one deck long enough to really know it.</li></ul></div>`,

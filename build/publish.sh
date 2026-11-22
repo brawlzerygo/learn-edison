@@ -57,6 +57,11 @@ case "$origin" in
 esac
 
 # The Edison site: stop on any JavaScript syntax error, so a broken page never goes live (2026-11-22).
+# The Edison site: write every page as its own HTML file first (clean URLs and SEO, 2026-11-22), so the published
+# pages always match the app.
+# The hub: build the blog pages and sitemap from blog/posts/ (drafts stay unpublished).
+if [ "$REPO" = "learn-retro" ]; then node tools/blog.mjs || { echo "The blog build failed. Not publishing."; exit 1; }; fi
+if [ "$REPO" = "learn-edison" ]; then node build/prerender.mjs || { echo "The pre-render failed. Not publishing."; exit 1; }; fi
 if [ "$REPO" = "learn-edison" ]; then python3 build/check_js.py || { echo "Fix the JavaScript errors above. Not publishing."; exit 1; }; fi
 git add -A
 git diff --cached --quiet || git commit -q -m "${1:-Update the site}"

@@ -119,7 +119,7 @@ window.EDISON_RULES = {
 <li><b>Resolve:</b> monsters destroyed by battle stop applying their continuous effects. "After damage calculation" effects and FLIP effects activate.</li>
 <li><b>End:</b> monsters destroyed by battle go to the GY, and effects like Sangan, Mystic Tomato and Giant Rat activate.</li>
 </ol>
-<p>Lesson 6 walks through this with examples, and the <a href="#rulings">Rulings</a> page links edisonformat.net's longer write-ups.</p>` },
+<p>Lesson 10 walks through this with examples, and the <a href="#rulings">Rulings</a> page links edisonformat.net's longer write-ups.</p>` },
 
     { id: 'cards', title: 'Card types', src: 'Rulebook pages 6 to 23', html: `
 <h3>Monster effects</h3>

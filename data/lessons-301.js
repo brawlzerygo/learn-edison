@@ -1,8 +1,8 @@
-/* Edison 301 lessons (17-23), written from the site's card data, rulings and deck lists. */
+/* Edison 301 lessons (18-24), written from the site's card data, rulings and deck lists. */
 window.EDISON_LESSONS_301=function(h){const {cn,call}=h;return [
 
 /* ---------------- 17 Deck Styles ---------------- */
-{n:17,title:'Deck Styles',sub:'Aggro, control, combo and stun: what each one wants, and how to spot it.',min:4,
+{n:18,title:'Deck Styles',sub:'Aggro, control, combo and stun: what each one wants, and how to spot it.',min:4,
 cards:['Blackwing - Bora the Spear','Dimensional Prison','Quickdraw Synchron','Treeborn Frog','Royal Oppression','Skill Drain','Thunder King Rai-Oh','Pulling the Rug'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>The four main deck styles in Edison</li><li>How to tell which style you are facing in the first few turns</li><li>The kind of card that beats each style</li></ul></div>
@@ -58,7 +58,7 @@ flash:[
 ]},
 
 /* ---------------- 18 Blackwings ---------------- */
-{n:18,title:'Blackwings',sub:'A flock of DARK birds that summon each other and win the battle.',min:6,
+{n:19,title:'Blackwings',sub:'A flock of DARK birds that summon each other and win the battle.',min:6,
 cards:['Black Whirlwind','Blackwing - Shura the Blue Flame','Blackwing - Bora the Spear','Blackwing - Blizzard the Far North','Blackwing - Kalut the Moon Shadow','Blackwing - Vayu the Emblem of Honor','Icarus Attack','Blackwing Armor Master','Blackwing Armed Wing'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>How the Blackwing engine finds and summons its own cards</li><li>Which Synchros the deck makes, and how</li><li>What Blackwings are weak to, and how to play against them</li></ul></div>
@@ -103,7 +103,7 @@ ${call('rule','Ordering two triggers',`<p>A ruling for ${cn('Blackwing - Blizzar
 <p>${cn('Blackwing - Vayu the Emblem of Honor','Vayu')} gives a second way in. It can't be Synchro Material. Instead, from the GY it banishes itself and a non-Tuner Blackwing, then Special Summons a Blackwing Synchro of their total Level. Vayu (1) plus Sirocco (5) makes Armed Wing (6). That Synchro has its effects negated, and it is not treated as Synchro Summoned, so it can't be revived later.</p>
 ${call('key','Why Kalut matters',`<p>${cn('Blackwing - Kalut the Moon Shadow','Kalut')} works in the Damage Step, even during damage calculation. Any Blackwing in battle might really have 1400 more ATK. Your 2400 monster is not safe from a 1700 Bora if they hold a card.</p>`)}
 <h2>Hybrid: Blackwings with Dark Grepher</h2>
-<p>The <a href="#deck-Hybrid">Hybrid list</a>, also in the Best tier, is a Blackwing variant. It keeps the birds and Black Whirlwind, but adds 3 Dark Grepher, 3 Vayu, Burial from a Different Dimension, 2 Royal Oppression and 2 Dark Bribe. Dark Grepher can discard a DARK to send another DARK from the Deck to the GY, like Vayu or Sirocco. That sets up Vayu faster. Burial returns banished monsters to the GY so Vayu can be used again. Lesson 21 covers this idea in full.</p>
+<p>The <a href="#deck-Hybrid">Hybrid list</a>, also in the Best tier, is a Blackwing variant. It keeps the birds and Black Whirlwind, but adds 3 Dark Grepher, 3 Vayu, Burial from a Different Dimension, 2 Royal Oppression and 2 Dark Bribe. Dark Grepher can discard a DARK to send another DARK from the Deck to the GY, like Vayu or Sirocco. That sets up Vayu faster. Burial returns banished monsters to the GY so Vayu can be used again. Lesson 22 covers this idea in full.</p>
 <h2>Weaknesses and how to play against it</h2>
 <p>These all follow from the cards' text:</p>
 <ul>
@@ -126,12 +126,12 @@ flash:[
 ]},
 
 /* ---------------- 19 Quickdraw Plants ---------------- */
-{n:19,title:'Quickdraw Plants',sub:'Tokens, Plants and Synchron Tuners: a combo deck built on Dandylion.',min:5,
+{n:20,title:'Quickdraw Plants',sub:'Tokens, Plants and Synchron Tuners: a combo deck built on Dandylion.',min:5,
 cards:['Quickdraw Synchron','Dandylion','Debris Dragon','Lonefire Blossom','Tytannial, Princess of Camellias','Drill Warrior','Junk Archer','Ancient Fairy Dragon','Pot of Avarice'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>How Quickdraw Synchron, Dandylion and Debris Dragon build Synchros</li><li>The Level math for the deck's main Synchros</li><li>The Volcanic version, and how to beat both</li></ul></div>
 <h2>The deck</h2>
-<p>You met this engine in Lesson 5. According to edisonformat.com, a Quickdraw deck called Quickdraw Dandywarrior won the April 2010 tournament in Edison that the format is named after. On this site the <a href="#deck-Quickdraw%20Plant">Quickdraw Plant list</a> is listed as a Rogue deck.</p>
+<p>You met this engine in Lesson 6. According to edisonformat.com, a Quickdraw deck called Quickdraw Dandywarrior won the April 2010 tournament in Edison that the format is named after. On this site the <a href="#deck-Quickdraw%20Plant">Quickdraw Plant list</a> is listed as a Rogue deck.</p>
 <div class="tbl-wrap"><table><thead><tr><th>Card</th><th>Copies</th><th>Description</th></tr></thead><tbody>
 <tr><td>${cn('Quickdraw Synchron')}</td><td>2</td><td>Level 5 Tuner. Special Summons itself by sending another monster from your hand to the GY.</td></tr>
 <tr><td>${cn('Dandylion')}</td><td>2</td><td>When sent to the GY from anywhere, makes 2 Level 1 Fluff Tokens.</td></tr>
@@ -190,7 +190,7 @@ flash:[
 ]},
 
 /* ---------------- 20 Lightsworn ---------------- */
-{n:20,title:'Lightsworn',sub:'A deck that throws its own cards into the Graveyard, on purpose.',min:4,
+{n:21,title:'Lightsworn',sub:'A deck that throws its own cards into the Graveyard, on purpose.',min:4,
 cards:['Lyla, Lightsworn Sorceress','Wulf, Lightsworn Beast','Judgment Dragon','Garoth, Lightsworn Warrior','Celestia, Lightsworn Angel','Lumina, Lightsworn Summoner','Solar Recharge','Charge of the Light Brigade','Necro Gardna'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>Why Lightsworn sends its own cards to the Graveyard</li><li>How Wulf, Garoth and Judgment Dragon reward the mill</li><li>The cards that beat Lightsworn</li></ul></div>
@@ -251,7 +251,7 @@ flash:[
 ]},
 
 /* ---------------- 21 Vayu Turbo ---------------- */
-{n:21,title:'Vayu Turbo',sub:'Fill the Graveyard with DARKs, then pull Synchros out of it.',min:5,
+{n:22,title:'Vayu Turbo',sub:'Fill the Graveyard with DARKs, then pull Synchros out of it.',min:5,
 cards:['Blackwing - Vayu the Emblem of Honor','Blackwing - Sirocco the Dawn','Armageddon Knight','Dark Grepher','Blackwing Armed Wing','Plaguespreader Zombie','Burial from a Different Dimension','Dark Armed Dragon','Super-Nimble Mega Hamster'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>What "turbo" means, and how this deck fills its Graveyard</li><li>How Vayu and Sirocco make Armed Wing, and what comes next</li><li>How to slow Vayu Turbo down</li></ul></div>
@@ -315,7 +315,7 @@ flash:[
 ]},
 
 /* ---------------- 22 HEROs ---------------- */
-{n:22,title:'HEROs',sub:'Four HERO decks, one toolkit: Miracle Fusion, Absolute Zero and friends.',min:5,
+{n:23,title:'HEROs',sub:'Four HERO decks, one toolkit: Miracle Fusion, Absolute Zero and friends.',min:5,
 cards:['Elemental HERO Stratos','E - Emergency Call','Miracle Fusion','Elemental HERO Absolute Zero','Deep Sea Diva','Destiny HERO - Malicious','Elemental HERO Neos Alius','Hero Blast','Skill Drain'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>The HERO cards every HERO deck shares</li><li>How Diva Hero, Diva Hero Beat and Hero Beat use them differently</li><li>How to handle Elemental HERO Absolute Zero</li></ul></div>
@@ -325,7 +325,7 @@ html:`
 <tr><td><a href="#deck-Diva%20Hero">Diva Hero</a></td><td>Competitive</td><td>Deep Sea Diva and Destiny HERO - Malicious for fast Synchros.</td></tr>
 <tr><td><a href="#deck-Diva%20Hero%20Beat">Diva Hero Beat</a></td><td>Competitive</td><td>Diva plus Gemini beaters and lots of Traps.</td></tr>
 <tr><td><a href="#deck-Hero%20Beat">Hero Beat</a></td><td>Rogue</td><td>Gemini beaters behind Skill Drain and Royal Oppression.</td></tr>
-<tr><td><a href="#deck-Hero%20Frog">Hero Frog</a></td><td>Best</td><td>Frogs and Monarchs with a HERO fusion package. See Lesson 23.</td></tr>
+<tr><td><a href="#deck-Hero%20Frog">Hero Frog</a></td><td>Best</td><td>Frogs and Monarchs with a HERO fusion package. See Lesson 24.</td></tr>
 </tbody></table></div>
 <h2>The shared toolkit</h2>
 <div class="tbl-wrap"><table><thead><tr><th>Card</th><th>Description</th></tr></thead><tbody>
@@ -376,7 +376,7 @@ flash:[
 ]},
 
 /* ---------------- 23 Frog Monarchs ---------------- */
-{n:23,title:'Frog Monarchs',sub:'Frogs that come back every turn, used to Tribute Summon Monarchs.',min:6,
+{n:24,title:'Frog Monarchs',sub:'Frogs that come back every turn, used to Tribute Summon Monarchs.',min:6,
 cards:['Treeborn Frog','Swap Frog','Substitoad','Dupe Frog','Junk Synchron','Caius the Shadow Monarch','Raiza the Storm Monarch','Enemy Controller','Battle Fader'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>How Frogs give you free Tributes for Monarchs</li><li>How Junk Synchron turns Frogs into Synchros</li><li>Why the deck runs so few Traps, and how to beat it</li></ul></div>
@@ -417,7 +417,7 @@ ${call('key','The Monarch loop',`<ol class="steps"><li><div>Standby Phase: Treeb
 <p>Junk Synchron also makes Junk Warrior (Level 5, with any Level 2 Frog), which gains the ATK of all your Level 2 and lower monsters. Junk (3) + Treeborn (1) makes Armory Arm (Level 4).</p>
 <h2>Defense and the Hero Frog version</h2>
 <p>Frog Monarchs defend without Traps. Dupe Frog forces attacks into itself, and Substitoad keeps Frogs from being destroyed by battle. Battle Fader stops a direct attack and ends the Battle Phase. Tragoedia comes out from the hand when you take battle damage. Threatening Roar stops attacks for a turn.</p>
-<p>Hero Frog keeps the Frogs and Monarchs, and adds a HERO package from Lesson 22. Frogs are WATER, so Miracle Fusion can banish a HERO and a Frog from the GY to make Absolute Zero. It runs 3 copies of it. Evil HERO Infernal Prodigy draws a card at the End Phase if it was Tributed for a HERO Tribute Summon, like Evil HERO Malicious Edge. It also plays 3 Raigeki Break and Soul Exchange.</p>
+<p>Hero Frog keeps the Frogs and Monarchs, and adds a HERO package from Lesson 23. Frogs are WATER, so Miracle Fusion can banish a HERO and a Frog from the GY to make Absolute Zero. It runs 3 copies of it. Evil HERO Infernal Prodigy draws a card at the End Phase if it was Tributed for a HERO Tribute Summon, like Evil HERO Malicious Edge. It also plays 3 Raigeki Break and Soul Exchange.</p>
 <h2>Weaknesses and how to play against it</h2>
 <ul>
 <li><b>Treeborn in the GY.</b> D.D. Crow or Soul Release banishes it. The loop stops.</li>

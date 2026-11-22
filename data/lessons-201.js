@@ -1,12 +1,98 @@
-/* Edison 201 lessons (10-16), written from the site's card data, rulings and deck lists. */
+/* Edison 201 lessons (10-17), written from the site's card data, rulings and deck lists. */
 window.EDISON_LESSONS_201=function(h){const {cn,call}=h;return [
 
-{n:10,title:'The Big Synchros, Part 1',sub:'Levels 4 to 6: the Synchros you make with small monsters.',min:5,
+{n:10,title:'Rules, Timing and Old Card Text',sub:'Priority, the Chain order, the Damage Step, 2010 card text, and the cards that answer a Synchro.',min:12,
+cards:['Chaos Sorcerer','Sangan','Caius the Shadow Monarch','Honest','Blackwing - Kalut the Moon Shadow','Brionac, Dragon of the Ice Barrier','Goyo Guardian','Treeborn Frog','Ryko, Lightsworn Hunter','Quickdraw Synchron','Solemn Judgment','Horn of Heaven','Royal Oppression','Bottomless Trap Hole','Black Rose Dragon','Starlight Road'],
+html:`
+<div class="goals"><h4>What you will learn</h4><ul><li>The 2010 timing rules: priority, the order of triggers on a Chain, missing the timing, and the Damage Step</li><li>Two smaller rules: one Field Spell, and paying a cost down to 0 LP</li><li>Which important cards use older, stronger text in Edison</li><li>The two moments a Synchro can be answered, and which answers really work</li></ul></div>
+<h2>Why this lesson</h2>
+<p>Edison 101 taught you enough to play a full game. This lesson adds the finer rules. Edison uses the rules from 2010, and a few of them are different from today's game. Online card text often shows the modern rules, which can confuse you. Take them one at a time.</p>
+<h2>1. Priority</h2>
+<p>When you summon a monster, you get the first chance to act. If the summon did not start a Chain, you can activate an <b>Ignition Effect</b> before your opponent responds.</p>
+<div class="timeline">
+<div class="tl"><b>You</b><span>Special Summon ${cn('Chaos Sorcerer')}. Nothing triggers.</span></div>
+<div class="tl"><b>You</b><span>Use priority. Activate Chaos Sorcerer's effect and banish their monster.</span></div>
+<div class="tl"><b>Opponent</b><span>Now they can respond, for example with ${cn('Bottomless Trap Hole')}. Your effect is already on the Chain.</span></div>
+</div>
+<p>This also works with Synchros. Synchro Summon ${cn('Brionac, Dragon of the Ice Barrier')}, then use its effect right away with priority, before your opponent can Bottomless it.</p>
+${call('rule','When you lose priority',`<p>If the summon starts a Chain, you lose priority. Example: you use ${cn('Sangan')} as material for Brionac. Sangan's effect triggers and starts a Chain. Now you cannot use Brionac's Ignition Effect first.</p>`)}
+<h2>2. Two things trigger at once</h2>
+<p>Sometimes two effects trigger at the same time. They go on the Chain in this order:</p>
+<ol><li>Turn player's mandatory effects</li><li>Opponent's mandatory effects</li><li>Turn player's optional effects</li><li>Opponent's optional effects</li></ol>
+<p>Example: you Tribute ${cn('Sangan')} to summon ${cn('Caius the Shadow Monarch')}. Sangan's effect is mandatory, so it is Chain Link 1. Caius is Chain Link 2.</p>
+<h2>3. Missing the timing</h2>
+<p>An optional effect that says "<b>When</b> ... you can" misses its timing if something else happened last. Effects that say "<b>If</b>" never miss the timing. Read the wording on each card.</p>
+<h2>4. The Damage Step is a narrow window</h2>
+<p>The Damage Step starts when an attack is about to hit. Very few cards can be used here.</p>
+<ul><li>Cards that change ATK or DEF, before damage is calculated</li><li>Counter Traps</li><li>Some monster effects made for this moment, like ${cn('Honest')} and ${cn('Blackwing - Kalut the Moon Shadow')}</li></ul>
+<p>Most Spells and Traps cannot be used. Spell Speed 2 cards that negate cannot be used here at all.</p>
+${call('analogy','Think of it like this','<p>The Damage Step is the moment two boxers swing. You can still change how hard they hit. You cannot walk into the ring with a new plan.</p>')}
+<h2>5. Two smaller rules</h2>
+<ul><li><b>One Field Spell for the whole field.</b> Only one Field Spell is in play at a time, shared by both players. When a new one resolves, the old one is destroyed. Today, each player has their own Field Zone.</li>
+<li><b>Life Points.</b> You cannot pay a cost that takes your LP to 0. If you have 800 LP, you cannot pay 800 LP for a cost.</li></ul>
+<p>The first-turn draw, the other rule people mix up, is in <a href="#lesson-2">Lesson 2</a>. Every rule is on the <a href="#rules">Rules</a> page.</p>
+<h2>6. Old card text</h2>
+<p>Over the years, Konami rewrote some cards to make them weaker or clearer. This is called <b>errata</b>. When the rewrite changes how the card works, it is <b>functional errata</b>. Edison uses the text from 2010, but most websites and online tools show today's text. So a card you look up can say something different from how it works in Edison.</p>
+${call('analogy','Think of it like this','<p>It is like playing a classic board game with the original rulebook. A newer edition changed some rules. Your table still uses the old book.</p>')}
+<div class="tbl-wrap"><table><thead><tr><th>Card</th><th>Description</th></tr></thead><tbody>
+<tr><td>${cn('Brionac, Dragon of the Ice Barrier')}</td><td>No once-per-turn limit: use it as often as you have cards to discard (the discard is a cost). It can return cards on either side.</td></tr>
+<tr><td>${cn('Goyo Guardian')}</td><td>Any Tuner can be used as material. Today it needs an EARTH Tuner.</td></tr>
+<tr><td>${cn('Treeborn Frog')}</td><td>No once-per-turn limit. It keeps coming back from the Graveyard as Tribute fodder.</td></tr>
+<tr><td>${cn('Armory Arm')}</td><td>Deals damage equal to the destroyed monster's ATK. With ${cn('Colossal Fighter')}, it makes a one-turn-kill combo.</td></tr>
+<tr><td>${cn('Ryko, Lightsworn Hunter')}</td><td>Destroying a card is optional. It always mills 3.</td></tr>
+<tr><td>${cn('Quickdraw Synchron')}</td><td>Sending a monster from your hand happens when the effect resolves. It is not a cost.</td></tr>
+<tr><td>${cn('Sangan')}</td><td>You can use the effects of the monster you add that turn.</td></tr>
+<tr><td>${cn('Rescue Cat')}</td><td>The monsters it summons keep their effects.</td></tr>
+<tr><td>${cn('Red-Eyes Darkness Metal Dragon')}</td><td>No once-per-turn limit on its summon effect.</td></tr>
+<tr><td>${cn('Necrovalley')}</td><td>Only stops effects that target cards in the Graveyard.</td></tr>
+</tbody></table></div>
+${call('rule','When you are not sure','<p>Check the <a href="#errata">Errata</a> page on this site, or the <a href="https://www.edisonformat.com/functional-errata.html">Edison Format functional errata page</a>. They list the cards that work differently in Edison.</p>')}
+<h2>7. Answering a Synchro: the two moments</h2>
+<p>In <a href="#lesson-7">Lesson 7</a> you learned that a failed Synchro costs the monster and its materials. Here is how the answers work on a Chain. Your opponent can stop a Synchro at two different moments.</p>
+<h3>Moment 1: while it is happening</h3>
+<p>Some cards <b>negate</b> the summon itself. The monster never really lands.</p>
+<div class="tbl-wrap"><table><thead><tr><th>Card</th><th>Cost</th><th>Banlist</th></tr></thead><tbody>
+<tr><td>${cn('Solemn Judgment')}</td><td>Half your LP</td><td>Limited (1)</td></tr>
+<tr><td>${cn('Horn of Heaven')}</td><td>Tribute 1 monster</td><td>Unlimited</td></tr>
+<tr><td>${cn('Royal Oppression')}</td><td>800 LP each time</td><td>Semi-Limited (2)</td></tr>
+</tbody></table></div>
+<p>When a Synchro Summon is negated:</p>
+<ul><li>The materials are already in your Graveyard. They do not come back.</li><li>The Synchro is destroyed and goes to the Graveyard.</li><li>It was not properly summoned, so it cannot be revived later.</li><li>Effects like Black Rose Dragon's board wipe never happen.</li></ul>
+${call('rule','Royal Oppression is special','<p>Royal Oppression stays on the field. As long as it is there, <b>either player</b> can pay 800 LP to stop any Special Summon. One copy can shut down a whole Synchro deck for many turns.</p>')}
+<h3>Moment 2: right after it lands</h3>
+<p>Other cards let the summon happen, then destroy or banish the monster: ${cn('Bottomless Trap Hole')}, ${cn('Torrential Tribute')}, and later, when it attacks, ${cn('Dimensional Prison')} or ${cn('Mirror Force')}. The monster did land, so any effect it started when it was summoned can still resolve.</p>
+<h3>An example: Black Rose meets Bottomless</h3>
+<div class="timeline">
+<div class="tl"><b>You</b><span>Synchro Summon ${cn('Black Rose Dragon')}. It lands. Its "destroy all cards" effect starts a Chain (Chain Link 1).</span></div>
+<div class="tl"><b>Opponent</b><span>Chains ${cn('Bottomless Trap Hole')} (Chain Link 2).</span></div>
+<div class="tl"><b>Link 2</b><span>Bottomless resolves first. Black Rose is destroyed and banished.</span></div>
+<div class="tl"><b>Link 1</b><span>Black Rose's effect still resolves. Every card on the field is destroyed.</span></div>
+</div>
+<p>The dragon is gone, but its blast still happens. The effect was already activated, so removing the monster does not stop it. That is why Bottomless is a weak answer to Black Rose.</p>
+<p>The real answer is ${cn('Starlight Road')}. It negates any effect that would destroy 2 or more of your cards. Then it can summon ${cn('Stardust Dragon')} from your Extra Deck.</p>
+${call('mistake','Common mistakes',`<ul><li>Letting your opponent respond before you use priority.</li><li>Trying to activate Mirror Force in the Damage Step.</li><li>Using Brionac only once per turn, or thinking Goyo Guardian needs an EARTH Tuner, because the modern text says so.</li><li>Thinking Bottomless stops Black Rose's effect. It does not.</li><li>Forgetting that you can also pay for Royal Oppression. It works for both players.</li></ul>`)}
+<div class="recap"><h2>Recap</h2><ul><li>Priority: after a summon that starts no Chain, you can use an Ignition Effect first.</li><li>Triggers at the same time go on the Chain in a set order: mandatory before optional, turn player first.</li><li>"When ... you can" can miss the timing. "If" cannot.</li><li>The Damage Step allows only ATK/DEF changes, Counter Traps, and a few monster effects.</li><li>One Field Spell for the whole field. No cost can take you to 0 LP.</li><li>Edison uses 2010 card text: Brionac, Goyo and Treeborn Frog are stronger than today.</li><li>Negation (Solemn Judgment, Horn of Heaven, Royal Oppression) stops the summon itself. Bottomless and Torrential hit it after it lands, so its summon effect can still resolve.</li></ul></div>`,
+flash:[
+['You Special Summon Chaos Sorcerer and nothing triggers. Who acts first?','You do. You can use its Ignition Effect with priority before your opponent responds.'],
+['You use Sangan as Synchro Material for Brionac. Can you use Brionac with priority?','No. The trigger from Sangan starts a Chain, so you lose priority.'],
+['How many Field Spells can be active at once?','One, shared by both players. A new one destroys the old one.'],
+['Name two kinds of cards you can use in the Damage Step.','Any two of: cards that change ATK/DEF (before damage), Counter Traps, special monster effects like Honest or Kalut.'],
+['"When ... you can" vs "If ... you can." Which can miss the timing?','"When ... you can."'],
+['How many times per turn can you use Brionac in Edison?','As many times as you can pay the cost. There is no once-per-turn limit.'],
+['Does Goyo Guardian need an EARTH Tuner in Edison?','No. Any Tuner works.'],
+['Ryko flips. Must you destroy a card?','No. Destroying is optional. The mill of 3 always happens.'],
+['Can a Synchro negated by Horn of Heaven be revived with Call of the Haunted?','No. It was never properly Synchro Summoned.'],
+[`Your opponent chains Bottomless Trap Hole to the effect of Black Rose Dragon. Does the field still get destroyed?`,'Yes. The effect was already activated, so it resolves even after Black Rose is banished.'],
+['Who can pay 800 LP to use Royal Oppression?','Either player.'],
+['Name one card that fully answers the board wipe of Black Rose Dragon.','Starlight Road. It negates the destruction and can summon Stardust Dragon.']
+]},
+
+{n:11,title:'The Big Synchros, Part 1',sub:'Levels 4 to 6: the Synchros you make with small monsters.',min:5,
 cards:['Armory Arm','Ally of Justice Catastor','Magical Android','Goyo Guardian','Brionac, Dragon of the Ice Barrier','Flamvell Uruquizas'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>What the Level 4, 5 and 6 Synchros in most Extra Decks do</li><li>Which problem each one solves</li><li>The rulings that trip people up</li></ul></div>
 <h2>Why these cards matter</h2>
-<p>In Lesson 3 you met the Extra Deck "toolbox." Now you learn what each tool does. This lesson covers the smaller ones, Levels 4 to 6. Lesson 11 covers Levels 7 to 9.</p>
+<p>In Lesson 5 you met the Extra Deck "toolbox." Now you learn what each tool does. This lesson covers the smaller ones, Levels 4 to 6. Lesson 12 covers Levels 7 to 9.</p>
 <p>Small Synchros matter because they are easy to make. A Level 2 Tuner plus a Level 3 or 4 monster is enough. You will see them in game after game.</p>
 <p>The numbers below come from the 55 decks on this site. They count a card if a deck runs it anywhere: Main, Extra or Side Deck.</p>
 <div class="tbl-wrap"><table><thead><tr><th>Card</th><th>Level</th><th>ATK</th><th>In decks</th><th>Description</th></tr></thead><tbody>
@@ -33,7 +119,7 @@ ${call('mistake','The face-down trap',`<p>The start of the Damage Step happens <
 <h3>Goyo Guardian</h3>
 <p>${cn('Goyo Guardian')} has 2800 ATK. When it destroys a monster in battle and sends it to the Graveyard, you can Special Summon that monster to <b>your</b> field in Defense Position.</p>
 <p>So every battle it wins takes a monster away from your opponent and gives it to you. That new monster can then be Synchro Material for your next play.</p>
-${call('rule','Edison text',`<p>Modern Goyo needs an EARTH Tuner. In Edison, <b>any Tuner</b> works. It is Limited, so you get one copy. See <a href="#lesson-7">Lesson 7</a> and the <a href="#errata">errata list</a>.</p>`)}
+${call('rule','Edison text',`<p>Modern Goyo needs an EARTH Tuner. In Edison, <b>any Tuner</b> works. It is Limited, so you get one copy. See <a href="#lesson-10">Lesson 10</a> and the <a href="#errata">errata list</a>.</p>`)}
 <p>The effect needs the monster to go to the Graveyard, and Goyo must still be face-up when it triggers. If the destroyed monster is banished instead, nothing happens.</p>
 <h3>Brionac, Dragon of the Ice Barrier</h3>
 <p>${cn('Brionac, Dragon of the Ice Barrier')} is in 89% of the decks here. Discard any number of cards, then target that many cards on the field. They go back to the hand.</p>
@@ -45,7 +131,7 @@ ${call('analogy','Think of it like this','<p>Brionac turns cards in your hand in
 <p>${cn('Flamvell Uruquizas')} is a Level 6 in 22% of the decks. It deals piercing damage, and it gains 300 ATK each time it deals battle damage to your opponent.</p>
 ${call('mistake','Common beginner mistakes',`<ul><li>Using Catastor's effect on a face-down monster. It does not trigger.</li><li>Using Brionac only once per turn because of the modern text.</li><li>Thinking a bounced Synchro goes to the hand. It goes to the Extra Deck.</li></ul>`)}
 <div class="recap"><h2>Recap</h2><ul><li>Armory Arm equips for +1000 ATK and burns for the ATK of what it destroys.</li><li>Catastor destroys any face-up non-DARK monster it battles.</li><li>Magical Android is a 2400 body that gains LP.</li><li>Goyo Guardian takes the monsters it destroys in battle. Any Tuner works in Edison.</li><li>Brionac bounces one card per discard, as often as you like.</li></ul></div>
-<p class="soon">Next: <a href="#lesson-11">Lesson 11</a>, the Level 7 to 9 Synchros.</p>`,
+<p class="soon">Next: <a href="#lesson-12">Lesson 12</a>, the Level 7 to 9 Synchros.</p>`,
 flash:[
 ["Catastor attacks a face-down monster. Does its effect destroy it?","No. The effect checks at the start of the Damage Step, before the Set monster is flipped face-up."],
 ["Your opponent controls a face-up 2500 ATK LIGHT monster. Which Level 5 Synchro beats it in battle?","Ally of Justice Catastor. It destroys any non-DARK monster it battles, whatever its ATK."],
@@ -55,13 +141,13 @@ flash:[
 ["Can Armory Arm be equipped to your opponent's monster?","Yes. If that monster then destroys yours in battle, your opponent takes the damage."]
 ]},
 
-{n:11,title:'The Big Synchros, Part 2',sub:'Levels 7 to 9: the Synchros that end turns and win games.',min:5,
+{n:12,title:'The Big Synchros, Part 2',sub:'Levels 7 to 9: the Synchros that end turns and win games.',min:5,
 cards:['Black Rose Dragon','Ancient Fairy Dragon','Stardust Dragon','Thought Ruler Archfiend','Colossal Fighter','Red Dragon Archfiend','Dark End Dragon','Mist Wurm'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>What the Level 7, 8 and 9 Synchros do</li><li>Why Stardust Dragon is in every deck on this site</li><li>How to pick the right big Synchro for the moment</li></ul></div>
 <h2>Level 7: Black Rose and Ancient Fairy</h2>
 <h3>Black Rose Dragon</h3>
-<p>You met ${cn('Black Rose Dragon')} in Lesson 2. When it is Synchro Summoned, you can destroy <b>every card on the field</b>. Yours too. It is Limited, and it is in 89% of the decks here.</p>
+<p>You met ${cn('Black Rose Dragon')} in Lesson 4. When it is Synchro Summoned, you can destroy <b>every card on the field</b>. Yours too. It is Limited, and it is in 89% of the decks here.</p>
 <p>The effect is optional. You use it when your opponent has more on the field than you do. If you are ahead, you can skip it and just keep a 2400 ATK monster.</p>
 <p>It has a second effect: banish a Plant from your Graveyard to turn one of your opponent's Defense Position monsters to Attack Position with 0 ATK until the End Phase. Plant decks use this. Most decks only care about the first effect.</p>
 <h3>Ancient Fairy Dragon</h3>
@@ -111,7 +197,7 @@ flash:[
 ["Your opponent targets Thought Ruler Archfiend with Book of Moon. What can you do?","Pay 1000 LP to negate and destroy Book of Moon, because it targets exactly one Psychic."]
 ]},
 
-{n:12,title:'Common Tuners',sub:'The small monsters that make Synchros possible, and how each one reaches the field.',min:4,
+{n:13,title:'Common Tuners',sub:'The small monsters that make Synchros possible, and how each one reaches the field.',min:4,
 cards:['Plaguespreader Zombie','Blackwing - Gale the Whirlwind','Deep Sea Diva','Debris Dragon','Junk Synchron','Blackwing - Vayu the Emblem of Honor','Krebons'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>Why Tuners change from deck to deck</li><li>The Tuners you will meet most often</li><li>How to do the Level math with common monsters</li></ul></div>
@@ -140,7 +226,7 @@ ${call('analogy','Think of it like this','<p>The Synchros are a shared toolbox. 
 <h3>Tuners with rules attached</h3>
 <ul><li>${cn('Debris Dragon')} can only be material for a <b>Dragon</b> Synchro, and the other materials cannot be Level 4. Debris (4) plus a Level 3 makes 7, enough for Black Rose Dragon.</li><li>The monster revived by Debris Dragon or Junk Synchron has its effects negated.</li><li>${cn('Blackwing - Vayu the Emblem of Honor')} is a Tuner that <b>cannot</b> be Synchro Material. From the Graveyard, it banishes itself and a Blackwing to summon a Blackwing Synchro. That Synchro was not Synchro Summoned, so it cannot be revived later.</li></ul>
 <h2>The Level math with common monsters</h2>
-<p>Most Tuners are Level 2 or 3. Here is what a Level 2 Tuner makes with monsters from <a href="#lesson-13">Lesson 13</a>:</p>
+<p>Most Tuners are Level 2 or 3. Here is what a Level 2 Tuner makes with monsters from <a href="#lesson-14">Lesson 14</a>:</p>
 <div class="tbl-wrap"><table><thead><tr><th>Level 2 Tuner plus</th><th>Total</th><th>Description</th></tr></thead><tbody>
 <tr><td>${cn('Sangan')} (3)</td><td>5</td><td>Catastor or Magical Android</td></tr>
 <tr><td>${cn('Fossil Dyna Pachycephalo')} (4)</td><td>6</td><td>Goyo Guardian or Brionac</td></tr>
@@ -159,7 +245,7 @@ flash:[
 ["Junk Synchron revives a monster. Can that monster use its effect?","No. Its effects are negated while it stays on the field."]
 ]},
 
-{n:13,title:'Staple Monsters',sub:'The Main Deck monsters you will see in game after game.',min:4,
+{n:14,title:'Staple Monsters',sub:'The Main Deck monsters you will see in game after game.',min:4,
 cards:['Cyber Dragon','Chimeratech Fortress Dragon','D.D. Crow','Sangan','Caius the Shadow Monarch','Gorz the Emissary of Darkness','Tragoedia','Fossil Dyna Pachycephalo','Ryko, Lightsworn Hunter'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>The staple monsters and what each one does</li><li>Which ones come out for free, which ones trade, and which ones stop plays</li><li>The rulings that matter most</li></ul></div>
@@ -183,7 +269,7 @@ ${call('rule','Two rulings',`<ul><li>You can only activate one of these hand eff
 <p>${cn('Ryko, Lightsworn Hunter')} (35%) is a Flip monster. When flipped, you can destroy one card on the field. Then you always send the top 3 cards of your Deck to the Graveyard. Destroying is optional; the 3 cards always go.</p>
 <h3>Caius the Shadow Monarch</h3>
 <p>${cn('Caius the Shadow Monarch')} (40%) is a Level 6, so it needs one Tribute. When Tribute Summoned, it banishes one card on the field. If that card was a DARK monster, its controller also takes 1000 damage. Banishing gets past Stardust Dragon, which only stops destruction.</p>
-<p>Cards that stop Tributes, like Mask of Restrict, stop Caius. So does Pulling the Rug (<a href="#lesson-15">Lesson 15</a>).</p>
+<p>Cards that stop Tributes, like Mask of Restrict, stop Caius. So does Pulling the Rug (<a href="#lesson-16">Lesson 16</a>).</p>
 <h2>Monsters that stop plays</h2>
 <h3>D.D. Crow</h3>
 <p>${cn('D.D. Crow')} (64%) works from your hand at any time. Discard it to banish one card from your opponent's Graveyard. Use it on:</p>
@@ -209,12 +295,12 @@ flash:[
 ["You control Cyber Dragon. Your opponent controls Ally of Justice Catastor. Can you make Chimeratech Fortress Dragon?","Yes. Catastor is a Machine, and the materials can come from either field. It would have 2000 ATK."]
 ]},
 
-{n:14,title:'Staple Spells',sub:'Removal, stealing and drawing: the Spells most decks run.',min:4,
+{n:15,title:'Staple Spells',sub:'Removal, stealing and drawing: the Spells most decks run.',min:4,
 cards:['Mystical Space Typhoon','Heavy Storm','Brain Control','Book of Moon','Mind Control','Allure of Darkness','Nobleman of Crossout','Pot of Avarice','Smashing Ground'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>The staple Spells and their jobs</li><li>How Edison text changes Brain Control</li><li>How the less common Spells fit in</li></ul></div>
 <h2>Removing Spells and Traps</h2>
-<p>Lesson 4 showed how Set cards stop Synchros. These Spells clear the way.</p>
+<p>Lesson 7 showed how Set cards stop Synchros. These Spells clear the way.</p>
 <div class="tbl-wrap"><table><thead><tr><th>Card</th><th>Status</th><th>In decks</th><th>Description</th></tr></thead><tbody>
 <tr><td>${cn('Mystical Space Typhoon')}</td><td>Limited</td><td>98%</td><td>Quick-Play. Destroy one Spell or Trap.</td></tr>
 <tr><td>${cn('Heavy Storm')}</td><td>Limited</td><td>85%</td><td>Destroy every Spell and Trap on the field, yours too.</td></tr>
@@ -258,7 +344,7 @@ flash:[
 ["You resolve Pot of Avarice and shuffle Stardust Dragon back. Where does it go?","To your Extra Deck."]
 ]},
 
-{n:15,title:'Staple Traps',sub:'The Set cards that stop attacks, summons and big effects.',min:4,
+{n:16,title:'Staple Traps',sub:'The Set cards that stop attacks, summons and big effects.',min:4,
 cards:['Mirror Force','Solemn Judgment','Bottomless Trap Hole','Torrential Tribute','Dimensional Prison','Starlight Road','Royal Oppression','Pulling the Rug','Dust Tornado'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>The staple Traps, sorted by what they stop</li><li>How Starlight Road and Royal Oppression change a game</li><li>Which Traps answer which plays</li></ul></div>
@@ -275,7 +361,7 @@ html:`
 <tr><td>${cn('Bottomless Trap Hole')}</td><td>65%</td><td>Destroy and banish monsters with 1500+ ATK when summoned.</td></tr>
 <tr><td>${cn('Torrential Tribute')}</td><td>65%</td><td>When a monster is summoned, destroy every monster on the field.</td></tr>
 </tbody></table></div>
-<p>You studied these in Lesson 4. Two rulings to add:</p>
+<p>You met these in Lesson 7, and saw how they work on a Chain in Lesson 10. Two rulings to add:</p>
 <ul><li>${cn('Solemn Judgment')} cannot negate monster effects that start a Chain, even ones that summon. It cannot stop Gorz.</li><li>${cn('Bottomless Trap Hole')} destroys, so Stardust Dragon can stop it.</li></ul>
 <h2>Traps that stop big effects</h2>
 <h3>Starlight Road</h3>
@@ -308,7 +394,7 @@ flash:[
 ["Why is Dimensional Prison good against Synchros?","It banishes the attacker, so the Synchro does not go back to the Extra Deck."]
 ]},
 
-{n:16,title:'How Edison Thinks',sub:'Card advantage, tempo, which threat to answer, the order of your plays, and reading your opponent.',min:10,
+{n:17,title:'How Edison Thinks',sub:'Card advantage, tempo, which threat to answer, the order of your plays, and reading your opponent.',min:10,
 cards:['Mystical Space Typhoon','Heavy Storm','Black Rose Dragon','Sangan','Brain Control','Pot of Avarice','Plaguespreader Zombie','Starlight Road'],
 html:`
 <div class="goals"><h4>What you will learn</h4><ul><li>What card advantage means</li><li>How to judge a trade, one card for one card</li><li>How to decide when to make a big play</li><li>How tempo differs from card advantage</li><li>Which threat to answer, and which card to play first</li><li>How to read your opponent and their outs</li></ul></div>
@@ -362,7 +448,7 @@ ${call('analogy','Think of it like this','<p>Think of cards as coins. A good tra
 <li><div><b>Search before you decide.</b> Use ${cn('E - Emergency Call')}, ${cn('Charge of the Light Brigade')} or a Sangan search early. The card you find may change the best play.</div></li>
 <li><div><b>Bait with the smaller threat.</b> Summon the monster you can afford to lose first, and keep your best one for after their Trap is gone.</div></li>
 <li><div><b>Attack with your least important monster first.</b> Mirror Force and Dimensional Prison wait for an attack. Give them the worst target.</div></li>
-<li><div><b>Attack first, Synchro after.</b> In the Blackwing turn in Lesson 18, the Synchro comes in Main Phase 2, after the materials have done their damage.</div></li>
+<li><div><b>Attack first, Synchro after.</b> In the Blackwing turn in Lesson 19, the Synchro comes in Main Phase 2, after the materials have done their damage.</div></li>
 </ol>
 <h2>Don't overextend</h2>
 <p>Overextending means putting more on the field than you need. Edison punishes it. ${cn('Torrential Tribute')} destroys every monster, ${cn('Heavy Storm')} every Spell and Trap, and ${cn('Black Rose Dragon')} and Judgment Dragon every card. Against a full field, one of them is one card for five of yours.</p>
@@ -370,7 +456,7 @@ ${call('analogy','Think of it like this','<p>Think of cards as coins. A good tra
 <h2>Read your opponent</h2>
 <ul>
 <li><b>Hand size.</b> Many cards in hand means many options. One or two means they are close to out. Remember that ${cn('Blackwing - Kalut the Moon Shadow')}, ${cn('Honest')} and ${cn('Battle Fader')} work from the hand.</li>
-<li><b>Set cards.</b> Count them, and watch what they let through (Lesson 27).</li>
+<li><b>Set cards.</b> Count them, and watch what they let through (Lesson 28).</li>
 <li><b>The banlist.</b> Mirror Force, Solemn Judgment, Torrential Tribute, Heavy Storm and Black Rose Dragon are Limited. Once one is in their Graveyard, there are no more.</li>
 <li><b>Their outs.</b> Ask which card would get them out of trouble, and play so that card does the least. If only Heavy Storm saves them, don't Set three Spells and Traps.</li>
 <li><b>Their deck.</b> Once you know what they play, you know what they need to happen. <a href="#opponents">Know your opponent</a> has every deck at a glance.</li>
