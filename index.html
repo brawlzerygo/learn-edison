@@ -1031,16 +1031,23 @@ const dbLink=n=>`https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=
 
 /* ============ LESSONS ============ */
 const L=[];
-L.push({n:1,title:'Welcome to 2010',sub:'What Edison is, and the one big change since Goat.',min:6,
+L.push({n:1,title:'Welcome to 2010',sub:'What a retro format is, where Edison comes from, and the one big change since Goat.',min:8,
 cards:['sangan','plague','cyberdragon','blackrose'],
 html:`
-<div class="goals"><h4>What you will learn</h4><ul><li>What Edison format is</li><li>The one big change since Goat</li><li>What stays the same</li></ul></div>
+<div class="goals"><h4>What you will learn</h4><ul><li>What a retro format is</li><li>What Edison format is, and where it comes from</li><li>The one big change since Goat</li><li>What stays the same</li></ul></div>
+<h2>What a retro format is</h2>
+<p>Yu-Gi-Oh! never stands still. New sets come out every few months, and the banlist changes with them. The game you learn this year won't quite be the game you play next year.</p>
+<p>A <b>retro format</b> picks one moment and freezes it: a fixed card pool, a fixed banlist, and the rules from that time. The game stays the same long enough to really learn, and it is full of decks many players remember. Goat format, from 2005, is one you may have heard of. Edison is another.</p>
 <h2>The story</h2>
 <p>You stopped playing around 2005. Picture that you put your deck in a drawer and walked away.</p>
 <p>The game kept going without you. In 2008, Konami launched a new show, Yu-Gi-Oh! 5D's. With it came a brand-new kind of monster: the <b>Synchro Monster</b>. It changed how people played.</p>
-<p>In April 2010, a big tournament took place in Edison, New Jersey. Many players think that moment in the game was close to perfect. Many different decks could win. No single card ruined the game. Games were fair, but exciting.</p>
-<p>Years later, players decided to freeze that moment in time. They said: "Let's play with only the cards and rules from April 2010. Nothing newer." That frozen moment is <b>Edison format</b>.</p>
+<p>Edison sits right at the start of that Synchro era. In March 2010 a new banlist came out, and the newest set in stores was Absolute Powerforce. That moment only lasted about two and a half months, until the next set, The Shining Darkness, came out.</p>
+<p>In late April 2010, Konami held its <b>75th Shonen Jump Championship</b> in Edison, New Jersey. Konami called it the biggest Shonen Jump Championship of all time. It was also the last one: the series was relaunched as the Yu-Gi-Oh! Championship Series (YCS). Jeff Jones won it with a deck called Quickdraw Dandywarrior, which you'll meet in Lesson 19.</p>
+<p>What made the tournament special was its Top 16, one of the most varied in Shonen Jump Championship history. Lightsworn, Gravekeepers and Cat decks all made it, next to the Synchro decks. You didn't need the single best deck to win.</p>
+<p>Years later, players decided to freeze that moment. They said: "Let's play with only the cards and rules from April 2010. Nothing newer." That frozen moment is <b>Edison format</b>, named after the town where the tournament was played.</p>
+<p>Many players see Edison as a sweet spot. It is faster and more explosive than Goat, thanks to Synchro Monsters, but still slow enough that every card and every choice matters. That makes it a nice break from how fast the modern game plays.</p>
 ${call('analogy','Think of it like this','<p>Goat is a time capsule from 2005. Edison is a time capsule from 2010. Same game, different moment.</p>')}
+<p class="srcnote">Sources: Konami's SHONEN JUMP Championship blog (<a href="https://yugiohblog.konami.com/2010/sjc/10-04-75thsjc/sjc-history-the-future-2010/" target="_blank" rel="noopener">SJC History: The Future</a>) and YGOPRODeck's <a href="https://ygoprodeck.com/article/an-introduction-to-sjc-edison-format-93251" target="_blank" rel="noopener">introduction to SJC Edison format</a>.</p>
 <h2>The one big change</h2>
 <p>In Goat, small monsters were worth their <b>effect</b>. ${c('sangan')}, Witch of the Black Forest, and Magician of Faith had low ATK, but they were some of the best cards in the game because of what they did.</p>
 <p>In Edison, a small monster is worth its effect <b>and its Level</b>. Its Level lets it become part of a bigger monster.</p>
@@ -1057,9 +1064,11 @@ ${call('key','The big idea','<p>In Edison, almost every monster can become part 
 <p>You already know more than you think. These things work the way you remember:</p>
 <ul><li>Normal Summon, Tribute Summon, Flip Summon</li><li>Chains and Spell Speeds</li><li>Battle, damage, and the Graveyard</li><li>Many cards you know, like Sangan, Book of Moon, Heavy Storm, Mirror Force, and Torrential Tribute</li></ul>
 <p>Some Goat favorites are banned in Edison, like Pot of Greed, Graceful Charity, Monster Reborn, and Snatch Steal. Lesson 8 covers the full list.</p>
-<div class="recap"><h2>Recap</h2><ul><li>Edison freezes the game as it was in April 2010.</li><li>Synchro Monsters are the big new idea.</li><li>A small monster is now worth its effect and its Level.</li><li>Always ask: what can my opponent turn their monsters into?</li></ul></div>`,
+<div class="recap"><h2>Recap</h2><ul><li>A retro format freezes one moment of the game. Edison freezes April 2010.</li><li>It is named after the 75th Shonen Jump Championship, in Edison, New Jersey, the last one before the YCS.</li><li>Synchro Monsters are the big new idea.</li><li>A small monster is now worth its effect and its Level.</li><li>Always ask: what can my opponent turn their monsters into?</li></ul></div>`,
 flash:[
-['Why is the format called "Edison"?','It copies a big tournament held in Edison, New Jersey, in April 2010. Players froze the cards and rules from that moment.'],
+['Why is the format called "Edison"?','It copies the 75th Shonen Jump Championship, held in Edison, New Jersey, in April 2010. Players froze the cards and rules from that moment.'],
+['What is a retro format?','A way to play one moment of Yu-Gi-Oh! history, frozen: a fixed card pool, a fixed banlist and the rules from that time.'],
+['Which deck won the tournament Edison is named after?','Quickdraw Dandywarrior, played by Jeff Jones.'],
 ['In Goat, low-ATK monsters like Sangan were valuable for their effects. What else makes a small monster valuable in Edison?','Its Level. Small monsters can become ingredients for a bigger Synchro Monster.'],
 ['Your opponent has two weak monsters face-up. Why can that be dangerous in Edison?','They can combine them into a big Synchro Monster from their Extra Deck, often one with a strong effect.'],
 ['Name three Goat cards that are banned in Edison.','Any three of: Pot of Greed, Graceful Charity, Monster Reborn, Snatch Steal, Raigeki, Dark Hole, Witch of the Black Forest, Magician of Faith, Ring of Destruction.']
