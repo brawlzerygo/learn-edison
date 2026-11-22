@@ -345,7 +345,7 @@ ${call('key','Tier is not everything',`<p>A Best deck you don't understand loses
 <li><div><b>Draw test hands.</b> Press "Test hand" on the deck page. Ask: what is my best first turn with these 6 cards?</div></li>
 <li><div><b>Copy it to the builder.</b> Press "Open in Deck Builder" to make your own copy in the <a href="#builder">Deck Builder</a>. Change it only after you know why each card is there.</div></li>
 <li><div><b>Practice the combos.</b> Load the deck on the <a href="#simulator">practice board</a> and play out your best turns by hand.</div></li>
-<li><div><b>Play games.</b> <a href="#duel">Duel the computer</a> with your deck. Then play people.</div></li>
+<li><div><b>Play games.</b> Play people as much as you can: friends, online, or at locals.</div></li>
 <li><div><b>Watch the experts.</b> The <a href="#library">Library</a> has deck guides for Blackwings, Quickdraw, Dragons, Diva Hero, Hero Beat, Vayu Turbo and Frogs.</div></li>
 <li><div><b>Learn your side.</b> Know which Side Deck cards come in against each top deck (Lesson 28).</div></li>
 </ol>

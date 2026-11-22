@@ -772,7 +772,7 @@ table.mchart2 tr.on td{box-shadow:inset 0 0 0 2px var(--accent)}
     <a href="#opponents" role="menuitem">Know your opponent<small>Every deck at a glance, and matchups</small></a>
   </div>
   <div class="ndrop-menu" id="m-play" role="menu" aria-label="Play">
-    <a href="#duel" role="menuitem">Duel the computer<small>Play a game, three difficulties</small></a>
+    <a href="#duel" role="menuitem">Duel the computer<small>Coming soon</small></a>
     <a href="#simulator" role="menuitem">Practice board<small>Set up any field, try Synchros</small></a>
   </div>
   <div class="ssearch" id="ssearch" role="search">
@@ -1072,7 +1072,7 @@ flash:[
 ['Why is the format called "Edison"?','It copies the 75th Shonen Jump Championship, held in Edison, New Jersey, in April 2010. Players froze the cards and rules from that moment.'],
 ['What is a retro format?','A way to play one moment of Yu-Gi-Oh! history, frozen: a fixed card pool, a fixed banlist and the rules from that time.'],
 ['Which deck won the tournament Edison is named after?','Quickdraw Dandywarrior, played by Jeff Jones.'],
-['Why can Edison players bring out big monsters more often than Goat players?','Synchro Monsters wait in the Extra Deck, so you don't need to draw them. You only need the right materials on the field. In Goat, a big monster usually had to be drawn and Tribute Summoned.'],
+['Why can Edison players bring out big monsters more often than Goat players?','Synchro Monsters wait in the Extra Deck, so you do not need to draw them. You only need the right materials on the field. In Goat, a big monster usually had to be drawn and Tribute Summoned.'],
 ['In Goat, low-ATK monsters like Sangan were valuable for their effects. What else makes a small monster valuable in Edison?','Its Level. Small monsters can become ingredients for a bigger Synchro Monster.'],
 ['Your opponent has two weak monsters face-up. Why can that be dangerous in Edison?','They can combine them into a big Synchro Monster from their Extra Deck, often one with a strong effect.'],
 ['Name three Goat cards that are banned in Edison.','Any three of: Pot of Greed, Graceful Charity, Monster Reborn, Snatch Steal, Raigeki, Dark Hole, Witch of the Black Forest, Magician of Faith, Ring of Destruction.']
@@ -1797,7 +1797,7 @@ function route(){
   else if(h==='rulings')renderRulings();
   else if(h==='errata')renderErrata();
   else if(h==='course')renderCourse();
-  else if(h==='duel')renderDuel();
+  else if(h==='duel'){if(DUEL_READY())renderDuel();else renderDuelSoon()}
   else renderHome();
   fitTables(app);
   window.scrollTo(0,0);
@@ -1829,7 +1829,7 @@ function renderHome(){
     <div>
       <h1>Learn Edison format, from your first summon to a tournament deck.</h1>
       <p>Edison is Yu-Gi-Oh! frozen at April 2010: the March 2010 banlist, the first Synchro era, and a game where many decks can win. This site teaches it step by step, with real cards, rulings, starter decks and a computer to duel.</p>
-      <div class="hero-btns">${started?`<a class="btn primary" href="#lesson-${next.n}">Continue: ${lessonLabel(next)}, ${esc(next.title)} →</a>`:`<a class="btn primary" href="#course">Start learning →</a>`}<a class="btn" href="#duel">Duel the computer</a></div>
+      <div class="hero-btns">${started?`<a class="btn primary" href="#lesson-${next.n}">Continue: ${lessonLabel(next)}, ${esc(next.title)} →</a>`:`<a class="btn primary" href="#course">Start learning →</a>`}<a class="btn" href="#simulator">Practice board</a></div>
       <form class="hsearch" id="hsearch" role="search"><input type="search" id="hq" placeholder="Look up any card, like Stardust Dragon" aria-label="Search cards"><button class="btn" type="submit">Search</button></form>
     </div>
     ${cod?`<aside class="hcod"><h4>Card of the day</h4><img src="${artURL(cod)}" alt="" data-rid="${cod.id}"><b><button type="button" class="cref" data-rid="${cod.id}">${esc(cod.n)}</button></b><p>${esc((cod.ru||'').split('\n')[0].replace(/^●\s*/,''))}</p></aside>`:''}
@@ -1838,14 +1838,14 @@ function renderHome(){
   <div class="hpath">
     <a href="#lesson-0.1"><span class="hnum">1</span><b>New to Yu-Gi-Oh?</b><span>Step 0 teaches the basics in six short parts: summoning, battle, Spells, Traps and Chains.</span></a>
     <a href="#lesson-1"><span class="hnum">2</span><b>Know the basics?</b><span>Edison 101 covers what changed since Goat: Synchros, the Extra Deck, tokens and the 2010 rules.</span></a>
-    <a href="#decks"><span class="hnum">3</span><b>Ready to play?</b><span>Pick a deck from All Decks, open it in the builder, then duel the computer to get a feel for it.</span></a>
+    <a href="#decks"><span class="hnum">3</span><b>Ready to play?</b><span>Pick a deck from All Decks, open it in the builder, then set it up on the practice board to get a feel for it.</span></a>
   </div>
   <h2 class="hh">Everything on the site</h2>
   <div class="hgrid">
     ${sec('Learn','Short lessons in plain language, a quiz after each one, flashcards to drill, a glossary, and a library of guides by Edison creators.','Stardust Dragon',[['course','Course'],['flashcards','Flashcards'],['glossary','Glossary'],['library','Library']])}
     ${sec('Cards and rules','Every Edison-legal card with its 2010 text, Edison rulings, the March 2010 banlist and the cards that work differently today.','Brionac, Dragon of the Ice Barrier',[['cards','Card search'],['staples','Staples'],['banlist','Banlist'],['rulings','Rulings'],['errata','Errata']])}
     ${sec('Decks','Deck lists for 55 strategies from top tier to casual, and a builder that checks your deck is legal.','Blackwing - Gale the Whirlwind',[['decks','All Decks'],['builder','Deck builder']])}
-    ${sec('Play','Duel the computer at three difficulties, or set up any field on the practice board and try Synchro Summons.','Black Rose Dragon',[['duel','Duel the computer'],['simulator','Practice board']])}
+    ${sec('Play','Set up any field on the practice board and try Synchro Summons. Dueling the computer is coming soon.','Black Rose Dragon',[['simulator','Practice board']])}
   </div>
   ${DB.length?`<p class="sitestats"><span><b>${DB.length.toLocaleString()}</b> cards</span><span><b>${DECKS.length}</b> decks</span><span><b>${DB.filter(r=>r.ru).length.toLocaleString()}</b> Edison rulings</span><span>Banlist: <b>March 2010</b></span><span>Progress: <b>${d101} of ${L.length}</b> Edison 101 lessons</span></p>`:''}
   ${srcNote()}`;
@@ -2791,7 +2791,7 @@ function renderSim(){
     youPanel:lpPanel('You',S.you.deckName,'lpy',S.you.lp,true,`<div class="lpbtns"><span class="lpstat">Hand ${S.hand.length}</span><button class="abtn" data-pile="you|ban">Banished ${S.you.ban.length}</button></div>`),
     opp:slots('opp'),you:slots('you'),oppST:zones('opp','st'),oppM:zones('opp','m'),youM:zones('you','m'),youST:zones('you','st'),
     strip:ARM?(ARM.kind==='trib'?`Pick ${ARM.need} monster${ARM.need>1?'s':''} to Tribute (${ARM.picked.length}/${ARM.need}) · Esc to cancel`:'Tap a glowing zone to place the card · Esc to cancel'):RULES()?`Turn ${S.turn} · ${S.normalDone?'Normal Summon used':'Normal Summon available'}`:'Free setup: rules are off',
-    actions:`${selMode?synPanel():''}${RULES()?'<button class="btn primary" id="endturn">End turn</button>':''}<button class="btn ${RULES()?'':'primary'}" id="addhand">+ Add to hand</button><button class="btn ${selMode?'primary':''}" id="synbtn">${selMode?'Cancel Synchro':'⭐ Synchro Summon'}</button><button class="btn" id="tokbtn">+ Token</button><button class="btn" id="clr">Clear board</button><a class="btn" href="#duel">Duel the computer</a>`,
+    actions:`${selMode?synPanel():''}${RULES()?'<button class="btn primary" id="endturn">End turn</button>':''}<button class="btn ${RULES()?'':'primary'}" id="addhand">+ Add to hand</button><button class="btn ${selMode?'primary':''}" id="synbtn">${selMode?'Cancel Synchro':'⭐ Synchro Summon'}</button><button class="btn" id="tokbtn">+ Token</button><button class="btn" id="clr">Clear board</button>`,
     log:S.log.map(l=>`<div>${esc(l)}</div>`).join('')||'<div>Nothing yet.</div>',
     hand}));
   bindSim();
@@ -3316,6 +3316,15 @@ function hintPanelE(){
   return `${best?`<p class="hbest"><b>The computer's pick in your seat:</b> ${esc(best)}</p>`:''}${hintPanel(h)}`;
 }
 /* ---- screens ---- */
+/* Duel the computer stays "coming soon" on the live site until it is fully ready (Zack, 2026-11-22). To try it in a
+ browser before then, run localStorage.setItem('edison:duelpreview','1') in the console; to open it for everyone,
+ make DUEL_READY return true. */
+const DUEL_READY=()=>{try{return localStorage.getItem('edison:duelpreview')==='1'}catch(e){return false}};
+function renderDuelSoon(){
+  app.innerHTML=`<div class="read" style="max-width:720px"><h1 style="font-size:32px;margin-bottom:6px">Duel the computer</h1>
+    <p class="soon" style="font-size:17px">Coming soon. We're still finishing the computer opponent, so it isn't open yet.</p>
+    <p>In the meantime, set up any field on the <a href="#simulator">practice board</a> and try Synchro Summons, or pick a deck from <a href="#decks">All Decks</a> and open it in the <a href="#builder">deck builder</a>.</p></div>`;
+}
 function renderDuel(){if(!DB.length){app.innerHTML=noData();return}if(!window.EdisonEngine){app.innerHTML='<p class="note">Loading the duel…</p>';return}engineReady();if(!G){renderDuelSetup();return}renderDuelGame()}
 function renderDuelSetup(){
   const opts=sel=>deckChoices().map(c=>`<option value="${esc(c.key)}" ${c.key===sel?'selected':''}>${esc(c.name)}${deckAuto(c.d)?' ✓':''}</option>`).join('');

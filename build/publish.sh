@@ -56,6 +56,8 @@ case "$origin" in
   *) echo "The push destination is $origin, not a $OWNER repository. Stopping without publishing."; exit 1 ;;
 esac
 
+# The Edison site: stop on any JavaScript syntax error, so a broken page never goes live (2026-11-22).
+if [ "$REPO" = "learn-edison" ]; then python3 build/check_js.py || { echo "Fix the JavaScript errors above. Not publishing."; exit 1; }; fi
 git add -A
 git diff --cached --quiet || git commit -q -m "${1:-Update the site}"
 push -u origin main
