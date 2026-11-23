@@ -28,9 +28,9 @@ REPO=learn-edison
 DESC="A free, open-source site for learning Edison format Yu-Gi-Oh! (April 2010)"
 if [ "$1" = "--site" ]; then
   case "$2" in
-    hub) node build/prerender.mjs && python3 build/check_js.py && (cd goat && python3 build/check_js.py) && node build/assemble.mjs --live || { echo "The site build failed. Not publishing."; exit 1; }
+    hub) node build/prerender.mjs && python3 build/check_js.py && (cd goat && python3 build/check_js.py && node build/prerender.mjs) && node build/assemble.mjs --live || { echo "The site build failed. Not publishing."; exit 1; }
       cd hub; REPO=learn-retro; DESC="Learn Retro Yu-Gi-Oh!: free courses for retro formats" ;;
-    site-preview) node build/prerender.mjs && python3 build/check_js.py && (cd goat && python3 build/check_js.py) && node build/assemble.mjs --preview || { echo "The preview build failed. Not publishing."; exit 1; }
+    site-preview) node build/prerender.mjs && python3 build/check_js.py && (cd goat && python3 build/check_js.py && node build/prerender.mjs) && node build/assemble.mjs --preview || { echo "The preview build failed. Not publishing."; exit 1; }
       cd site-preview; REPO=learn-retro-preview; DESC="Preview of learnretro.com: the hub, /edison/ and /goat/ (not indexed)" ;;
     preview) node build/make-redirects.mjs || exit 1
       cd preview; REPO=learn-edison-preview; DESC="edison-preview.learnretro.com now redirects to preview.learnretro.com/edison/" ;;
