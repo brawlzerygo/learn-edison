@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<base href="/">
+<base href="/edison/">
 <title>Lesson 23: HEROs | Learn Retro</title>
 <meta name="description" content="Four HERO decks, one toolkit: Miracle Fusion, Absolute Zero and friends.">
-<link rel="canonical" href="https://edison.learnretro.com/lessons/23-heros/">
+<link rel="canonical" href="https://learnretro.com/edison/lessons/23-heros/">
 <link rel="icon" href="img/icon-d2-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="img/icon-d2-180.png">
 <!-- Public since 2026-11-22 (Zack: post episode 1 and open the site). The password screen and the noindex tag were removed. -->
@@ -15,42 +15,42 @@
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script>/* Apply the saved theme before the page paints, so it never flashes the wrong look. */
 (function(){var t='index';try{var v=JSON.parse(localStorage.getItem('edison:theme'));if(['index'].indexOf(v)>-1)t=v}catch(e){}document.documentElement.dataset.theme=t})();</script>
-<link rel="stylesheet" href="themes/base.css?v=m3">
-<link rel="stylesheet" href="themes/index.css?v=m3">
+<link rel="stylesheet" href="themes/base.css?v=f2">
+<link rel="stylesheet" href="themes/index.css?v=f2">
 </head>
 <body>
 <header class="top"><div class="top-in">
-  <div class="brand"><a class="bhub" href="https://learnretro.com/" title="Learn Retro: every format"><img class="blogo" src="img/icon-t2-512.png" alt="" width="34" height="34">Learn<em>Retro</em></a><a class="bfmt" href="/" title="Edison home">Edison</a></div>
+  <div class="brand"><a class="bhub" href="/" title="Learn Retro: every format"><img class="blogo" src="img/icon-t2-512.png" alt="" width="34" height="34">Learn<em>Retro</em></a><div class="fmtsw" data-fmt="edison"><button type="button" class="bfmt" id="fmtbtn" aria-haspopup="true" aria-expanded="false" aria-controls="fmtmenu" title="Switch format">Edison<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="fmtmenu" id="fmtmenu" role="menu" aria-label="Formats" hidden><a role="menuitem" data-fmt="goat" href="/goat/"><i class="fdot"></i><b>Goat</b><small>2005</small></a><a role="menuitem" data-fmt="edison" href="/edison/"><i class="fdot"></i><b>Edison</b><small>2010</small></a><hr><a role="menuitem" class="fplain" href="/">All formats</a><a role="menuitem" class="fplain" href="/blog/">Blog</a></div></div></div>
   <button type="button" class="mburger" id="mburger" aria-label="Open menu" aria-expanded="false" aria-controls="mnav"><svg class="ib" width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h16M3 11h16M3 16h16"/></svg><svg class="ix" width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l12 12M17 5L5 17"/></svg></button>
   <nav class="nav" id="nav" aria-label="Sections">
-    <a href="/" data-v="home">Home</a>
+    <a href="./" data-v="home">Home</a>
     <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-learn" data-group="course lesson flashcards rules glossary library" aria-haspopup="true" aria-expanded="false">Learn ▾</button></div>
     <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-cards" data-group="cards staples banlist rulings errata" aria-haspopup="true" aria-expanded="false">Cards ▾</button></div>
     <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-decks" data-group="deck builder opponents" aria-haspopup="true" aria-expanded="false">Decks ▾</button></div>
     <div class="ndrop"><button type="button" class="ndrop-btn" data-menu="m-play" data-group="duel simulator" aria-haspopup="true" aria-expanded="false">Play ▾</button></div>
   </nav>
   <div class="ndrop-menu" id="m-learn" role="menu" aria-label="Learn">
-    <a href="/course/" role="menuitem">Course<small>Step 0 basics and Edison 101</small></a>
-    <a href="/flashcards/" role="menuitem">Flashcards<small>Every quiz question, to drill</small></a>
-    <a href="/rules/" role="menuitem">Rules<small>How a duel works, 2010 rules</small></a>
-    <a href="/glossary/" role="menuitem">Glossary<small>Every term, in plain words</small></a>
-    <a href="/library/" role="menuitem">Library<small>Videos and guides by other creators</small></a>
+    <a href="course/" role="menuitem">Course<small>Step 0 basics and Edison 101</small></a>
+    <a href="flashcards/" role="menuitem">Flashcards<small>Every quiz question, to drill</small></a>
+    <a href="rules/" role="menuitem">Rules<small>How a duel works, 2010 rules</small></a>
+    <a href="glossary/" role="menuitem">Glossary<small>Every term, in plain words</small></a>
+    <a href="library/" role="menuitem">Library<small>Videos and guides by other creators</small></a>
   </div>
   <div class="ndrop-menu" id="m-cards" role="menu" aria-label="Cards">
-    <a href="/cards/" role="menuitem">Card search<small>All 3,673 Edison-legal cards</small></a>
-    <a href="/staples/" role="menuitem">Staples<small>Cards most decks play</small></a>
-    <a href="/banlist/" role="menuitem">Banlist<small>March 2010 list</small></a>
-    <a href="/rulings/" role="menuitem">Rulings<small>Edison rulings by card</small></a>
-    <a href="/errata/" role="menuitem">Errata<small>Cards that work differently</small></a>
+    <a href="cards/" role="menuitem">Card search<small>All 3,673 Edison-legal cards</small></a>
+    <a href="staples/" role="menuitem">Staples<small>Cards most decks play</small></a>
+    <a href="banlist/" role="menuitem">Banlist<small>March 2010 list</small></a>
+    <a href="rulings/" role="menuitem">Rulings<small>Edison rulings by card</small></a>
+    <a href="errata/" role="menuitem">Errata<small>Cards that work differently</small></a>
   </div>
   <div class="ndrop-menu" id="m-decks" role="menu" aria-label="Decks">
-    <a href="/decks/" role="menuitem">All Decks<small>55 deck lists, by tier</small></a>
-    <a href="/builder/" role="menuitem">Deck builder<small>Build, check and export</small></a>
-    <a href="/opponents/" role="menuitem">Know your opponent<small>Every deck at a glance, and matchups</small></a>
+    <a href="decks/" role="menuitem">All Decks<small>55 deck lists, by tier</small></a>
+    <a href="builder/" role="menuitem">Deck builder<small>Build, check and export</small></a>
+    <a href="opponents/" role="menuitem">Know your opponent<small>Every deck at a glance, and matchups</small></a>
   </div>
   <div class="ndrop-menu" id="m-play" role="menu" aria-label="Play">
-    <a href="/duel/" role="menuitem">Duel the computer<small>Coming soon</small></a>
-    <a href="/simulator/" role="menuitem">Practice board<small>Set up any field, try Synchros</small></a>
+    <a href="duel/" role="menuitem">Duel the computer<small>Coming soon</small></a>
+    <a href="simulator/" role="menuitem">Practice board<small>Set up any field, try Synchros</small></a>
   </div>
   <div class="ssearch" id="ssearch" role="search">
     <input type="search" id="sq" placeholder="Search cards, lessons, decks..." aria-label="Search the site" autocomplete="off" aria-controls="sres" aria-expanded="false">
@@ -60,11 +60,11 @@
 </div>
 <nav class="mnav" id="mnav" aria-label="Site menu" hidden></nav></header>
 <main id="app"><article class="lesson wide">
-    <header class="lhead"><div class="crumbs"><a href="/course/" data-k="course">Course</a> / Edison 301 / Lesson 23 (6 of 13)</div>
+    <header class="lhead"><div class="crumbs"><a href="/edison/course/" data-k="course">Course</a> / Edison 301 / Lesson 23 (6 of 13)</div>
       <h1>HEROs</h1><p class="sub">Four HERO decks, one toolkit: Miracle Fusion, Absolute Zero and friends. <span class="pill">5 min · 6 flashcards</span></p></header>
     <div class="lgrid">
       <div class="lmain"><section class="glance" data-deck="hero"><h2 id="sec-0">At a glance: HEROs</h2>
-    <p class="gsub"><b>Combo or stun</b> · Lists: <a href="/decks/diva-hero/" data-k="deck-Diva%20Hero">Diva Hero</a>, <a href="/decks/diva-hero-beat/" data-k="deck-Diva%20Hero%20Beat">Diva Hero Beat</a>, <a href="/decks/hero-beat/" data-k="deck-Hero%20Beat">Hero Beat</a> · <a href="/lessons/23-heros/" data-k="lesson-23">Lesson 23</a></p>
+    <p class="gsub"><b>Combo or stun</b> · Lists: <a href="/edison/decks/diva-hero/" data-k="deck-Diva%20Hero">Diva Hero</a>, <a href="/edison/decks/diva-hero-beat/" data-k="deck-Diva%20Hero%20Beat">Diva Hero Beat</a>, <a href="/edison/decks/hero-beat/" data-k="deck-Hero%20Beat">Hero Beat</a> · <a href="/edison/lessons/23-heros/" data-k="lesson-23">Lesson 23</a></p>
     <div class="ggrid">
       <div><h4>How to spot it</h4><p><button type="button" class="cref" data-rid="213326">E - Emergency Call</button> or <button type="button" class="cref" data-rid="40044918">Elemental HERO Stratos</button> searching a HERO. Diva Hero: <button type="button" class="cref" data-rid="78868119">Deep Sea Diva</button> and <button type="button" class="cref" data-rid="9411399">Destiny HERO - Malicious</button> into fast Synchros. Hero Beat: <button type="button" class="cref" data-rid="69884162">Elemental HERO Neos Alius</button> behind a face-up <button type="button" class="cref" data-rid="82732705">Skill Drain</button> or <button type="button" class="cref" data-rid="93016201">Royal Oppression</button>.</p></div>
       <div><h4>What it wants</h4><p>Diva Hero races to Level 5 and Level 8 Synchros. Hero Beat locks the game and wins with plain beaters. Both finish with <button type="button" class="cref" data-rid="45906428">Miracle Fusion</button> into <button type="button" class="cref" data-rid="40854197">Elemental HERO Absolute Zero</button>.</p></div>
@@ -74,17 +74,17 @@
       <div class="g-beat"><h4>How to beat it</h4><ul><li>Flip Absolute Zero face-down with <button type="button" class="cref" data-rid="14087893">Book of Moon</button> first, then remove it.</li><li>Save your Spell and Trap removal for Skill Drain or Royal Oppression.</li><li><button type="button" class="cref" data-rid="34717238">Pulling the Rug</button> negates Deep Sea Diva and a Normal Summoned Stratos.</li></ul></div>
       <div class="g-avoid"><h4>Don't</h4><ul><li>Destroying a face-up Absolute Zero while you have monsters out.</li><li>Ignoring their GY: Miracle Fusion can use it at any time.</li><li>Attacking a LIGHT monster while they hold a card: Honest.</li></ul></div>
     </div>
-    <div class="gmatch"><div><b>Good against:</b> <a href="/opponents/bw/" data-k="opponents-bw">Blackwings</a>, <a href="/opponents/qd/" data-k="opponents-qd">Quickdraw Plants</a>, <a href="/opponents/ls/" data-k="opponents-ls">Lightsworn</a>, <a href="/opponents/gb/" data-k="opponents-gb">Gladiator Beasts</a>, <a href="/opponents/gadget/" data-k="opponents-gadget">Machina Gadget</a>, <a href="/opponents/zombie/" data-k="opponents-zombie">Diva Zombie</a>, <a href="/opponents/dragon/" data-k="opponents-dragon">Dragon Turbo</a></div><div><b>Even with:</b> <a href="/opponents/vayu/" data-k="opponents-vayu">Vayu Turbo</a>, <a href="/opponents/frog/" data-k="opponents-frog">Frog Monarchs</a></div><div><b>Tough against:</b> none</div>
-      <div class="note">Why each one: <a href="/opponents/hero/" data-k="opponents-hero">the matchup chart</a>.</div></div>
+    <div class="gmatch"><div><b>Good against:</b> <a href="/edison/opponents/bw/" data-k="opponents-bw">Blackwings</a>, <a href="/edison/opponents/qd/" data-k="opponents-qd">Quickdraw Plants</a>, <a href="/edison/opponents/ls/" data-k="opponents-ls">Lightsworn</a>, <a href="/edison/opponents/gb/" data-k="opponents-gb">Gladiator Beasts</a>, <a href="/edison/opponents/gadget/" data-k="opponents-gadget">Machina Gadget</a>, <a href="/edison/opponents/zombie/" data-k="opponents-zombie">Diva Zombie</a>, <a href="/edison/opponents/dragon/" data-k="opponents-dragon">Dragon Turbo</a></div><div><b>Even with:</b> <a href="/edison/opponents/vayu/" data-k="opponents-vayu">Vayu Turbo</a>, <a href="/edison/opponents/frog/" data-k="opponents-frog">Frog Monarchs</a></div><div><b>Tough against:</b> none</div>
+      <div class="note">Why each one: <a href="/edison/opponents/hero/" data-k="opponents-hero">the matchup chart</a>.</div></div>
   </section>
 
 <h2 id="sec-1">Four decks, one toolkit</h2>
 <p>This site lists four HERO decks. They share a core of searchers and fusions, then go different ways.</p>
 <div class="tbl-wrap"><table><thead><tr><th class="nw">Deck</th><th class="nw">Tier</th><th>Description</th></tr></thead><tbody>
-<tr><td class="nw"><a href="/decks/diva-hero/" data-k="deck-Diva%20Hero">Diva Hero</a></td><td class="nw">Competitive</td><td>Deep Sea Diva and Destiny HERO - Malicious for fast Synchros.</td></tr>
-<tr><td class="nw"><a href="/decks/diva-hero-beat/" data-k="deck-Diva%20Hero%20Beat">Diva Hero Beat</a></td><td class="nw">Competitive</td><td>Diva plus Gemini beaters and lots of Traps.</td></tr>
-<tr><td class="nw"><a href="/decks/hero-beat/" data-k="deck-Hero%20Beat">Hero Beat</a></td><td class="nw">Rogue</td><td>Gemini beaters behind Skill Drain and Royal Oppression.</td></tr>
-<tr><td class="nw"><a href="/decks/hero-frog/" data-k="deck-Hero%20Frog">Hero Frog</a></td><td class="nw">Best</td><td>Frogs and Monarchs with a HERO fusion package. See Lesson 24.</td></tr>
+<tr><td class="nw"><a href="/edison/decks/diva-hero/" data-k="deck-Diva%20Hero">Diva Hero</a></td><td class="nw">Competitive</td><td>Deep Sea Diva and Destiny HERO - Malicious for fast Synchros.</td></tr>
+<tr><td class="nw"><a href="/edison/decks/diva-hero-beat/" data-k="deck-Diva%20Hero%20Beat">Diva Hero Beat</a></td><td class="nw">Competitive</td><td>Diva plus Gemini beaters and lots of Traps.</td></tr>
+<tr><td class="nw"><a href="/edison/decks/hero-beat/" data-k="deck-Hero%20Beat">Hero Beat</a></td><td class="nw">Rogue</td><td>Gemini beaters behind Skill Drain and Royal Oppression.</td></tr>
+<tr><td class="nw"><a href="/edison/decks/hero-frog/" data-k="deck-Hero%20Frog">Hero Frog</a></td><td class="nw">Best</td><td>Frogs and Monarchs with a HERO fusion package. See Lesson 24.</td></tr>
 </tbody></table></div>
 <h2 id="sec-2">The shared toolkit</h2>
 <div class="tbl-wrap"><table><thead><tr><th class="nw">Card</th><th>Description</th></tr></thead><tbody>
@@ -123,7 +123,7 @@
 <li><b>Hero Beat locks you.</b> Save Mystical Space Typhoon or Dust Tornado for Skill Drain or Royal Oppression.</li>
 </ul>
 <div class="call mistake"><b class="tag">Common mistakes against HEROs</b><ul><li>Destroying a face-up Absolute Zero while you have monsters out. Flip it face-down first, or clear your own board.</li><li>Ignoring their GY. Miracle Fusion can use it at any time.</li><li>Attacking a LIGHT monster when they hold a card. Honest can match your ATK.</li></ul></div>
-<p>E3 Yu-Gi-Oh has a Diva Hero guide and a Hero Beat guide in the <a href="/library/" data-k="library">Library</a>.</p>
+<p>E3 Yu-Gi-Oh has a Diva Hero guide and a Hero Beat guide in the <a href="/edison/library/" data-k="library">Library</a>.</p>
 <div class="recap"><h2 id="sec-6">Recap</h2><ul><li>All HERO decks share E - Emergency Call, Stratos, Miracle Fusion and Absolute Zero.</li><li>Diva Hero uses Diva and Malicious for quick Level 5 and Level 8 Synchros.</li><li>Hero Beat uses Gemini beaters behind Skill Drain and Royal Oppression.</li><li>Flip Absolute Zero face-down before you remove it.</li></ul></div></div>
       <aside class="lside" aria-label="Lesson overview">
         <section class="sbox"><h4>Cards in this lesson</h4><div class="stiles"><button type="button" class="ctile pic" data-rid="40044918" aria-label="Elemental HERO Stratos" style="background-image:url('img/40044918.webp?v=2')"></button><button type="button" class="ctile pic" data-rid="213326" aria-label="E - Emergency Call" style="background-image:url('img/213326.webp?v=2')"></button><button type="button" class="ctile pic" data-rid="45906428" aria-label="Miracle Fusion" style="background-image:url('img/45906428.webp?v=2')"></button><button type="button" class="ctile pic" data-rid="40854197" aria-label="Elemental HERO Absolute Zero" style="background-image:url('img/40854197.webp?v=2')"></button><button type="button" class="ctile pic" data-rid="78868119" aria-label="Deep Sea Diva" style="background-image:url('img/78868119.webp?v=2')"></button><button type="button" class="ctile pic" data-rid="9411399" aria-label="Destiny HERO - Malicious" style="background-image:url('img/9411399.webp?v=2')"></button><button type="button" class="ctile pic" data-rid="69884162" aria-label="Elemental HERO Neos Alius" style="background-image:url('img/69884162.webp?v=2')"></button><button type="button" class="ctile pic" data-rid="37412656" aria-label="Hero Blast" style="background-image:url('img/37412656.webp?v=2')"></button><button type="button" class="ctile pic" data-rid="82732705" aria-label="Skill Drain" style="background-image:url('img/82732705.webp?v=2')"></button></div><p class="note" style="margin:6px 0 0">Tap a card for its text and rulings.</p></section>
@@ -131,11 +131,11 @@
         <section class="sbox stoc" id="ltoc"><h4>On this page</h4><button type="button">At a glance: HEROs</button><button type="button">Four decks, one toolkit</button><button type="button">The shared toolkit</button><button type="button">Diva Hero</button><button type="button">Hero Beat and Diva Hero Beat</button><button type="button">Weaknesses and how to play against them</button><button type="button">Recap</button></section>
       </aside>
     </div>
-    <section class="lesson-fc"><h2>Check yourself</h2><p class="note">Tap a question to see the answer. <a href="/flashcards/" id="fclink" data-k="flashcards">Practice these in Flashcards</a></p><div class="qa-grid" id="lfc"><button type="button" class="qa" aria-expanded="false"><span class="q">What does Miracle Fusion use as Fusion Material?</span><span class="a">Monsters on your field or in your GY, which it banishes.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">Absolute Zero is bounced to the Extra Deck. Does its effect trigger?</span><span class="a">Yes. It triggers whenever it leaves the field face-up, even back to the Extra Deck.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">How do you remove Absolute Zero without losing your monsters?</span><span class="a">Flip it face-down first, for example with Book of Moon. Then it does not trigger when it leaves.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">You Normal Summon Deep Sea Diva. What can you Special Summon?</span><span class="a">A Level 3 or lower Sea Serpent from your Deck, like Spined Gillman or another Diva.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">Why does Skill Drain barely hurt Neos Alius?</span><span class="a">Alius is treated as a Normal Monster on the field unless Normal Summoned again.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">Which card stops HERO searches like E - Emergency Call?</span><span class="a">Thunder King Rai-Oh. Neither player can add cards from the Deck except by drawing.</span><small>Tap to see the answer</small></button></div></section>
+    <section class="lesson-fc"><h2>Check yourself</h2><p class="note">Tap a question to see the answer. <a href="/edison/flashcards/" id="fclink" data-k="flashcards">Practice these in Flashcards</a></p><div class="qa-grid" id="lfc"><button type="button" class="qa" aria-expanded="false"><span class="q">What does Miracle Fusion use as Fusion Material?</span><span class="a">Monsters on your field or in your GY, which it banishes.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">Absolute Zero is bounced to the Extra Deck. Does its effect trigger?</span><span class="a">Yes. It triggers whenever it leaves the field face-up, even back to the Extra Deck.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">How do you remove Absolute Zero without losing your monsters?</span><span class="a">Flip it face-down first, for example with Book of Moon. Then it does not trigger when it leaves.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">You Normal Summon Deep Sea Diva. What can you Special Summon?</span><span class="a">A Level 3 or lower Sea Serpent from your Deck, like Spined Gillman or another Diva.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">Why does Skill Drain barely hurt Neos Alius?</span><span class="a">Alius is treated as a Normal Monster on the field unless Normal Summoned again.</span><small>Tap to see the answer</small></button><button type="button" class="qa" aria-expanded="false"><span class="q">Which card stops HERO searches like E - Emergency Call?</span><span class="a">Thunder King Rai-Oh. Neither player can add cards from the Deck except by drawing.</span><small>Tap to see the answer</small></button></div></section>
     <div class="lesson-foot">
-      <a class="btn" href="/lessons/22-vayu-turbo/" data-k="lesson-22">← Lesson 22</a>
+      <a class="btn" href="/edison/lessons/22-vayu-turbo/" data-k="lesson-22">← Lesson 22</a>
       <button class="btn primary" id="mark">Mark lesson done</button>
-      <a class="btn" href="/lessons/24-frog-monarchs/" data-k="lesson-24">Lesson 24 →</a>
+      <a class="btn" href="/edison/lessons/24-frog-monarchs/" data-k="lesson-24">Lesson 24 →</a>
     </div></article></main>
 <footer class="sitefoot"><p class="socfoot"><a class="soc" href="https://www.youtube.com/@LearnRetro" target="_blank" rel="noopener" aria-label="Learn Retro on YouTube" title="YouTube"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="1.5" y="4.5" width="21" height="15" rx="4.5" fill="currentColor"/><path d="M10 8.8v6.4l5.6-3.2z" fill="var(--soc-bg,#fff)"/></svg><span>YouTube</span></a><a class="soc" href="https://www.instagram.com/learnretroygo/" target="_blank" rel="noopener" aria-label="Learn Retro on Instagram" title="Instagram"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg><span>Instagram</span></a></p><p>The literal and graphical information presented on this site about Yu-Gi-Oh!, including Card images, Attribute, Level, Rank, Type Symbols, is copyright 4K Media Inc, a subsidiary of Konami Digital Entertainment (KDE), Inc.</p><p>This website is not produced by, endorsed by, supported by, or affiliated with 4k Media, Studio Dice, or KDE.</p></footer>
 <div id="modal"></div>
@@ -161,6 +161,6 @@
 <script src="js/cards/batch-6.js"></script>
 <script src="js/cards/batch-7.js"></script>
 <script src="js/ai.js"></script>
-<script src="js/app.js?v=m3"></script>
+<script src="js/app.js?v=f2"></script>
 </body>
 </html>

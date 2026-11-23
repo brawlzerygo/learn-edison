@@ -772,3 +772,30 @@ html.mnav-open{overflow:hidden}
 .mnav .msoc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 .mnav .msoc h5{flex-basis:100%}
 .mnav .msoc .soc{flex-direction:row;color:var(--ink);font-size:15px;font-weight:700;padding:0 10px}
+
+/* Format switcher (Zack, 2026-11-23): the format name beside the logo is a pill in that format's accent color; it opens
+ a menu of every format plus All formats and Blog. Each format's color: Edison rust, Goat green. */
+.brand .fmtsw{position:relative;margin-left:10px;padding-left:10px;border-left:1px solid var(--line);align-self:center;display:flex}
+.brand .bfmt{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:var(--label,inherit);font-size:13px;font-weight:700;letter-spacing:.02em;line-height:1;color:var(--accent);background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-radius:999px;padding:7px 11px;margin:0}
+.brand .bfmt:hover{border-color:var(--accent)}
+.brand .bfmt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.brand .bfmt svg{transition:transform .15s}
+.fmtsw.open .bfmt svg{transform:rotate(180deg)}
+.fmtmenu{position:absolute;z-index:70;top:calc(100% + 10px);left:0;min-width:210px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;font-family:var(--body,inherit);font-size:15px;font-weight:400}
+.fmtmenu[hidden]{display:none}
+.fmtmenu a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;color:var(--ink);text-decoration:none}
+.fmtmenu a:hover{background:var(--bg,#f4f1ec)}
+.fmtmenu a b{font-weight:700}
+.fmtmenu a small{margin-left:auto;color:var(--muted);font-size:12.5px}
+.fmtmenu a[aria-current]{background:var(--accent-soft)}
+.fmtmenu a.fplain{padding-left:29px;color:var(--muted)}
+.fmtmenu hr{border:none;border-top:1px solid var(--line);margin:6px 4px}
+.fdot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--muted)}
+[data-fmt=edison]>.fdot{background:#c2410c}
+[data-fmt=goat]>.fdot{background:#15803d}
+.mnav .mfmt{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.mnav .mfmt h5{grid-column:1/-1}
+.mnav .mfmt a{flex-direction:row;align-items:center;justify-content:flex-start;gap:10px}
+.mnav .mfmt a small{margin-left:auto}
+.mnav .mfmt a[aria-current]{background:var(--accent-soft);color:var(--accent)}
+@media(max-width:640px){.brand .fmtsw{margin-left:8px;padding-left:8px}.brand .bfmt{min-height:44px;padding:0 12px}.fmtmenu a{min-height:44px}}

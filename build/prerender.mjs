@@ -9,12 +9,13 @@
 // #links to their new address). Folders it wrote last time are listed in build/prerendered.json and removed first,
 // so a renamed lesson leaves no stale page behind.
 import fs from 'fs'; import path from 'path'; import os from 'os'; import { spawn } from 'child_process'; import { fileURLToPath } from 'url';
-import { serve } from './serve.mjs';
+import { serve, mountOf } from './serve.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SITE = 'https://edison.learnretro.com';
+const SITE = 'https://learnretro.com';
+const MOUNT = mountOf(ROOT); // '/edison': page addresses start with it; folders are written without it
 const MANIFEST = path.join(ROOT, 'build/prerendered.json');
 const SHELL = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const KEEP = new Set(['build', 'data', 'design', 'hub', 'img', 'js', 'redirect', 'themes', 'video', '.git']);
+const KEEP = new Set(['build', 'data', 'design', 'docs', 'goat', 'hub', 'img', 'js', 'preview', 'redirect', 'site-preview', 'themes', 'video', '.git']);
 const BINS = [path.join(ROOT, 'video/node_modules/.remotion/chrome-headless-shell/mac-arm64/chrome-headless-shell-mac-arm64/chrome-headless-shell'),
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'];
 const BIN = BINS.find(b => fs.existsSync(b));
@@ -48,7 +49,7 @@ try {
   const { targetId } = await B.send('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await B.send('Target.attachToTarget', { targetId, flatten: true });
   const ev = async expr => { const r = await B.send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, sessionId); if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
-  await B.send('Page.navigate', { url: `http://127.0.0.1:${port}/` }, sessionId);
+  await B.send('Page.navigate', { url: `http://127.0.0.1:${port}${MOUNT}/` }, sessionId);
   for (let i = 0; i < 100; i++) { await new Promise(r => setTimeout(r, 200)); try { if (await ev(`typeof go==='function'&&!!document.getElementById('app').innerHTML`)) break; } catch {} }
   const keys = await ev(`[...PAGEKEYS, ...ALL.map(l=>'lesson-'+l.n), ...DECKS.map(d=>'deck-'+encodeURIComponent(d.name)),
     ...(OPP.decks||[]).map(d=>'opponents-'+d.id), ...(window.EDISON_RULES?EDISON_RULES.sections.map(x=>'rules-'+x.id):[]),
@@ -62,6 +63,7 @@ try {
     const p = JSON.parse(await ev(`(async()=>{window.__KEY=${JSON.stringify(k)};route();await new Promise(r=>setTimeout(r,0));
       return JSON.stringify({p:keyToPath(window.__KEY),t:document.title,d:document.querySelector('meta[name=description]').content,c:document.querySelector('link[rel=canonical]').href,h:document.getElementById('app').innerHTML})})()`));
     urls.push(SITE + p.p);
+    if (MOUNT && p.p.startsWith(MOUNT + '/')) p.p = p.p.slice(MOUNT.length);
     if (p.p === '/') { n++; continue; } // the home page is index.html itself: left as is, the app renders it
     const rel = p.p.replace(/^\/|\/$/g, ''); const top = rel.split('/')[0];
     if (KEEP.has(top)) throw new Error(`Page ${p.p} would overwrite the ${top}/ folder`);

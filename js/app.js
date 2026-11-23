@@ -1031,7 +1031,10 @@ function setDone(n,v){let d=done().filter(x=>x!==n);if(v)d.push(n);store.set('do
  build/prerender.mjs writes each one as its own HTML file at publish, so search engines index every page. Inside the
  app a page is still named by its old key ('lesson-3', 'card-73580471', 'deck-Name'); keyToPath and pathToKey convert.
  Old #links (#lesson-3) are rewritten to the new address on load, so every link shared before still works. */
-const SITE='https://edison.learnretro.com';
+const SITE='https://learnretro.com';
+/* The site lives in a folder of learnretro.com (Zack, 2026-11-23: one domain for every format). BASE comes from
+ <base href>, so the same code runs at /edison/ on the live site, the preview and the local server. */
+const BASE=(document.querySelector('base')?.getAttribute('href')||'/').replace(/\/$/,'');
 const slugify=x=>String(x).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 let URLMAPS=null;
 function urlMaps(){
@@ -1046,7 +1049,10 @@ const PAGEKEYS=['home','course','flashcards','glossary','rules','simulator','car
 function isRouteKey(k){return PAGEKEYS.includes(k)||/^(lesson|deck|opponents|rules|card)-./.test(k)}
 function keyToPath(k){
   const M=urlMaps();
-  if(!k||k==='home')return '/';
+  if(!k||k==='home')return BASE+'/';
+  return BASE+keyPath(k,M);
+}
+function keyPath(k,M){
   if(k.startsWith('lesson-'))return `/lessons/${M.lesson.get(k.slice(7))||k.slice(7)}/`;
   if(k.startsWith('deck-')){const n=decodeURIComponent(k.slice(5));return `/decks/${M.deck.get(n)||slugify(n)}/`}
   if(k.startsWith('card-'))return `/cards/${M.card.get(+k.slice(5))||k.slice(5)}/`;
@@ -1055,7 +1061,8 @@ function keyToPath(k){
   return `/${k}/`;
 }
 function pathToKey(p){
-  const M=urlMaps();const seg=decodeURI(p).replace(/index\.html$/,'').split('/').filter(Boolean);
+  const M=urlMaps();if(BASE){if(p===BASE)p='/';else if(p.startsWith(BASE+'/'))p=p.slice(BASE.length);else return null}
+  const seg=decodeURI(p).replace(/index\.html$/,'').split('/').filter(x=>x&&x!=='.');
   if(!seg.length)return 'home';
   const [a,b]=seg;
   if(seg.length===1)return isRouteKey(a)?a:null;
@@ -1119,7 +1126,7 @@ function route(){
   const h=curKey();
   document.querySelectorAll('#nav > a').forEach(a=>a.classList.toggle('on',h===a.dataset.v));
   document.querySelectorAll('.ndrop-btn').forEach(b=>b.classList.toggle('on',b.dataset.group.split(' ').some(t=>h.startsWith(t))));
-  document.querySelectorAll('.ndrop-menu a,.mnav a').forEach(a=>a.classList.toggle('on',(a.dataset.k||(a.getAttribute('href').startsWith('/')?pathToKey(a.getAttribute('href')):a.getAttribute('href').slice(1)))===h));closeMenus();
+  document.querySelectorAll('.ndrop-menu a,.mnav a').forEach(a=>a.classList.toggle('on',(a.dataset.k||(a.getAttribute('href').startsWith('#')?a.getAttribute('href').slice(1):pathToKey(new URL(a.href).pathname)))===h));closeMenus();
   if(h.startsWith('lesson-')){renderLesson(h.slice(7))}
   else if(h==='flashcards')renderFlash();
   else if(h==='glossary')renderGloss();
@@ -1723,7 +1730,7 @@ window.addEventListener('scroll',closeMenus,{passive:true});
  one button; its panel lists every page under its section, built from the desktop menus so the two never drift apart. */
 (function(){
   const btn=document.getElementById('mburger'),nav=document.getElementById('mnav');if(!btn||!nav)return;
-  nav.innerHTML=`<a class="mhome" href="/">Home</a>`+[...document.querySelectorAll('.ndrop-btn')].map(b=>{const m=document.getElementById(b.dataset.menu);
+  nav.innerHTML=`<a class="mhome" href="./">Home</a>`+[...document.querySelectorAll('.ndrop-btn')].map(b=>{const m=document.getElementById(b.dataset.menu);
     return `<section><h5>${b.textContent.replace('▾','').trim()}</h5>${[...m.querySelectorAll('a')].map(a=>`<a href="${a.getAttribute('href')}">${a.firstChild.textContent.trim()}<small>${a.querySelector('small')?.textContent||''}</small></a>`).join('')}</section>`}).join('')+`<section class="msoc"><h5>Follow Learn Retro</h5>${document.querySelector('.hsoc').innerHTML.replace(/aria-label="Learn Retro on (\w+)"([^>]*)>([\s\S]*?)<\/a>/g,'aria-label="Learn Retro on $1"$2>$3<span>$1</span></a>')}</section>`;
   const top=document.querySelector('header.top');
   const set=o=>{if(o)nav.style.setProperty('--mtop',Math.max(0,top.getBoundingClientRect().bottom)+'px');document.documentElement.classList.toggle('mnav-open',o);nav.hidden=!o;btn.setAttribute('aria-expanded',String(o));btn.setAttribute('aria-label',o?'Close menu':'Open menu');btn.classList.toggle('open',o)};
@@ -1732,6 +1739,26 @@ window.addEventListener('scroll',closeMenus,{passive:true});
   document.addEventListener('click',e=>{if(!nav.hidden&&!e.target.closest('#mnav,#mburger'))set(false)});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!nav.hidden){set(false);btn.focus()}});
   window.addEventListener('resize',()=>{if(nav.hidden)return;if(innerWidth>860)set(false);else nav.style.setProperty('--mtop',Math.max(0,top.getBoundingClientRect().bottom)+'px')});
+})();
+/* Format switcher (Zack, 2026-11-23: "clean navigation though with clear distinction on which site theyre on, and maybe
+ an easy toggle so switch between formats"). The format name beside the logo opens a menu of every format, plus All
+ formats (the hub) and the Blog. Switching keeps you in the same section when the other format has it (Card search,
+ Banlist, Course...); a lesson, card or deck opens the other format's home. The same list shows at the top of the
+ phone menu. A new format is a new line in #fmtmenu in index.html, on every format site. */
+(function(){
+  const sw=document.querySelector('.fmtsw'),btn=document.getElementById('fmtbtn'),menu=document.getElementById('fmtmenu');if(!sw||!btn||!menu)return;
+  const SHARED=['course','flashcards','glossary','rules','cards','staples','banlist','decks','builder','simulator'];
+  const links=[...menu.querySelectorAll('a[data-fmt]')];
+  links.forEach(a=>{a.dataset.base=a.getAttribute('href');if(a.dataset.fmt===sw.dataset.fmt)a.setAttribute('aria-current','page')});
+  const target=a=>{if(a.dataset.fmt===sw.dataset.fmt)return a.dataset.base;const k=curKey();return SHARED.includes(k)?a.dataset.base+k+'/':a.dataset.base};
+  const aim=()=>document.querySelectorAll('#fmtmenu a[data-fmt],#mnav a[data-fmt]').forEach(a=>{a.dataset.base=a.dataset.base||a.getAttribute('href');a.setAttribute('href',target(a))});
+  const set=o=>{menu.hidden=!o;btn.setAttribute('aria-expanded',String(o));sw.classList.toggle('open',o);if(o)aim()};
+  btn.onclick=e=>{e.stopPropagation();set(menu.hidden)};
+  document.addEventListener('click',e=>{if(!menu.hidden&&!e.target.closest('.fmtsw'))set(false)});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!menu.hidden){set(false);btn.focus()}});
+  const nav=document.getElementById('mnav');
+  if(nav){nav.insertAdjacentHTML('afterbegin',`<section class="mfmt"><h5>Format</h5>${links.map(a=>`<a data-fmt="${a.dataset.fmt}" href="${a.dataset.base}"${a.hasAttribute('aria-current')?' aria-current="page"':''}><i class="fdot"></i>${a.querySelector('b').textContent}<small>${a.querySelector('small').textContent}</small></a>`).join('')}<a href="/">All formats</a></section>`);
+    document.getElementById('mburger')?.addEventListener('click',aim)}
 })();
 /* ============ SITE SEARCH (Zack, 2026-11-17) ============
    One box in the header searches everything: pages, lessons (titles and text), cards, decks, glossary terms and

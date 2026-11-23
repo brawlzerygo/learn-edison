@@ -20,3 +20,6 @@ preview/
 
 # The Goat site: its own repo (goat.learnretro.com)
 goat/
+
+# The combined preview of learnretro.com (build/assemble.mjs --preview; repo learn-retro-preview)
+site-preview/
