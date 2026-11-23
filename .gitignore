@@ -16,3 +16,4 @@ video/
 # Their own repos (build/publish.sh --site hub / redirect)
 hub/
 redirect/
+preview/

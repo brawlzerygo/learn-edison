@@ -11,6 +11,8 @@
 #
 # Usage: sh build/publish.sh ["what changed"]                  the Edison site (this folder, edison.learnretro.com)
 #        sh build/publish.sh --site hub ["what changed"]       the learnretro.com hub (hub/, repo learn-retro)
+#        sh build/publish.sh --site preview ["what changed"]   the preview of the Edison site (preview/, repo learn-edison-preview,
+#                                                               edison-preview.learnretro.com): every change goes here first
 #        sh build/publish.sh --site redirect ["what changed"]  learnedison.com, redirecting (redirect/, repo learnedison-redirect)
 # hub/ and redirect/ are their own git repos inside this folder (ignored by this repo); same account, same checks.
 set -e
@@ -22,8 +24,10 @@ DESC="A free, open-source site for learning Edison format Yu-Gi-Oh! (April 2010)
 if [ "$1" = "--site" ]; then
   case "$2" in
     hub) cd hub; REPO=learn-retro; DESC="Learn Retro Yu-Gi-Oh!: free courses for retro formats" ;;
+    preview) node build/prerender.mjs && python3 build/check_js.py && node build/make-preview.mjs || { echo "The preview build failed. Not publishing."; exit 1; }
+      cd preview; REPO=learn-edison-preview; DESC="Preview of edison.learnretro.com (not indexed)" ;;
     redirect) cd redirect; REPO=learnedison-redirect; DESC="learnedison.com now lives at edison.learnretro.com" ;;
-    *) echo "Unknown site: $2 (use hub or redirect)"; exit 1 ;;
+    *) echo "Unknown site: $2 (use hub, preview or redirect)"; exit 1 ;;
   esac
   shift 2
   [ -d .git ] || git init -q -b main
