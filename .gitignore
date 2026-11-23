@@ -17,3 +17,6 @@ video/
 hub/
 redirect/
 preview/
+
+# The Goat site: its own repo (goat.learnretro.com)
+goat/
