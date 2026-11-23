@@ -14,3 +14,13 @@ A blog on the site, mainly for search traffic: the same news (big sales, retro r
 
 ## Course videos in the Library (Zack, 2026-11-22)
 Once the course videos are all done, add them to the Edison site's Library page, at the top, above the creator videos.
+
+## Blog angles from search research (Zack, 2026-11-23: "write all of these angles after the site updates")
+Search data (Semrush US estimates, Oct 2026; Google autocomplete 2026-11-23): "edison format" ~1,300/mo, "yugioh formats" ~1,000, "duelingbook" + "dueling book" ~33,000, "yugioh banlist" 18,100; Format Library ranks #1 for most format terms. Posts, in order:
+1. Yu-Gi-Oh! Formats Explained, in Order (formats explained / in order / after edison / best retro formats).
+2. How to Play Yu-Gi-Oh! on DuelingBook (Goat and Edison rooms).
+3. Getting Back Into Yu-Gi-Oh! in 2026 (returning players; are old cards still playable).
+4. Edison and Goat tier lists, explained from the site's tiered deck lists.
+5. Goat and Edison banlists explained.
+6. Are old Yu-Gi-Oh! cards worth anything? Every price from a dated sold record, or no price.
+7. YouTube shorts cut from 1 and 2.
