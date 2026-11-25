@@ -23,3 +23,8 @@ goat/
 
 # The combined preview of learnretro.com (build/assemble.mjs --preview; repo learn-retro-preview)
 site-preview/
+
+# The duel simulator: its own repo, and its published builds (build/publish.sh --site play-preview / play)
+play/
+play-preview/
+play-site/

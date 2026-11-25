@@ -17,6 +17,9 @@
 #        sh build/publish.sh --site site-preview ["what changed"]  the whole learnretro.com preview: hub, /edison/ and /goat/
 #                                                               (site-preview/, repo learn-retro-preview, preview.learnretro.com)
 #        sh build/publish.sh --site goat ["what changed"]      the Goat source (goat/, repo learn-goat, no Pages)
+#        sh build/publish.sh --site play-preview ["what changed"]  the duel game's preview (play-preview/, built from play/ by
+#                                                               play/tools/build_site.mjs; repo learn-retro-play-preview, noindex)
+#        sh build/publish.sh --site play ["what changed"]      the duel game live (play-site/, repo learn-retro-play, play.learnretro.com)
 # Since 2026-11-23 (Zack: one domain) --site hub also assembles /edison/ and /goat/ into the hub (build/assemble.mjs).
 # hub/, redirect/, goat/ and site-preview/ are their own git repos inside this folder (ignored by this repo);
 # same account, same checks.
@@ -36,9 +39,13 @@ if [ "$1" = "--site" ]; then
       cd preview; REPO=learn-edison-preview; DESC="edison-preview.learnretro.com now redirects to preview.learnretro.com/edison/" ;;
     redirect) node build/make-redirects.mjs || exit 1
       cd redirect; REPO=learnedison-redirect; DESC="learnedison.com now redirects to learnretro.com/edison/" ;;
+    play-preview) node play/tools/build_site.mjs --preview || { echo "The game build failed. Not publishing."; exit 1; }
+      cd play-preview; REPO=learn-retro-play-preview; DESC="Preview of play.learnretro.com, the Learn Retro duel simulator (not indexed)" ;;
+    play) node play/tools/build_site.mjs --live || { echo "The game build failed. Not publishing."; exit 1; }
+      cd play-site; REPO=learn-retro-play; DESC="Learn Retro Play: duel the computer in Edison and Goat format Yu-Gi-Oh!" ;;
     goat) cd goat; python3 build/check_js.py || { echo "Fix the JavaScript errors above. Not publishing."; exit 1; }
       REPO=learn-goat; DESC="Source of the Goat format course at learnretro.com/goat/"; NOPAGES=1 ;;
-    *) echo "Unknown site: $2 (use hub, site-preview, preview, redirect or goat)"; exit 1 ;;
+    *) echo "Unknown site: $2 (use hub, site-preview, preview, redirect, goat, play-preview or play)"; exit 1 ;;
   esac
   shift 2
   [ -d .git ] || git init -q -b main
