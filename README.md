@@ -2,14 +2,14 @@
 
 A free, open-source site for learning **Edison format**: Yu-Gi-Oh! as it was in April 2010, with the March 2010 banlist and the first Synchro era.
 
-**Live site:** https://edison.learnretro.com (part of https://learnretro.com)
+**Live site:** https://learnretro.com/edison/ (part of [Learn Retro](https://learnretro.com); the full story, credits and disclaimers are in [learn-retro](https://github.com/brawlzerygo/learn-retro))
 
 ## What's in it
 
 - **Learn:** a course in plain language, from the basics of the game (Step 0) to Edison 101, with quizzes, flashcards, a glossary and a library of guides by Edison creators.
 - **Cards:** every Edison-legal card with its Edison text, Edison rulings and art; staples, the banlist, rulings and errata.
 - **Decks:** 55 deck lists by tier and a deck builder that checks legality and exports `.ydk` files.
-- **Play:** a practice board and a duel against the computer.
+- **Play:** a practice board. Duels against the computer are at [play.learnretro.com](https://play.learnretro.com).
 
 ## Running it
 
