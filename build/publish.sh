@@ -93,7 +93,15 @@ if [ "$REPO" = "learn-edison" ]; then node build/prerender.mjs && node build/mak
 if [ "$REPO" = "learn-edison" ]; then python3 build/check_js.py || { echo "Fix the JavaScript errors above. Not publishing."; exit 1; }; fi
 git add -A
 git diff --cached --quiet || git commit -q -m "${1:-Update the site}"
-push -u origin main
+# REWRITE=1: a one-time force push after rewriting this repo's own history (Zack, 2026-11-24: scrubbing the Mac's
+# name from early commits). --force-with-lease refuses if GitHub has commits this copy hasn't seen. The brawlzerygo
+# checks above still apply.
+if [ "$REWRITE" = "1" ]; then push --force-with-lease -u origin main; else push -u origin main; fi
+
+# Keep the repo's GitHub description and website current on every publish (2026-11-24: learn-retro's had gone blank).
+site="https://$OWNER.github.io/$REPO/"; [ -f CNAME ] && site="https://$(head -n 1 CNAME | tr -d '[:space:]')/"
+[ "$REPO" = "learn-retro" ] && DESC="Learn Retro Yu-Gi-Oh!: free courses, card search, deck lists, rules and a duel simulator for retro formats, starting with Edison (2010) and Goat (2005)."
+gh api -X PATCH "repos/$OWNER/$REPO" -f "description=$DESC" -f "homepage=$site" >/dev/null 2>&1 && echo "Description set." || echo "Couldn't set the repo description (the publish itself went through)."
 
 # A source-only repo (learn-goat) stops here: the site itself is published inside learnretro.com by --site hub.
 if [ -n "$NOPAGES" ]; then echo "Pushed https://github.com/$OWNER/$REPO (source only, no Pages)."; exit 0; fi
