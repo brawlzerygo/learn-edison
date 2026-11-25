@@ -1,0 +1,39 @@
+# Goat batch 7: card scripts to write in js/cards/goat-7.js (see build/CARD_SCRIPTS.md and js/cards/goat-1.js, goat-2.js)
+# Name | type | Text (goat/data/cards.js) | decks that run it
+
+Dream Clown | effect Effect EARTH Warrior Lv3 1200/900 | When this card is changed from Attack Position to face-up Defense Position, select 1 monster your opponent controls and destroy it. | Clown Control
+Protector of the Sanctuary | effect Effect EARTH Fiend Lv4 1100/1900 | Your opponent cannot draw cards except during Draw Phases. | Clown Control
+Sasuke Samurai #4 | effect Effect WIND Warrior Lv4 1200/1200 | If this card battles a monster, toss a coin and call heads or tails before damage calculation. If you call it right, destroy the opponent's monster with this effect. | Clown Control
+Stumbling | spell Continuous | Any monster that is Normal Summoned, Flip Summoned or Special Summoned is changed to Defense Position. | Clown Control
+Nightmare Penguin | effect Effect WATER Aqua Lv4 900/1800 | All face-up WATER monsters you control gain 200 ATK. When this card is flipped face-up: Target 1 card your opponent controls; return that target to the hand. | Heavy Slump
+Penguin Soldier | effect Flip Effect WATER Aqua Lv2 750/500 | FLIP: You can target up to 2 monsters on the field; return those targets to the hand. | Heavy Slump
+Chain Energy | spell Continuous | Each player must pay 500 Life Points per card to Normal Summon, Special Summon, Set or activate cards from his/her respective hand. | Stein OTK, Heavy Slump
+Heavy Slump | trap Normal | If your opponent has 8 or more cards in their hand: They shuffle their entire hand into the Deck, then draw 2 cards. | Heavy Slump
+Cannon Soldier | effect Effect DARK Machine Lv4 1400/1300 | You can Tribute 1 monster; inflict 500 damage to your opponent. | Stein Gate Turbo
+Fusilier Dragon, the Dual-Mode Beast | effect Effect DARK Machine Lv7 2800/2000 | You can Normal Summon/Set this card without Tributing, but its original ATK and DEF become halved. | Stein Gate Turbo
+Megamorph | spell Equip | While your LP is lower than your opponent's, the equipped monster's ATK becomes double its original ATK. While your LP is higher, the equipped monster's ATK becomes half its original ATK. | Stein Gate Turbo, Last Turn
+Last Will | spell Normal | If a monster on your side of the field was sent to your Graveyard this turn, you can Special Summon 1 monster with an ATK of 1500 points or less from your Deck once during this turn. Then shuffle your Deck. | Cat OTK, Cat Burn, Stein Monarch, Stein OTK, Stein Horus, Last Turn
+Royal Magical Library | effect Effect LIGHT Spellcaster Lv4 0/2000 | Each time a Spell Card is activated, place 1 Spell Counter on this card when that Spell resolves (max. 3). You can remove 3 Spell Counters from this card; draw 1 card. | Library FTK
+Archfiend's Oath | spell Continuous | Once per turn: You can pay 500 Life Points, then declare 1 card name; excavate the top card of your Deck, and if it is the declared card, add it to your hand. Otherwise, send it to the Graveyard. | Library FTK
+Black Pendant | spell Equip | The equipped monster gains 500 ATK. When this card is sent from the field to the Graveyard: Inflict 500 damage to your opponent. | Library FTK
+Convulsion of Nature | spell Continuous | As long as this card remains face-up on the field, both players must turn their respective Decks upside down and proceed with the current Duel. | Library FTK
+Reversal Quiz | spell Normal | Send all cards in your hand and on your side of the field to the Graveyard. Call the type of card (Spell, Trap, or Monster) on top of your Deck. If you call it right, exchange your current Life Points with your opponent's current ones. | Library FTK
+Reflect Bounder | effect Effect LIGHT Machine Lv4 1700/1000 | Before damage calculation, if this card is being attacked by an opponent's monster, and was in face-up Attack Position at the start of the Damage Step: Inflict damage to your opponent equal to the attacking monster's ATK. If you do, after damage calculation: Destroy this card. | Monarch
+Cyber Saurus | fusion Fusion EARTH Machine Lv5 1800/1400 | "Blast Juggler" + "Two-Headed King Rex" | Monarch
+Labyrinth Tank | fusion Fusion DARK Machine Lv7 2400/2400 | "Giga-Tech Wolf" + "Cannon Soldier" | Monarch
+Metal Dragon | fusion Fusion WIND Machine Lv6 1850/1700 | "Steel Ogre Grotto #1" + "Lesser Dragon" | Monarch
+Goblin Attack Force | effect Effect EARTH Warrior Lv4 2300/0 | If this card attacks, it is changed to Defense Position at the end of the Battle Phase, and its battle position cannot be changed until the End Phase of your next turn. | Earth Beat, Cat OTK, Drain Beat
+Jirai Gumo | effect Effect EARTH Insect Lv4 2200/100 | When this card declares an attack: Toss a coin and call it. If you call it wrong, lose half your Life Points. | Drain Beat
+Gigantes | effect Effect EARTH Rock Lv4 1900/1300 | Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by banishing 1 EARTH monster from your GY. If this card is destroyed by battle and sent to the GY: Destroy all Spells and Traps on the field. | Earth Beat, Cat OTK, Cat Burn
+Charubin the Fire Knight | fusion Fusion FIRE Pyro Lv3 1100/800 | "Monster Egg" + "Hinotama Soul" | Earth Beat
+Gilasaurus | effect Effect EARTH Dinosaur Lv3 1400/400 | You can Special Summon this card (from your hand). If Summoned this way: Activate this effect; your opponent can Special Summon 1 monster from their GY. | Stein Horus
+Granmarg the Rock Monarch | effect Effect EARTH Rock Lv6 2400/1000 | If this card is Tribute Summoned: Target 1 Set card on the field; destroy that target. | Stein Horus
+Horus the Black Flame Dragon LV6 | effect Effect FIRE Dragon Lv6 2300/1600 | This card is unaffected by Spell effects. During the End Phase, if this card destroyed a monster by battle this turn: You can send this face-up card to the Graveyard; Special Summon 1 "Horus the Black Flame Dragon LV8" from your hand or Deck. | Stein Horus
+Horus the Black Flame Dragon LV8 | effect Effect FIRE Dragon Lv8 3000/1800 | Cannot be Normal Summoned/Set. Must be Special Summoned by "Horus the Black Flame Dragon LV6", and cannot be Special Summoned by other ways. During either player's turn, when a Spell Card is activated: You can negate the activation, and if you do, destroy it. You must control this face-up card to activate and to resolve this effect. | Stein Horus
+Amazoness Archer | effect Effect EARTH Warrior Lv4 1400/1000 | You can Tribute 2 monsters; inflict 1200 damage to your opponent. | Panda Burn, Earth Beat, Cat OTK, Cat Burn, Stein OTK, Bazoo Burn
+Des Wombat | effect Effect EARTH Beast Lv3 1600/300 | Any damage to you from a card effect becomes 0. | Cat OTK, Cat Burn, Dimension Fusion Turbo, Warrior Control
+Milus Radiant | effect Effect EARTH Beast Lv1 300/250 | As long as this card remains face-up on the field, increase the ATK of all EARTH monsters by 500 points and decrease the ATK of all WIND monsters by 400 points. | Cat OTK, Cat Burn
+The Big March of Animals | spell Quick-Play | Until the end of this turn, all face-up Beast-Type monsters on your side of the field gain 200 ATK for each Beast-Type monster on your side of the field. | Cat Burn
+Byser Shock | effect Effect DARK Fiend Lv5 800/600 | If this card is Summoned: Return all Set cards on the field to the hand. | Stein OTK
+Gear Golem the Moving Fortress | effect Effect EARTH Machine Lv4 800/2200 | Once per turn, during your Main Phase 1: You can pay 800 Life Points; this card can attack your opponent directly this turn. | Stein OTK
+Emergency Provisions | spell Quick-Play | Send any number of other Spell/Trap Cards you control to the Graveyard; gain 1000 LP for each card sent to the Graveyard this way. | Stein OTK

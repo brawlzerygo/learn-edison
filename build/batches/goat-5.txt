@@ -1,0 +1,30 @@
+# Goat batch 5: card scripts to write in js/cards/goat-5.js (see build/CARD_SCRIPTS.md and js/cards/goat-1.js, goat-2.js)
+# Name | type | Text (goat/data/cards.js) | decks that run it
+
+Aqua Spirit | effect Effect WATER Aqua Lv4 1600/1200 | This card cannot be Normal Summoned or Set. This card can only be Special Summoned by removing from play 1 WATER monster in your Graveyard. During each of your opponent's Standby Phases, you can change the battle position of 1 of your opponent's face-up Monster Cards. Once changed, the monster must remain in this position for the rest of the turn. | Water Return
+Lekunga | effect Effect WATER Plant Lv4 1700/500 | You can banish 2 WATER monsters from your Graveyard; Special Summon 1 "Lekunga Token" (Plant-Type/WATER/Level 2/ATK 700/DEF 700) in Attack Position. | Water Return
+Dark Flare Knight | fusion Fusion Effect DARK Warrior Lv6 2200/800 | "Dark Magician" + "Flame Swordsman" You take no Battle Damage from battles involving this card. When this card is destroyed by battle and sent to the Graveyard: Special Summon 1 "Mirage Knight" from your hand or Deck. | Chaos Return, Earth Beat, Warrior Control, Water Return
+Deepsea Shark | fusion Fusion WATER Fish Lv5 1900/1600 | "Bottom Dweller" + "Tongyo" | Water Return
+Humanoid Worm Drake | fusion Fusion WATER Aqua Lv7 2200/2000 | "Worm Drake" + "Humanoid Slime" | Chaos Warrior Turbo, Water Return
+Roaring Ocean Snake | fusion Fusion WATER Aqua Lv6 2100/1800 | "Mystic Lamp" + "Hyosube" | Water Return
+King Dragun | fusion Fusion Effect DARK Dragon Lv7 2400/1100 | "Lord of D." + "Divine Dragon Ragnarok" Your opponent cannot target Dragon monsters with card effects. Once per turn: You can Special Summon 1 Dragon monster from your hand. | Chaos Return, Chaos Warrior Turbo, Earth Beat, Cat OTK, Stein Gate Turbo, Relinquished, Flip Control, Cat Burn, Flip Warrior, Tiger Stun, Gearfried, Stein Monarch, Economics FTK, Mataza Rush, Tomato Monarch, Stein OTK, Library FTK, Monarch, Warrior Control, Soul Control, Tomato Control, Clown Control, Jar Burn, Stein Horus, Heavy Slump, Zombie Turbo, Emissary Beat, Last Turn
+Magic Jammer | trap Counter | When a Spell Card is activated: Discard 1 card; negate the activation, and if you do, destroy it. | Drain Burn
+Black Skull Dragon | fusion Fusion DARK Dragon Lv9 3200/2500 | "Summoned Skull" + "Red-Eyes Black Dragon"    (This card is always treated as an "Archfiend" card.) | Drain Burn, Jar Burn
+Empress Judge | fusion Fusion EARTH Warrior Lv6 2100/1700 | "Queen's Double" + "Hibikime" | Drain Burn
+Fusionist | fusion Fusion EARTH Beast Lv3 900/700 | "Petit Angel" + "Mystical Sheep #2" | Drain Burn
+Sanwitch | fusion Fusion DARK Spellcaster Lv6 2100/1800 | "Sangan" + "Witch of the Black Forest" | Drain Burn, Drain Beat
+Thousand Dragon | fusion Fusion WIND Dragon Lv7 2400/2000 | "Time Wizard" + "Baby Dragon" | Drain Burn, Drain Beat, Jar Burn
+Warrior of Tradition | fusion Fusion EARTH Warrior Lv6 1900/1700 | "Sonic Maid" + "Beautiful Headhuntress" | Drain Burn
+Giltia the D. Knight | fusion Fusion LIGHT Warrior Lv5 1850/1500 | "Guardian of the Labyrinth" + "Protector of the Throne" | Chaos Warrior Turbo, Stein OTK, Library FTK, Monarch, Warrior Control, Chaos Zombie
+Gaia the Dragon Champion | fusion Fusion WIND Dragon Lv7 2600/2100 | "Gaia The Fierce Knight" + "Curse of Dragon" | Jar Burn
+Gearfried the Iron Knight | effect Effect EARTH Warrior Lv4 1800/1600 | If either player equips an Equip Card(s) to this card: Destroy that Equip Card(s). | Gearfried
+Smoke Grenade of the Thief | spell Equip | When this card is destroyed by a card effect while equipped to a monster: Look at your opponent's hand and discard 1 card from their hand. | Gearfried
+Golem Sentry | effect Effect EARTH Rock Lv4 800/1800 | Once per turn: You can change this card to face-down Defense Position. When this card is Flip Summoned: Target 1 monster your opponent controls; return that target to the hand. | Flip Control, Clown Control, Heavy Slump
+Mask of Darkness | effect Flip Effect DARK Fiend Lv2 900/400 | FLIP: Target 1 Trap in your GY; add that target to your hand. | Flip Control
+Emissary of the Afterlife | effect Effect DARK Fiend Lv4 1600/600 | When this card is sent from the field to the Graveyard: Each player adds 1 Level 3 or lower Normal Monster from their Deck to their hand. | Emissary Beat
+Back to Square One | spell Normal | Discard 1 card, then target 1 monster on the field; place that target on the top of the Deck. | Emissary Beat
+Light of Intervention | trap Continuous | While this card is on the field, Monster Cards cannot be Set or flipped face-down. If a Monster Card would be Set, it must be Normal Summoned in face-up Defense Position. | Tiger Stun
+Dark Scorpion - Cliff the Trap Remover | effect Effect DARK Warrior Lv3 1200/1000 | When this card inflicts Battle Damage to your opponent, you can activate 1 of these effects: ● Target 1 Spell/Trap Card on the field; destroy that target. ● Send the top 2 cards of their Deck to the Graveyard. | Bazoo Return
+Kuriboh | effect Effect DARK Fiend Lv1 300/200 | During damage calculation, if your opponent's monster attacks (Quick Effect): You can discard this card; you take no battle damage from that battle. | Soul Control, Emissary Beat
+Token Thanksgiving | spell Normal | Destroy all tokens on the field. Increase your Life Points by the number of tokens destroyed x 800 points. | Stein Horus
+Catapult Turtle | effect Effect WATER Aqua Lv5 1000/2000 | Once per turn: You can Tribute 1 monster; inflict damage to your opponent equal to half the Tributed monster's ATK on the field. | Last Turn

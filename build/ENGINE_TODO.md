@@ -49,3 +49,19 @@ From batch 7:
 
 Done in the engine pass (2026-11-20): Field Zone triggers and effects (and Setting Field Spells), static-effect cache refresh on flips and face changes, a position-change event ('pos'), an end-of-Battle-Phase event (phase 'bpEnd'), triggers checked against forbid() and resolving monster effects against negd() (Skill Drain), more than 2 attacks (c.flags.maxAttacks + maxAttacksTurn), cantBeTargeted honored by tgt(), a tribute-count hook (self.tributes / cont.tributes), a destruction replacement hook (self.replaceDestroy / cont.replaceDestroy, also for battle), the SC(x).effs guard, and the opponent's anyPlayer cards found from the idle and Battle Phase menus.
 Still open: cards written before these hooks keep their PARTIAL workarounds until they're moved onto them (Gladiator Beast tag outs -> bpEnd; Cloudians / Scopen / Level Limit -> 'pos'; Machina Gearframe / Peacekeeper / Six Samurai / Slingen / Clear Vice -> replaceDestroy; Double Coston / Geartown / Zerato -> tributes; Aurkus / Turbo Warrior -> cantBeTargeted).
+
+## Goat batches 3 to 7 (2026-11-25): gaps the card scripts work around
+Every Goat deck card is now scripted (js/cards/goat-3.js to goat-7.js, tests build/test_goat-3.js to test_goat-7.js; `node build/test_goat.js 1000 all`: 0 crashes, 0 stuck, no unscripted cards). These cards are the closest version until the engine grows:
+- No window during damage calculation: Injection Fairy Lily, Cipher Soldier, Sasuke Samurai #4 and Reflect Bounder act in the Damage Step windows instead.
+- No forced attack: Berserk Gorilla's "must attack if able"; Last Turn works out its battle inside the card.
+- No banish-instead replacement in move(): Banisher of the Light moves cards that reach the GY straight to the banished pile.
+- Targeting has no "who is targeting": King Dragun's Dragons can't be targeted by either player.
+- No face-up Defense Normal Summon and no Set-lock for face-down Special Summons: Light of Intervention.
+- No equip event: Gearfried the Iron Knight destroys a flipped-up Equip at the next game event.
+- No automatic negation hook: Ryu Senshi and Fiend Skull Dragon negate as an optional Spell Speed 3 response.
+- Ojama King's locked zones are picked automatically; control changes ignore them. The Last Warrior can't stop Flip Summons.
+- No face-up Deck: Convulsion of Nature logs the top card instead.
+- No LP payment hook: Spell Economics only covers Toon World. Scapegoat tokens skip summon locks (Jowgen).
+- Control changes have no "can't switch control" check: Mataza the Zapper returns to its owner.
+- "Can't be Special Summoned" still only blocks the GY (Flame Wingman, Gigantes, Horus LV8, The Creator), as before.
+- self.tributes returning a bare 0 is ignored (0 || []); Fusilier returns [0] to work around it.
