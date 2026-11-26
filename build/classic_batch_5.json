@@ -1,0 +1,290 @@
+[
+ {
+  "n": "Dragon Capture Jar",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "Change all face-up Dragon-Type monsters on the field to Defense Position, also they cannot change their battle positions."
+ },
+ {
+  "n": "Gift of The Mystical Elf",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Increase your Life Points by 300 points for each monster on the field."
+ },
+ {
+  "n": "Gorgon's Eye",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Until the end of this turn, all effects of Defense Position monsters are negated."
+ },
+ {
+  "n": "Graverobber",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Select 1 Spell Card from your opponent's Graveyard. You can use it as your hand until the end of the turn. If you use it, you take 2000 points of damage."
+ },
+ {
+  "n": "Horn of Heaven",
+  "k": "trap",
+  "sub": "Counter",
+  "tx": "When a monster(s) would be Summoned: Tribute 1 monster; negate the Summon, and if you do, destroy that monster(s)."
+ },
+ {
+  "n": "Kunai with Chain",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Activate 1 or both of these effects (simultaneously).\n● When an opponent's monster declares an attack: Target the attacking monster; change that target to Defense Position.\n● Target 1 face-up monster you control; equip this card to that target. It gains 500 ATK."
+ },
+ {
+  "n": "Magical Hats",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "During your opponent's Battle Phase: Choose 2 Spell/Trap Cards from your Deck and 1 monster in your Main Monster Zone. Special Summon them as Normal Monsters (ATK 0/DEF 0) in face-down Defense Position, Set the chosen monster if it is face-up, and shuffle them on the field. The 2 cards chosen from your Deck are destroyed at the end of the Battle Phase, and cannot remain on the field except during this Battle Phase."
+ },
+ {
+  "n": "Negate Attack",
+  "k": "trap",
+  "sub": "Counter",
+  "tx": "When an opponent's monster declares an attack: Target the attacking monster; negate the attack, then end the Battle Phase."
+ },
+ {
+  "n": "Shadow Spell",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "Activate this card by targeting 1 face-up monster your opponent controls; it loses 700 ATK, also it cannot attack or change its battle position. When it leaves the field, destroy this card."
+ },
+ {
+  "n": "Shadow of Eyes",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "When a monster(s) is Set on your opponent's field: Target 1 of those Set monsters; change that Set monster to face-up Attack Position. (Flip Effects are not activated.)"
+ },
+ {
+  "n": "Spellbinding Circle",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "Activate this card by targeting 1 monster your opponent controls; it cannot attack or change its battle position. When that monster is destroyed, destroy this card."
+ },
+ {
+  "n": "The Eye of Truth",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "Your opponent must keep their hand revealed. Once per turn, during your opponent's Standby Phase, if they have a Spell(s) in their hand: They gain 1000 LP if they have a Spell(s) in their hand at resolution."
+ },
+ {
+  "n": "Time Machine",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "When a monster is destroyed by battle and sent to the GY: Special Summon that monster to the same field it was on, in the same battle position it was in when destroyed."
+ },
+ {
+  "n": "Collected Power",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Target 1 face-up monster on the field; equip it with all Equip Cards on the field. If any of those Equip Cards is now equipped to an incorrect target, destroy that Equip Card."
+ },
+ {
+  "n": "Crush Card Virus",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Tribute 1 DARK monster with 1000 or less ATK; your opponent takes no damage until the end of the next turn after this card resolves, also, you look at your opponent's hand and all monsters they control, and if you do, destroy the monsters among them with 1500 or more ATK, then your opponent can destroy up to 3 monsters with 1500 or more ATK in their Deck."
+ },
+ {
+  "n": "Dark Renewal",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "When your opponent Normal or Special Summons a monster(s): Target 1 of those monsters and 1 Spellcaster monster you control; send both monsters to the GY, then you can Special Summon 1 DARK Spellcaster monster from your Deck or GY."
+ },
+ {
+  "n": "Dark Spirit of the Silent",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Activate only when an opponent's monster declares an attack. Negate that attack, and select another face-up monster your opponent controls. That monster attacks instead. (If it is in face-up Defense Position, change it to Attack Position.)"
+ },
+ {
+  "n": "Embodiment of Apophis",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "During either player's Main Phase: Special Summon this card as a Normal Monster (Reptile-Type/EARTH/Level 4/ATK 1600/DEF 1800). (This card is also still a Trap Card.)"
+ },
+ {
+  "n": "Energy Drain",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Target 1 face-up monster you control; it gains 200 ATK/DEF for each card your opponent currently has in their hand, until the end of this turn."
+ },
+ {
+  "n": "Exchange of the Spirit",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "If both players have 15 or more cards in their Graveyards: Pay 1000 LP; each player swaps the cards in their Graveyard with the cards in their Deck, then shuffles their Deck. You can only activate 1 \"Exchange of the Spirit\" per Duel."
+ },
+ {
+  "n": "Fairy Box",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "When your opponent's monster declares an attack: Toss a coin and call it. If you call it right, the attacking monster's ATK becomes 0 until the end of the Battle Phase. During each of your Standby Phases, pay 500 Life Points or destroy this card."
+ },
+ {
+  "n": "Jam Defender",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "When an opponent's monster declares an attack on a monster you control: You can target 1 \"Revival Jam\" you control; switch the attack target to that target."
+ },
+ {
+  "n": "Judgment of Anubis",
+  "k": "trap",
+  "sub": "Counter",
+  "tx": "When your opponent activates a Spell Card that would destroy a Spell/Trap Card(s) on the field: Discard 1 card; negate the activation, and if you do, destroy it, then you can destroy 1 face-up monster your opponent controls, and if you do that, inflict damage to your opponent equal to the destroyed monster's ATK on the field."
+ },
+ {
+  "n": "Lightforce Sword",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Banish 1 random card from your opponent's hand, face-down. During your opponent's 4th Standby Phase after this card's activation, return that card to their hand."
+ },
+ {
+  "n": "Magical Arm Shield",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "When your opponent declares an attack while you control a monster: Target 1 face-up monster your opponent controls, except the attacking monster; take control of that target until the end of the Battle Phase, and if you do, it is attacked instead, and you proceed to damage calculation."
+ },
+ {
+  "n": "Metalmorph",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Target 1 face-up monster on the field; equip this card to that target. It gains 300 ATK/DEF. If it attacks, it gains ATK equal to half the ATK of the attack target, during damage calculation only."
+ },
+ {
+  "n": "Muko",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Activate only when an effect of drawing card(s) is activated. Both players see the cards drawn by the effect and discard them all to the Graveyard."
+ },
+ {
+  "n": "Multiple Destruction",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "If both players have 3 or more cards in their hand: Each player places their entire hand on the bottom of the Deck in any order, also you lose LP equal to the total number of cards returned to the Deck by this effect x 300 (min. 1), then each player draws 5 cards. You can only activate 1 \"Multiple Destruction\" per turn."
+ },
+ {
+  "n": "Mystical Refpanel",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Activate only when a Spell Card that targets 1 player is activated. The effect of that Spell Card is applied to the other player instead."
+ },
+ {
+  "n": "Rope of Life",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "When a monster(s) is destroyed by battle and sent to your GY: Discard your entire hand (min.1), then target 1 of those monsters; Special Summon it, and if you do, it gains 800 ATK."
+ },
+ {
+  "n": "Shift",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "When your opponent targets exactly 1 monster you control (and no other cards) for an attack, or with a Spell/Trap effect: Target another monster you control that would be an appropriate target; that attack/Spell/Trap now targets the new target."
+ },
+ {
+  "n": "Skull Dice",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Roll a six-sided die. All monsters your opponent currently controls lose ATK/DEF equal to the result x 100, until the end of this turn."
+ },
+ {
+  "n": "Skull Invitation",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "Each time a card(s) is sent to the Graveyard, inflict 300 damage to its owner for each card sent."
+ },
+ {
+  "n": "Time Seal",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Skip the Draw Phase of your opponent's next turn."
+ },
+ {
+  "n": "Tornado Wall",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "Activate only while \"Umi\" is on the field. While \"Umi\" is face-up on the field, you take no Battle Damage from attacking monsters. Destroy this card when \"Umi\" leaves the field."
+ },
+ {
+  "n": "Vengeful Bog Spirit",
+  "k": "spell",
+  "sub": "Continuous",
+  "tx": "Monsters cannot attack the turn they are Summoned."
+ },
+ {
+  "n": "Umi",
+  "k": "spell",
+  "sub": "Field",
+  "tx": "All Fish, Sea Serpent, Thunder, and Aqua monsters on the field gain 200 ATK/DEF, also all Machine and Pyro monsters on the field lose 200 ATK/DEF."
+ },
+ {
+  "n": "Thousand Knives",
+  "k": "spell",
+  "sub": "Normal",
+  "tx": "If you control \"Dark Magician\": Target 1 monster your opponent controls; destroy that target."
+ },
+ {
+  "n": "The Flute of Summoning Dragon",
+  "k": "spell",
+  "sub": "Normal",
+  "tx": "Special Summon up to 2 Dragon monsters from your hand. \"Lord of D.\" must be on the field to activate and to resolve this effect."
+ },
+ {
+  "n": "The Dark Door",
+  "k": "spell",
+  "sub": "Continuous",
+  "tx": "Only 1 monster can attack during each Battle Phase."
+ },
+ {
+  "n": "Temple of the Kings",
+  "k": "spell",
+  "sub": "Continuous",
+  "tx": "You can activate 1 Trap Card the turn it was Set. You can send 1 \"Mystical Beast of Serket\" in your Monster Zone and this card you control to the Graveyard; Special Summon 1 monster from your hand or Deck, or 1 Fusion Monster from your Extra Deck. You can only use each effect of \"Temple of the Kings\" once per turn."
+ },
+ {
+  "n": "Stop Defense",
+  "k": "spell",
+  "sub": "Normal",
+  "tx": "Select 1 Defense Position monster on your opponent's side of the field and change it to Attack Position."
+ },
+ {
+  "n": "Silent Doom",
+  "k": "spell",
+  "sub": "Normal",
+  "tx": "Target 1 Normal Monster in your Graveyard; Special Summon it in face-up Defense Position, but it cannot attack."
+ },
+ {
+  "n": "Roulette Spider",
+  "k": "spell",
+  "sub": "Quick-Play",
+  "tx": "When an opponent's monster declares an attack: Roll a six-sided die and apply the result.\n1: Halve your LP.\n2: Make that attack a direct attack.\n3: Choose 1 monster you control, change the attack target to it, and perform damage calculation.\n4: Choose 1 other monster your opponent controls, change the attack target to it, and perform damage calculation.\n5: Negate the attack, and if you do, inflict damage to your opponent equal to that monster's ATK.\n6: Destroy that opponent's monster."
+ },
+ {
+  "n": "Ring of Defense",
+  "k": "spell",
+  "sub": "Quick-Play",
+  "tx": "When a Trap effect that inflicts damage is activated: Make that effect damage 0."
+ },
+ {
+  "n": "Return of the Doomed",
+  "k": "spell",
+  "sub": "Normal",
+  "tx": "Discard 1 Monster Card from your hand to the Graveyard. Return 1 of your monsters destroyed and sent to your Graveyard as a result of battle during this turn to your hand at the end of this turn."
+ },
+ {
+  "n": "Raigeki",
+  "k": "spell",
+  "sub": "Normal",
+  "tx": "Destroy all monsters your opponent controls."
+ },
+ {
+  "n": "Nightmare's Steelcage",
+  "k": "spell",
+  "sub": "Normal",
+  "tx": "This card remains on the field for 2 of your opponent's turns. While this card is face-up on the field, no monsters can attack."
+ }
+]

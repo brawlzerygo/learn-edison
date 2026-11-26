@@ -1,0 +1,333 @@
+[
+ {
+  "n": "Blue-Eyes Toon Dragon",
+  "k": "effect",
+  "ab": "Toon Effect",
+  "a": "LIGHT",
+  "r": "Dragon",
+  "lv": 8,
+  "atk": "3000",
+  "def": "2500",
+  "tx": "Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 2 monsters, while you control \"Toon World\". Cannot attack the turn it is Special Summoned. You must pay 500 LP to declare an attack with this monster. If \"Toon World\" on the field is destroyed, destroy this card. Can attack your opponent directly, unless they control a Toon monster, in which case this card must target a Toon monster for its attacks."
+ },
+ {
+  "n": "Exodia the Forbidden One",
+  "k": "effect",
+  "ab": "Effect",
+  "a": "DARK",
+  "r": "Spellcaster",
+  "lv": 3,
+  "atk": "1000",
+  "def": "1000",
+  "tx": "If you have \"Right Leg of the Forbidden One\", \"Left Leg of the Forbidden One\", \"Right Arm of the Forbidden One\" and \"Left Arm of the Forbidden One\" in addition to this card in your hand, you win the Duel."
+ },
+ {
+  "n": "Manga Ryu-Ran",
+  "k": "effect",
+  "ab": "Toon Effect",
+  "a": "FIRE",
+  "r": "Dragon",
+  "lv": 7,
+  "atk": "2200",
+  "def": "2600",
+  "tx": "(This card is always treated as a \"Toon\" card.)\nCannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 2 monsters, while you control \"Toon World\". Cannot attack the turn it is Special Summoned. You must pay 500 LP to declare an attack with this monster. If \"Toon World\" on the field is destroyed, destroy this card. Can attack your opponent directly, unless they control a Toon monster, in which case this card must target a Toon monster for its attacks."
+ },
+ {
+  "n": "Toon Mermaid",
+  "k": "effect",
+  "ab": "Toon Effect",
+  "a": "WATER",
+  "r": "Aqua",
+  "lv": 4,
+  "atk": "1400",
+  "def": "1500",
+  "tx": "Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand), while you control \"Toon World\". Cannot attack the turn it is Special Summoned. You must pay 500 LP to declare an attack with this monster. If \"Toon World\" on the field is destroyed, destroy this card. Can attack your opponent directly, unless they control a Toon monster, in which case this card must target a Toon monster for its attacks."
+ },
+ {
+  "n": "Toon Summoned Skull",
+  "k": "effect",
+  "ab": "Toon Effect",
+  "a": "DARK",
+  "r": "Fiend",
+  "lv": 6,
+  "atk": "2500",
+  "def": "1200",
+  "tx": "(This card is always treated as an \"Archfiend\" card.)\nCannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 1 monster, while you control \"Toon World\". Cannot attack the turn it is Special Summoned. You must pay 500 LP to declare an attack with this monster. If \"Toon World\" on the field is destroyed, destroy this card. Can attack your opponent directly, unless they control a Toon monster, in which case this card must target a Toon monster for its attacks."
+ },
+ {
+  "n": "Black Luster Soldier",
+  "k": "ritual",
+  "ab": "Ritual",
+  "a": "EARTH",
+  "r": "Warrior",
+  "lv": 8,
+  "atk": "3000",
+  "def": "2500",
+  "tx": "You can Ritual Summon this card with \"Black Luster Ritual\"."
+ },
+ {
+  "n": "Magician of Black Chaos",
+  "k": "ritual",
+  "ab": "Ritual",
+  "a": "DARK",
+  "r": "Spellcaster",
+  "lv": 8,
+  "atk": "2800",
+  "def": "2600",
+  "tx": "You can Ritual Summon this card with \"Black Magic Ritual\"."
+ },
+ {
+  "n": "Black Luster Ritual",
+  "k": "spell",
+  "sub": "Ritual",
+  "tx": "This card is used to Ritual Summon \"Black Luster Soldier\". You must also Tribute monsters from your hand or field whose total Levels equal 8 or more."
+ },
+ {
+  "n": "Barox",
+  "k": "fusion",
+  "ab": "Fusion",
+  "a": "DARK",
+  "r": "Fiend",
+  "lv": 5,
+  "atk": "1380",
+  "def": "1530",
+  "tx": "\"Frenzied Panda\" + \"Ryu-Kishin\""
+ },
+ {
+  "n": "Bickuribox",
+  "k": "fusion",
+  "ab": "Fusion",
+  "a": "DARK",
+  "r": "Fiend",
+  "lv": 7,
+  "atk": "2300",
+  "def": "2000",
+  "tx": "\"Crass Clown\" + \"Dream Clown\""
+ },
+ {
+  "n": "Punished Eagle",
+  "k": "fusion",
+  "ab": "Fusion",
+  "a": "WIND",
+  "r": "Winged Beast",
+  "lv": 6,
+  "atk": "2100",
+  "def": "1800",
+  "tx": "\"Blue-Winged Crown\" + \"Niwatori\""
+ },
+ {
+  "n": "Rabid Horseman",
+  "k": "fusion",
+  "ab": "Fusion",
+  "a": "EARTH",
+  "r": "Beast-Warrior",
+  "lv": 6,
+  "atk": "2000",
+  "def": "1700",
+  "tx": "\"Battle Ox\" + \"Mystic Horseman\""
+ },
+ {
+  "n": "Skelgon",
+  "k": "fusion",
+  "ab": "Fusion",
+  "a": "DARK",
+  "r": "Zombie",
+  "lv": 6,
+  "atk": "1700",
+  "def": "1900",
+  "tx": "\"The Snake Hair\" + \"Blackland Fire Dragon\""
+ },
+ {
+  "n": "Zombie Warrior",
+  "k": "fusion",
+  "ab": "Fusion",
+  "a": "DARK",
+  "r": "Zombie",
+  "lv": 3,
+  "atk": "1200",
+  "def": "900",
+  "tx": "\"Skull Servant\" + \"Battle Warrior\""
+ },
+ {
+  "n": "Masked Beast Des Gardius",
+  "k": "effect",
+  "ab": "Effect",
+  "a": "DARK",
+  "r": "Fiend",
+  "lv": 8,
+  "atk": "3300",
+  "def": "2500",
+  "tx": "This card cannot be Normal Summoned or Set. This card cannot be Special Summoned except by Tributing 2 monsters, including at least 1 \"Grand Tiki Elder\" or \"Melchid the Four-Face Beast\". When this card is sent from the field to the Graveyard, equip 1 \"The Mask of Remnants\" from your Deck to 1 monster on the field."
+ },
+ {
+  "n": "Obelisk the Tormentor",
+  "k": "effect",
+  "ab": "Effect",
+  "a": "DIVINE",
+  "r": "Divine-Beast",
+  "lv": 10,
+  "atk": "4000",
+  "def": "4000",
+  "tx": "Requires 3 Tributes to Normal Summon (cannot be Normal Set). This card's Normal Summon cannot be negated. When Normal Summoned, cards and effects cannot be activated. Neither player can target this card with card effects. Once per turn, during the End Phase, if this card was Special Summoned: Send it to the GY. You can Tribute 2 monsters; destroy all monsters your opponent controls. This card cannot declare an attack the turn this effect is activated."
+ },
+ {
+  "n": "Slifer the Sky Dragon",
+  "k": "effect",
+  "ab": "Effect",
+  "a": "DIVINE",
+  "r": "Divine-Beast",
+  "lv": 10,
+  "atk": "-1",
+  "def": "-1",
+  "tx": "Requires 3 Tributes to Normal Summon (cannot be Normal Set). This card's Normal Summon cannot be negated. When Normal Summoned, cards and effects cannot be activated. Once per turn, during the End Phase, if this card was Special Summoned: Send it to the GY. Gains 1000 ATK/DEF for each card in your hand. If a monster(s) is Normal or Special Summoned to your opponent's field in Attack Position: That monster(s) loses 2000 ATK, then if its ATK has been reduced to 0 as a result, destroy it."
+ },
+ {
+  "n": "The Winged Dragon of Ra",
+  "k": "effect",
+  "ab": "Effect",
+  "a": "DIVINE",
+  "r": "Divine-Beast",
+  "lv": 10,
+  "atk": "-1",
+  "def": "-1",
+  "tx": "Cannot be Special Summoned. Requires 3 Tributes to Normal Summon (cannot be Normal Set). This card's Normal Summon cannot be negated. When Normal Summoned, other cards and effects cannot be activated. When this card is Normal Summoned: You can pay LP so that you only have 100 left; this card gains ATK/DEF equal to the amount of LP paid. You can pay 1000 LP, then target 1 monster on the field; destroy that target."
+ },
+ {
+  "n": "Fortress Whale",
+  "k": "ritual",
+  "ab": "Ritual",
+  "a": "WATER",
+  "r": "Fish",
+  "lv": 7,
+  "atk": "2350",
+  "def": "2150",
+  "tx": "You can Ritual Summon this card with \"Fortress Whale's Oath\"."
+ },
+ {
+  "n": "The Masked Beast",
+  "k": "ritual",
+  "ab": "Ritual",
+  "a": "DARK",
+  "r": "Fiend",
+  "lv": 8,
+  "atk": "3200",
+  "def": "1800",
+  "tx": "You can Ritual Summon this card with \"Curse of the Masked Beast\"."
+ },
+ {
+  "n": "Zera the Mant",
+  "k": "ritual",
+  "ab": "Ritual",
+  "a": "DARK",
+  "r": "Fiend",
+  "lv": 8,
+  "atk": "2800",
+  "def": "2300",
+  "tx": "This card can only be Ritual Summoned with the Ritual Spell Card, \"Zera Ritual\"."
+ },
+ {
+  "n": "Curse of the Masked Beast",
+  "k": "spell",
+  "sub": "Ritual",
+  "tx": "This card is used to Ritual Summon \"The Masked Beast\". You must also Tribute monsters from your hand or field whose total Levels equal 8 or more."
+ },
+ {
+  "n": "Fortress Whale's Oath",
+  "k": "spell",
+  "sub": "Ritual",
+  "tx": "This card is used to Ritual Summon \"Fortress Whale\". You must also Tribute monsters from your hand or field whose total Levels equal 7 or more."
+ },
+ {
+  "n": "Mask of Dispel",
+  "k": "spell",
+  "sub": "Continuous",
+  "tx": "Select 1 face-up Spell Card on the field. The controller of the Spell Card takes 500 points of damage during each of your Standby Phases. When the selected card is removed from the field, destroy this card."
+ },
+ {
+  "n": "Mask of the Accursed",
+  "k": "spell",
+  "sub": "Equip",
+  "tx": "The equipped monster cannot attack. Once per turn, during your Standby Phase: Inflict 500 damage to the controller of the equipped monster."
+ },
+ {
+  "n": "Spirit Message \"A\"",
+  "k": "spell",
+  "sub": "Continuous",
+  "tx": "This card can only be placed on the field by the effect of \"Destiny Board\"."
+ },
+ {
+  "n": "Spirit Message \"I\"",
+  "k": "spell",
+  "sub": "Continuous",
+  "tx": "This card can only be placed on the field by the effect of \"Destiny Board\"."
+ },
+ {
+  "n": "Spirit Message \"L\"",
+  "k": "spell",
+  "sub": "Continuous",
+  "tx": "This card can only be placed on the field by the effect of \"Destiny Board\"."
+ },
+ {
+  "n": "Spirit Message \"N\"",
+  "k": "spell",
+  "sub": "Continuous",
+  "tx": "This card can only be placed on the field by the effect of \"Destiny Board\"."
+ },
+ {
+  "n": "The Mask of Remnants",
+  "k": "spell",
+  "sub": "Normal",
+  "tx": "Shuffle this card into its owner's Deck, OR if this card was put into play by the effect of \"Masked Beast Des Gardius\", this card is treated as an Equip Card. Control of the equipped monster is switched."
+ },
+ {
+  "n": "Zera Ritual",
+  "k": "spell",
+  "sub": "Ritual",
+  "tx": "This card is used to Ritual Summon \"Zera the Mant\". You must also Tribute monsters from the field or your hand whose total Levels equal 8 or more."
+ },
+ {
+  "n": "Destiny Board",
+  "k": "trap",
+  "sub": "Continuous",
+  "tx": "When this card and all 4 \"Spirit Message\" cards with different names are placed on your field, you win the Duel. Once per turn, during your opponent's End Phase: Place 1 \"Spirit Message\" card from your hand or Deck in your Spell & Trap Zone face-up, in the proper order of \"I\", \"N\", \"A\", and \"L\". When any \"Spirit Message\" card or \"Destiny Board\" you control leaves the field, send all \"Spirit Message\" cards and \"Destiny Board\" you control to the Graveyard."
+ },
+ {
+  "n": "Mask of Weakness",
+  "k": "trap",
+  "sub": "Normal",
+  "tx": "Target 1 attacking monster; that target loses 700 ATK until the end of this turn."
+ },
+ {
+  "n": "Alligator's Sword Dragon",
+  "k": "fusion",
+  "ab": "Fusion Effect",
+  "a": "WIND",
+  "r": "Dragon",
+  "lv": 5,
+  "atk": "1700",
+  "def": "1500",
+  "tx": "\"Baby Dragon\" + \"Alligator's Sword\"\nThis card can attack your opponent directly if the only face-up monsters they control are EARTH, WATER, or FIRE."
+ },
+ {
+  "n": "Chimera the Flying Mythical Beast",
+  "k": "fusion",
+  "ab": "Fusion Effect",
+  "a": "WIND",
+  "r": "Beast",
+  "lv": 6,
+  "atk": "2100",
+  "def": "1800",
+  "tx": "\"Gazelle the King of Mythical Beasts\" + \"Berfomet\"\n(This card is always treated as a \"Phantom Beast\" card.)\nWhen this card is destroyed: You can target 1 \"Berfomet\" or 1 \"Gazelle the King of Mythical Beasts\" in your Graveyard; Special Summon that target."
+ },
+ {
+  "n": "Great Mammoth of Goldfine",
+  "k": "fusion",
+  "ab": "Fusion",
+  "a": "DARK",
+  "r": "Zombie",
+  "lv": 6,
+  "atk": "2200",
+  "def": "1800",
+  "tx": "\"The Snake Hair\" + \"Dragon Zombie\""
+ }
+]

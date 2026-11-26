@@ -148,3 +148,7 @@ From `learn-edison/`:
 1. `node build/test_cards.js js/cards/batch-N.js 12` plays random duels around each card. It reports crashes (with the stack), stuck games, and cards whose effect never happened ("ok?"). Fix every crash. Look at each "ok?": usually the card's condition never comes true in random play, but it can also be a broken `cond`.
 2. `node build/test_engine.js 300 all` plays random duels with every deck and must show 0 crashes and 0 stuck.
 3. For tricky cards, write a scenario check in `build/test_batch-N.js`, modelled on `build/test_rules.js`. `cfg.board` sets up hands, fields and GYs. Example: `duel([FILL],[FILL],{board:[{hand:['X'], m:['Y'], st:['Z'], gy:[...], extra:[...]}, {...}]})`.
+
+## Classic cards (Duelist Kingdom and Battle City, 2026-11-25)
+- `js/cards/classic-1.js` to `classic-5.js` script the cards of the play site's Duelist Kingdom and Battle City draft pools, registered for Goat (`E.addScripts(obj, 'goat')`). Cards the Goat site doesn't list come from `play/data/classic-cards.js` (`play/tools/build_classic.mjs`). Test: `node build/test_classic.js js/cards/classic-N.js 12` and `node build/test_classic-N.js`.
+- Engine hooks added for them: `E.lib.winDuel(g, p, why)`, `E.lib.coin(g, p)` (true for Heads), `E.lib.dice(g, p)` (1 to 6), `self.tribExact` (exact Tributes, the Egyptian Gods), `self.attackCost(g, c)` (LP paid to declare an attack, Toons), `self.handWin(g, c, p)` (checked whenever a card enters a hand, Exodia).

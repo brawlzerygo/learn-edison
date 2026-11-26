@@ -65,3 +65,12 @@ Every Goat deck card is now scripted (js/cards/goat-3.js to goat-7.js, tests bui
 - Control changes have no "can't switch control" check: Mataza the Zapper returns to its owner.
 - "Can't be Special Summoned" still only blocks the GY (Flame Wingman, Gigantes, Horus LV8, The Creator), as before.
 - self.tributes returning a bare 0 is ignored (0 || []); Fusilier returns [0] to work around it.
+
+From the classic batches (2026-11-25):
+- Attack redirects: attack() keeps its target local (Ancient Lamp, Eye of Illusion, Dark Spirit of the Silent, Jam Defender, Magical Arm Shield, Shift, Roulette Spider work out their own battle).
+- No response window after a battle destruction or a Set (Time Machine, Rope of Life, Shadow of Eyes are optional triggers while Set).
+- No window during damage calculation (Kazejin, Sanga, Suijin use the Damage Step windows).
+- No idle action for a Special Summon from the Deck (Metalzoa, Red-Eyes Black Metal Dragon are offered as triggers).
+- Activating a Trap from the hand (Makyura the Destructor); Standby Phase windows (Curse of Fiend); the hand size limit is fixed (Infinite Cards).
+- Type changes (Parasite Paracide); "unaffected by Spells" only covers destruction (The Legendary Fisherman); Flip Summon as a forbid action (Mesmeric Control, Insect Barrier, Jam Breeding Machine).
+- Attack costs that Tribute a monster (Panther Warrior, Insect Queen use a chain link); Jinzo can't exempt its controller (Amplifier); hand cards change owner (Exchange); revealed hands (The Eye of Truth).
