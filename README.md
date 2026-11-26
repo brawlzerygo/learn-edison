@@ -31,7 +31,7 @@ python3 build/build_data.py --all-images --fill-missing
 - **Edison-accurate card text and rulings:** the [mikaRulings](https://github.com/MikaMikaDE/mikaRulings) project by MikaMikaDE.
 - **Card images missing from edisonformat.net, and token images:** [YGOPRODeck](https://ygoprodeck.com).
 - **Card back image:** [Yugipedia](https://yugipedia.com).
-- **Library videos:** made by and credited to their creators, including [IMNerd (Frazier Smith)](https://www.youtube.com/@imnerdpodcast) and [E3 Yu-Gi-Oh](https://www.youtube.com/@E3YuGiOh). The site only links to them on YouTube.
+- **Library videos:** the course episodes on our own [Learn Retro YouTube channel](https://www.youtube.com/@LearnRetro).
 
 ## Disclaimer
 
