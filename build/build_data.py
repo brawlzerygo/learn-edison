@@ -43,7 +43,8 @@ def main():
             rec['sub'] = c.get('Type') or 'Normal'
         else:
             extra = c.get('Extra') or 'Normal'
-            rec['k'] = 'synchro' if 'Synchro' in extra and extra != 'non-Synchro' else 'fusion' if 'Fusion' in extra else 'ritual' if 'Ritual' in extra else 'normal' if extra.startswith('Normal') else 'effect'
+            if extra == 'non-Synchro': extra = 'Synchro'   # the source's label for a Synchro with no effect (Gaia Knight); it is still a Synchro, from the Extra Deck
+            rec['k'] = 'synchro' if 'Synchro' in extra else 'fusion' if 'Fusion' in extra else 'ritual' if 'Ritual' in extra else 'normal' if extra.startswith('Normal') else 'effect'
             rec['ab'] = extra            # e.g. "Effect Tuner", "Flip Effect", "Synchro"
             rec['a'] = attr
             rec['r'] = c.get('Type')     # race

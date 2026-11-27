@@ -99,5 +99,16 @@ T('Grand Neos contact fusion and bounce', () => {
   choose(g, 'end'); passAll(g);
   ok(g.p[0].extra.some(c => E.name(c) === 'Elemental HERO Grand Neos'), 'Grand Neos went back to the Extra Deck in the End Phase');
 });
+T('Geartown: Set a Field Spell over it, its effect activates; activate one over it, it misses the timing', () => {
+  for (const mode of ['set', 'act']) {
+    const g = duel({ board: [{ hand: ['Geartown', 'Geartown', 'Ancient Gear Soldier'] }, { hand: [] }] });
+    const [a, b] = g.p[0].hand.filter(c => E.name(c) === 'Geartown');
+    choose(g, 'a:' + a.u + ':0'); passAll(g);
+    choose(g, mode === 'set' ? 'setst:' + b.u : 'a:' + b.u + ':0');
+    ok(g.p[0].gy.includes(a), mode + ': the old Geartown was destroyed');
+    if (mode === 'set') { ok(g.prompt && g.prompt.type === 'yesno', 'set: Geartown asks to use its effect'); choose(g, 'y'); passAll(g); ok(on(g, 0, 'Ancient Gear Soldier'), 'set: Ancient Gear Soldier Special Summoned'); }
+    else { passAll(g); ok(g.prompt && g.prompt.type === 'idle' && !on(g, 0, 'Ancient Gear Soldier'), 'act: no Geartown effect (missed the timing)'); }
+  }
+});
 console.log(fails ? `\n${fails} failed` : '\nAll batch-3 checks passed.');
 process.exit(fails ? 1 : 0);
