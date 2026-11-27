@@ -20,10 +20,22 @@
 #        sh build/publish.sh --site play-preview ["what changed"]  the duel game's preview (play-preview/, built from play/ by
 #                                                               play/tools/build_site.mjs; repo learn-retro-play-preview, noindex)
 #        sh build/publish.sh --site play ["what changed"]      the duel game live (play-site/, repo learn-retro-play, play.learnretro.com)
+#        sh build/publish.sh --site play-source ["what changed"]  the duel game's source (play/, PRIVATE repo learn-retro-play-source,
+#                                                               no Pages): its full history, tools and mock-ups, backed up
+#        sh build/publish.sh --source "what changed"           one step for the source (Zack, 2026-11-26: "make committing and pushing
+#                                                               source one step"): commits and pushes play/ (--site play-source), then
+#                                                               this folder (learn-edison). Doesn't touch the live game or the sites.
 # Since 2026-11-23 (Zack: one domain) --site hub also assembles /edison/ and /goat/ into the hub (build/assemble.mjs).
 # hub/, redirect/, goat/ and site-preview/ are their own git repos inside this folder (ignored by this repo);
 # same account, same checks.
 set -e
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+if [ "$1" = "--source" ]; then
+  msg="${2:-Update the source}"
+  echo "== play/ source"; sh "$SELF" --site play-source "$msg"
+  echo "== learn-edison source"; sh "$SELF" "$msg"
+  exit 0
+fi
 cd "$(dirname "$0")/.."
 export GH_CONFIG_DIR="$HOME/.config/gh-brawlzerygo"
 OWNER=brawlzerygo
@@ -43,9 +55,10 @@ if [ "$1" = "--site" ]; then
       cd play-preview; REPO=learn-retro-play-preview; DESC="Preview of play.learnretro.com, the Learn Retro duel simulator (not indexed)" ;;
     play) node play/tools/build_site.mjs --live || { echo "The game build failed. Not publishing."; exit 1; }
       cd play-site; REPO=learn-retro-play; DESC="Learn Retro Play: duel the computer in Edison and Goat format Yu-Gi-Oh!" ;;
+    play-source) cd play; REPO=learn-retro-play-source; DESC="Source of Learn Retro Play (play.learnretro.com): the duel game client, tools and mock-ups"; NOPAGES=1; PRIVATE=1 ;;
     goat) cd goat; python3 build/check_js.py || { echo "Fix the JavaScript errors above. Not publishing."; exit 1; }
       REPO=learn-goat; DESC="Source of the Goat format course at learnretro.com/goat/"; NOPAGES=1 ;;
-    *) echo "Unknown site: $2 (use hub, site-preview, preview, redirect, goat, play-preview or play)"; exit 1 ;;
+    *) echo "Unknown site: $2 (use hub, site-preview, preview, redirect, goat, play-preview, play or play-source)"; exit 1 ;;
   esac
   shift 2
   [ -d .git ] || git init -q -b main
@@ -70,7 +83,7 @@ push() { git -c credential.helper= -c 'credential.helper=!gh auth git-credential
 
 if ! git remote get-url origin >/dev/null 2>&1; then
   if ! gh repo view "$OWNER/$REPO" >/dev/null 2>&1; then
-    gh repo create "$OWNER/$REPO" --public \
+    gh repo create "$OWNER/$REPO" $([ -n "$PRIVATE" ] && echo --private || echo --public) \
       --description "$DESC" \
       --homepage "https://$OWNER.github.io/$REPO/"
   fi
