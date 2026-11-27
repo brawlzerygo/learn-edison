@@ -3,6 +3,9 @@
 //    A replaced Field Spell is destroyed (Geartown ruling); an Equip Spell whose monster leaves is sent to the GY, not destroyed (Butterfly Dagger - Elma ruling 2).
 // 2. Special Summon positions (askPos, the play game): an effect that names no position asks; one that names it doesn't.
 // 3. Card kinds agree with card text: checked at build time in build/build_data.py (check_kinds), re-checked here on the shipped data.
+// 4. Position questions read only the sentences that Special Summon (a position named elsewhere in the text used to skip the question).
+// 5. Ongoing Level changes go through lv() (A Legendary Ocean, Stygian Dirge, Synchro Boost used to do nothing or lag a step).
+// 6. A summon's "when summoned" moment ends when the next action starts (Bottomless Trap Hole was offered against later cards).
 const { E, C } = require('./load')();
 const id = n => { const c = C.find(x => x.n === n); if (!c) throw new Error('no card ' + n); return c.id; };
 const FILL = 'Gene-Warped Warwolf';
@@ -59,6 +62,38 @@ T('Every card kind agrees with its text (no Extra Deck monster filed as Main Dec
     if (syn !== (r.k === 'synchro')) { bad++; console.log('  ' + r.n + ': kind ' + r.k); }
   }
   ok(!bad, 'all ' + C.length + ' cards: Synchro text matches the Synchro kind');
+});
+
+T('Position question reads only the summon sentences', () => {
+  const txt = n => C.find(x => x.n === n).tx;
+  for (const [n, names] of [['Monster Reborn', false], ['Red-Eyes Zombie Dragon', false], ['Infernity Necromancer', false], ['Call of the Haunted', true], ['Premature Burial', true], ['Debris Dragon', true]])
+    ok(E.namesPos(txt(n)) === names, `${n}: ${names ? 'names its position' : 'asks for a position'}`);
+});
+
+T('A Legendary Ocean lowers WATER Levels in the hand (a Level 5 needs no Tribute)', () => {
+  const g = duel([{ hand: ['Terrorking Salmon', 'A Legendary Ocean'] }, { hand: [] }]);
+  ok(!opt(g, new RegExp('ns:' + hand(g, 'Terrorking Salmon').u)), 'no Ocean: Terrorking Salmon needs a Tribute');
+  act(g, new RegExp('a:' + hand(g, 'A Legendary Ocean').u + ':')); passAll(g);
+  const s = hand(g, 'Terrorking Salmon');
+  ok(E.lv(s) === 4, 'with Ocean: Level 4 in the hand');
+  ok(!!opt(g, new RegExp('ns:' + s.u)), 'with Ocean: Normal Summon with no Tribute');
+});
+
+T('Stygian Dirge lowers the opponent’s Levels at once', () => {
+  const g0 = duel([{}, { m: ['Cyber Dragon'] }]);
+  ok(E.lv(g0.p[1].m.find(Boolean)) === 5, 'Cyber Dragon starts at Level 5');
+  const g = duel([{ st: [{ n: 'Stygian Dirge', pos: 'up' }] }, { m: ['Cyber Dragon'] }]);
+  ok(E.lv(g.p[1].m.find(Boolean)) === 4, 'Cyber Dragon is Level 4 under a face-up Stygian Dirge');
+});
+
+T('Bottomless Trap Hole is offered only in the summon’s own moment', () => {
+  const g = duel([{ hand: [FILL, 'Pot of Avarice'], gy: [FILL, FILL, FILL, FILL, FILL] }, { st: [{ n: 'Bottomless Trap Hole', pos: 'set' }] }]);
+  act(g, new RegExp('ns:' + hand(g, FILL).u));
+  if (g.prompt && g.prompt.p === 0 && g.prompt.type === 'respond') E.act(g, ['pass']);
+  ok(g.prompt && g.prompt.p === 1 && /Bottomless/.test(g.prompt.opts.map(o => o.label).join()), 'offered right after the summon');
+  E.act(g, ['pass']);
+  act(g, new RegExp('a:' + hand(g, 'Pot of Avarice').u + ':'));
+  ok(!(g.prompt && g.prompt.p === 1 && /Bottomless/.test(g.prompt.opts.map(o => o.label).join())), 'not offered against a later card');
 });
 
 console.log(fails ? `\n${fails} failed` : '\nAll root-cause guards passed.');
