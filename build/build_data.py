@@ -15,7 +15,13 @@ Writes (loaded by index.html with <script> tags, so the page also works opened a
 With --images it also downloads card art for every card in a starter deck or a lesson into ../img/<id>.webp,
 paced and skipping files already there. Other cards load their art from img.edisonformat.net when viewed.
 """
+import re
 import json, os, re, sys, time, glob, datetime, urllib.request, urllib.parse
+
+# monster type labels in edisonformat.net's data -> our kind (see the check in main())
+KIND_OF = {'Normal': 'normal', 'Normal Tuner': 'normal', 'Effect': 'effect', 'Flip Effect': 'effect', 'Effect Tuner': 'effect',
+           'Effect Gemini': 'effect', 'Effect Union': 'effect', 'Effect Spirit': 'effect', 'Effect Toon': 'effect',
+           'Synchro': 'synchro', 'Fusion': 'fusion', 'Ritual': 'ritual'}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -29,6 +35,23 @@ def clean(s, empty_prefixes):
     if any(s.startswith(p) for p in empty_prefixes):
         return ''
     return s
+
+def check_kinds(cards):
+    """Every card's kind must agree with its own text, so an Extra Deck monster can never be filed as a Main Deck one (or the
+    reverse) again (2026-11-27, Gaia Knight). A Synchro's first line names a Tuner and non-Tuners; a Fusion's names its materials."""
+    bad = []
+    for r in cards:
+        if r.get('k') in ('spell', 'trap'):
+            continue
+        first = (r.get('tx') or '').split('\n')[0]
+        syn = re.search(r'\+[^\n]*\bnon-Tuner', first) is not None or re.search(r'\bTuner\s*\+', first) is not None  # "1 Tuner + 1 or more EARTH monsters" (XX-Saber Gottoms)
+        fus = re.match(r'\s*"[^"]+"\s*\+\s*"', first) is not None and not syn  # Majestic Red Dragon names its Synchros but is a Synchro
+        if syn and r['k'] != 'synchro': bad.append(f"{r['n']}: Synchro materials in its text but filed as {r['k']}")
+        if r['k'] == 'synchro' and not syn: bad.append(f"{r['n']}: filed as a Synchro but its text names no Tuner + non-Tuner materials")
+        if fus and r['k'] not in ('fusion', 'ritual'): bad.append(f"{r['n']}: Fusion materials in its text but filed as {r['k']}")
+    if bad:
+        raise SystemExit('build_data: card kinds disagree with card text:\n  ' + '\n  '.join(bad))
+
 
 def main():
     cards = json.load(open(os.path.join(HERE, 'raw/EdisonCards.json')))
@@ -44,7 +67,11 @@ def main():
         else:
             extra = c.get('Extra') or 'Normal'
             if extra == 'non-Synchro': extra = 'Synchro'   # the source's label for a Synchro with no effect (Gaia Knight); it is still a Synchro, from the Extra Deck
-            rec['k'] = 'synchro' if 'Synchro' in extra else 'fusion' if 'Fusion' in extra else 'ritual' if 'Ritual' in extra else 'normal' if extra.startswith('Normal') else 'effect'
+            # every label maps to its kind by name; a label we haven't seen stops the build instead of quietly becoming an Effect Monster
+            # (2026-11-27 root cause of the Gaia Knight report: an unexpected label fell through to 'effect')
+            if extra not in KIND_OF:
+                raise SystemExit(f"build_data: unknown monster type label {extra!r} on {c['Name']} ({c['id']}). Add it to KIND_OF with its kind.")
+            rec['k'] = KIND_OF[extra]
             rec['ab'] = extra            # e.g. "Effect Tuner", "Flip Effect", "Synchro"
             rec['a'] = attr
             rec['r'] = c.get('Type')     # race
@@ -90,6 +117,7 @@ def main():
                     print('unknown card', i, 'in', t['Name'])
         decks.append(dk)
 
+    check_kinds(out.values() if isinstance(out, dict) else out)
     os.makedirs(os.path.join(ROOT, 'data'), exist_ok=True)
     with open(os.path.join(ROOT, 'data/cards.js'), 'w') as fh:
         fh.write('window.EDISON_CARDS=' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';\n')
@@ -166,7 +194,7 @@ def main():
         print('YGOPRODeck art failures', fails)
 
     # Which cards have local art: the page uses img/<id>.webp for these and img.edisonformat.net for the rest.
-    local = sorted(int(os.path.basename(f)[:-5]) for f in glob.glob(os.path.join(ROOT, 'img/*.webp')))
+    local = sorted(int(os.path.basename(f)[:-5]) for f in glob.glob(os.path.join(ROOT, 'img/*.webp')) if os.path.basename(f)[:-5].isdigit())  # skip back.webp and other non-card art
     with open(os.path.join(ROOT, 'data/localimg.js'), 'w') as fh:
         fh.write('window.EDISON_LOCALIMG=' + json.dumps(local, separators=(',', ':')) + ';\n')
     print('local images', len(local))
