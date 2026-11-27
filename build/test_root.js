@@ -6,6 +6,8 @@
 // 4. Position questions read only the sentences that Special Summon (a position named elsewhere in the text used to skip the question).
 // 5. Ongoing Level changes go through lv() (A Legendary Ocean, Stygian Dirge, Synchro Boost used to do nothing or lag a step).
 // 6. A summon's "when summoned" moment ends when the next action starts (Bottomless Trap Hole was offered against later cards).
+// 7. A Tribute cost takes face-down monsters unless the text says face-up (Icarus Attack couldn't Tribute a Set Blackwing).
+// 8. A Special Summon whose text names no position asks, whatever position the script defaults to (Destiny HERO - Malicious forced Defense).
 const { E, C } = require('./load')();
 const id = n => { const c = C.find(x => x.n === n); if (!c) throw new Error('no card ' + n); return c.id; };
 const FILL = 'Gene-Warped Warwolf';
@@ -94,6 +96,39 @@ T('Bottomless Trap Hole is offered only in the summon’s own moment', () => {
   E.act(g, ['pass']);
   act(g, new RegExp('a:' + hand(g, 'Pot of Avarice').u + ':'));
   ok(!(g.prompt && g.prompt.p === 1 && /Bottomless/.test(g.prompt.opts.map(o => o.label).join())), 'not offered against a later card');
+});
+
+T('Icarus Attack: a face-down Winged Beast pays the cost, and 2 targets must remain', () => {
+  const g = duel([{ m: [{ n: 'Blackwing - Bora the Spear', pos: 'set' }], st: [{ n: 'Icarus Attack', pos: 'set' }], turn: 2 }, { m: ['Cyber Dragon', { n: FILL, pos: 'set' }] }]);
+  const ic = g.p[0].st.find(c => c && E.name(c) === 'Icarus Attack');
+  ok(!!opt(g, new RegExp('a:' + ic.u + ':')), 'offered with only a face-down Winged Beast to Tribute');
+  const h = duel([{ m: ['Blackwing - Bora the Spear'], st: [{ n: 'Icarus Attack', pos: 'set' }], turn: 2 }, { m: ['Cyber Dragon'] }]);
+  const ic2 = h.p[0].st.find(c => c && E.name(c) === 'Icarus Attack');
+  ok(!opt(h, new RegExp('a:' + ic2.u + ':')), 'not offered when only 1 target would remain after the Tribute');
+});
+
+T('Destiny HERO - Malicious asks for a position (its text names none)', () => {
+  const g = E.newDuel({ decks: [{ name: 't', main: Array(40).fill(id('Destiny HERO - Malicious')), extra: [] }, { name: 't', main: Array(40).fill(id(FILL)), extra: [] }],
+    first: 0, seed: 1, noShuffle: true, names: ['A', 'B'], askPos: true, board: [{ gy: ['Destiny HERO - Malicious'], hand: [], turn: 2 }, {}] });
+  act(g, /Malicious/);
+  ok(g.prompt && /which position/i.test(g.prompt.text || ''), 'asks Attack or Defense');
+});
+
+T('Tribute costs require face-up only when the text says so', () => {
+  const fs = require('fs'), path = require('path'), dir = path.join(__dirname, '..', 'js');
+  const byN = new Map(C.map(c => [c.n, c]));
+  // summoning conditions and Viruses keep their face-up check until their rulings are checked (FEEDBACK.md, 2026-11-27)
+  const KEEP = new Set(['Deck Devastation Virus', 'Masked Beast Des Gardius', 'Armed Dragon LV10', 'Infernal Incinerator', 'Red-Eyes Darkness Dragon', 'Exxod, Master of The Guard', 'Checkmate']);
+  const files = ['engine.js', ...fs.readdirSync(path.join(dir, 'cards')).map(f => 'cards/' + f)];
+  let bad = 0;
+  for (const f of files) { let cur = null;
+    fs.readFileSync(path.join(dir, f), 'utf8').split('\n').forEach((ln, i) => {
+      const m = ln.match(/^\s*'([^']+)':\s*\{/); if (m && byN.has(m[1])) cur = m[1];
+      if (!/Tribute/i.test(ln) || !/pick\(/.test(ln) || !/faceUp\(/.test(ln) || /face-up/i.test(ln) || KEEP.has(cur)) return;
+      const tx = (byN.get(cur) || {}).tx || '';
+      if (!/face-up/i.test(tx.split(/(?<=[.;:])\s+/).filter(x => /Tribut/i.test(x)).join(' '))) { bad++; console.log(`  ${f}:${i + 1} ${cur}`); }
+    }); }
+  ok(!bad, 'no Tribute cost wrongly requires a face-up monster');
 });
 
 console.log(fails ? `\n${fails} failed` : '\nAll root-cause guards passed.');
