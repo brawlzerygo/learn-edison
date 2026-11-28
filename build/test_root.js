@@ -7,6 +7,7 @@
 // 5. Ongoing Level changes go through lv() (A Legendary Ocean, Stygian Dirge, Synchro Boost used to do nothing or lag a step).
 // 6. A summon's "when summoned" moment ends when the next action starts (Bottomless Trap Hole was offered against later cards).
 // 7. A Tribute cost takes face-down monsters unless the text says face-up (Icarus Attack couldn't Tribute a Set Blackwing).
+// 9. Archetype checks match every member's name, not only names that start with it (XX-Saber cards for Gottoms' Emergency Call).
 // 8. A Special Summon whose text names no position asks, whatever position the script defaults to (Destiny HERO - Malicious forced Defense).
 const { E, C } = require('./load')();
 const id = n => { const c = C.find(x => x.n === n); if (!c) throw new Error('no card ' + n); return c.id; };
@@ -129,6 +130,25 @@ T('Tribute costs require face-up only when the text says so', () => {
       if (!/face-up/i.test(tx.split(/(?<=[.;:])\s+/).filter(x => /Tribut/i.test(x)).join(' '))) { bad++; console.log(`  ${f}:${i + 1} ${cur}`); }
     }); }
   ok(!bad, 'no Tribute cost wrongly requires a face-up monster');
+});
+
+T("Gottoms' Emergency Call revives XX-Saber monsters", () => {
+  const g = duel([{ m: ['X-Saber Airbellum'], st: [{ n: "Gottoms' Emergency Call", pos: 'set' }], gy: ['XX-Saber Emmersblade', 'XX-Saber Garsem'], turn: 2 }, {}]);
+  const ec = g.p[0].st.find(c => c && E.name(c) === "Gottoms' Emergency Call");
+  ok(!!opt(g, new RegExp('a:' + ec.u + ':')), 'offered with two XX-Sabers in the GY');
+});
+
+T('Archetype name checks catch every monster of the archetype', () => {
+  const fs = require('fs'), path = require('path'), dir = path.join(__dirname, '..', 'js');
+  const files = ['engine.js', ...fs.readdirSync(path.join(dir, 'cards')).map(f => 'cards/' + f)];
+  const OK = new Set(['Worm ']);   // the Worm archetype is Reptiles named "Worm ..."; Aztekipede, the Worm Warrior and others are not in it
+  const seen = new Set(); let bad = 0;
+  for (const f of files) for (const m of fs.readFileSync(path.join(dir, f), 'utf8').matchAll(/\/\^([A-Za-z][A-Za-z .'\-]+?)\//g)) {
+    const w = m[1]; if (seen.has(w) || OK.has(w)) continue; seen.add(w);
+    const miss = C.filter(c => !['spell', 'trap'].includes(c.k) && c.n.includes(w) && !c.n.startsWith(w));
+    if (miss.length) { bad++; console.log(`  /^${w}/ (${f}) misses ${miss.map(c => c.n).join(', ')}`); }
+  }
+  ok(!bad, 'no start-only archetype pattern misses a monster of that archetype');
 });
 
 console.log(fails ? `\n${fails} failed` : '\nAll root-cause guards passed.');
