@@ -42,12 +42,12 @@ T('Broken Blocker summons 2 copies after a Defense monster is destroyed', () => 
   attack(g, FILL, 'Shield Warrior'); for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { if (g.prompt.type === 'pick' && g.prompt.max === 2) pickAll(g); else drive(g, 1); }
   ok(g.p[1].m.filter(c => c && E.name(c) === 'Shield Warrior' && c.pos === 'def').length === 2, 'two Shield Warriors in Defense Position');
 });
-T('Cold Enchanter discards Broww: Ice Counter and a draw', () => {
+T('Cold Enchanter discards Broww: Ice Counter, and no draw (a cost discard: Dark World archive, 2026-11-27 audit)', () => {
   const g = duel({ board: [{ hand: ['Broww, Huntsman of Dark World'], m: ['Cold Enchanter'], turn: 2 }, { m: [FILL] }] });
   const before = g.p[0].hand.length;
   act(g, 0, 'Cold Enchanter'); choose(g, 'Broww'); drive(g);
   ok(atkOf(g, 0, 'Cold Enchanter') === 1900, 'Cold Enchanter has 1900 ATK with 1 Ice Counter');
-  ok(g.p[0].hand.length === before, 'Broww drew 1 card (hand size back to ' + before + ')');
+  ok(g.p[0].hand.length === before - 1, 'Broww, discarded as a cost, draws nothing (hand ' + g.p[0].hand.length + ')');
 });
 T('Brron discards after battle damage', () => {
   const g = duel({ board: [{ hand: ['Sangan'], m: ['Brron, Mad King of Dark World'], turn: 2 }, {}] });

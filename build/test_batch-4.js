@@ -50,7 +50,7 @@ T('Doomcaliber Knight negates a monster effect', () => {
   const deck = g.p[0].deck.length;
   choose(g, 'Send 1-3'); choose(g, '1');
   choose(g, 'Doomcaliber', 1); passAll(g);
-  ok(inZ(g, 0, 'gy', 'Card Trooper') && inZ(g, 1, 'gy', 'Doomcaliber Knight') && g.p[0].deck.length === deck - 1, 'Card Trooper negated and destroyed, nothing sent (it draws 1 for being destroyed)');
+  ok(inZ(g, 0, 'gy', 'Card Trooper') && inZ(g, 1, 'gy', 'Doomcaliber Knight') && g.p[0].deck.length === deck - 2, 'Card Trooper negated and destroyed: its cost card was sent anyway, and it draws 1 for being destroyed (2026-11-27 audit: the mill is a cost)');
 });
 T('Gemini Soldier survives and summons a Gemini', () => {
   const g = duel({ board: [{ m: ['Gemini Soldier'], deckTop: [FILL, 'Dark Valkyria'], turn: 2 }, { m: [FILL] }] });

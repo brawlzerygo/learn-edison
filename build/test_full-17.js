@@ -258,7 +258,10 @@ T('Trap of Darkness copies Time Seal', () => {
 });
 T('Trap of the Imperial Tomb after taking their Zombie', () => {
   const g = duel({ board: [{ hand: ['Monster Reborn'], st: ['Trap of the Imperial Tomb'], turn: 2 }, { gy: ['Clown Zombie'], m: [FILL], st: ['Time Seal'] }] });
-  act(g, 0, 'Monster Reborn'); auto(g); for (let i = 0; i < 4 && g.prompt && g.prompt.type === 'pick'; i++) choose(g, 'Clown Zombie'); auto(g);
+  act(g, 0, 'Monster Reborn'); for (let i = 0; i < 6 && g.prompt && g.prompt.type === 'respond' && !/summon/i.test(g.prompt.text); i++) E.act(g, ['pass']);
+  for (let i = 0; i < 4 && g.prompt && g.prompt.type === 'pick'; i++) choose(g, 'Clown Zombie');
+  // it answers in the summon's response window (2026-11-27: once both players pass, the summon's moment is over)
+  for (let i = 0; i < 6 && g.prompt && g.prompt.type === 'respond' && !hasOpt(g, 'a:' + g.p[0].st[0].u); i++) E.act(g, ['pass']);
   ok(on(g, 0, 'Clown Zombie') && hasOpt(g, 'a:' + g.p[0].st[0].u), 'offered after the Zombie came from their GY');
   choose(g, 'a:' + g.p[0].st[0].u); E.act(g, [FILL, 'Time Seal'].map(n => g.prompt.opts.find(o => o.label === n || (n === 'Time Seal' && o.label === 'Face-down card')).key)); auto(g);
   ok(inZ(g, 1, 'gy', FILL) && nM(g, 1) === 0, '2 cards destroyed');
@@ -356,7 +359,7 @@ T('Ultimate Obedient Fiend attack rule and negation', () => {
   const g = duel({ board: [{ hand: [], m: ['Ultimate Obedient Fiend'], turn: 2 }, { m: [FILL] }] });
   goBP(g); ok(!hasOpt(g, 'atk:'), 'cannot attack with a card in hand');
   const g2 = duel({ board: [{ hand: [], m: ['Ultimate Obedient Fiend'], deckTop: ['Time Seal'], turn: 2 }, { m: [{ n: 'Tornado Bird', pos: 'set' }], st: ['Time Seal', 'Time Machine'] }] });
-  choose(g2, 'setst:'); goBP(g2); ok(!hasOpt(g2, 'atk:'), 'cannot attack with a Spell/Trap on the field');
+  choose(g2, 'setst:'); passAll(g2); goBP(g2); ok(!hasOpt(g2, 'atk:'), 'cannot attack with a Spell/Trap on the field');   // the opponent may respond to the Set first (2026-11-27 audit)
   const g3 = duel({ board: [{ hand: [], m: ['Ultimate Obedient Fiend'], turn: 2 }, { m: [{ n: 'Tornado Bird', pos: 'set' }], st: ['Time Seal', 'Time Machine'] }] });
   for (const c of g3.p[0].hand.splice(0)) { c.zone = 'deck'; g3.p[0].deck.unshift(c); } g3.seq++;
   const u = on(g3, 0, 'Ultimate Obedient Fiend'); goBP(g3); attack(g3, u, on(g3, 1, 'Tornado Bird')); auto(g3, { no: true });

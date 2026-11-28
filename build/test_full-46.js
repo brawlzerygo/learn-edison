@@ -218,7 +218,8 @@ T('Water Dragon: FIRE monsters have 0 ATK; destroyed, it revives 2 Hydrogeddon a
 });
 T('Water Dragon: Monster Reborn can\'t revive it', () => {
   const g = duel({ board: [{ hand: ['Monster Reborn'], gy: ['Water Dragon'], turn: 2 }, {}] });
-  act(g, 0, 'Monster Reborn'); settle(g); ok(!on(g, 0, 'Water Dragon') && inZ(g, 0, 'gy', 'Water Dragon'), 'stays in the GY');
+  // 2026-11-27 summoning conditions: with no other target, Monster Reborn isn't offered at all
+  ok(!g.prompt.opts.some(o => o.key.startsWith('a:' + g.p[0].hand.find(c => E.name(c) === 'Monster Reborn').u + ':')) && inZ(g, 0, 'gy', 'Water Dragon'), 'Monster Reborn not offered, it stays in the GY');
 });
 T('Water Hazard: Special Summon a Level 4 or lower WATER with no monsters', () => {
   const g = duel({ board: [{ st: [{ n: 'Water Hazard', pos: 'up' }], hand: ['Tribe-Infecting Virus'], turn: 2 }, {}] });

@@ -249,7 +249,8 @@ T('Otohime changes a position, then returns to the hand', () => {
   ns(g, 0, 'Otohime'); auto(g);
   ok(on(g, 1, 'Dark Magician').pos === 'def', 'Dark Magician in Defense Position');
   choose(g, 'end'); auto(g); ok(inZ(g, 0, 'hand', 'Otohime'), 'Otohime back in the hand');
-  ok(E.lib.forbid(g, { type: 'ss', c: g.p[0].hand.find(c => E.name(c) === 'Otohime'), p: 0 }) === false, 'hand check (GY only lock)');
+  // "Cannot be Special Summoned" applies from anywhere (2026-11-27 summoning conditions; it was a GY-only lock)
+  ok(E.lib.forbid(g, { type: 'ss', c: g.p[0].hand.find(c => E.name(c) === 'Otohime'), p: 0 }) === true, 'can\u2019t be Special Summoned from the hand either');
 });
 T('Outstanding Dog Marron shuffles back into the Deck', () => {
   const g = duel({ board: [{ hand: ['Raigeki'] }, { m: ['Outstanding Dog Marron'] }] });

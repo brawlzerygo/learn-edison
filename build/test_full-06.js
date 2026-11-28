@@ -350,8 +350,10 @@ T('Double-Edged Sword Technique: summon 2, destroy and take damage at the End Ph
 });
 T('Double Tag Team answers a Gladiator Beast Special Summon', () => {
   const g = duel({ board: [{ hand: ['Dimension Distortion', 'Gladiator Beast Laquari'], ban: ['Gladiator Beast Bestiari'], st: ['Double Tag Team'] }, {}] });
-  act(g, 0, 'Dimension Distortion'); passAll(g);
+  act(g, 0, 'Dimension Distortion');
   const dtt = g.p[0].st.find(x => x && E.name(x) === 'Double Tag Team');
+  // it answers in the summon's own response window (2026-11-27: once both players pass, the summon's moment is over)
+  for (let i = 0; i < 10 && g.prompt && g.prompt.type === 'respond' && !hasOpt(g, 'a:' + dtt.u + ':'); i++) E.act(g, ['pass']);
   ok(hasOpt(g, 'a:' + dtt.u + ':'), 'Double Tag Team offered after the summon'); choose(g, 'a:' + dtt.u + ':'); passAll(g); pk(g); respondUntilIdle(g);
   ok(on(g, 0, 'Gladiator Beast Bestiari') && on(g, 0, 'Gladiator Beast Laquari'), 'Laquari Special Summoned');
 });

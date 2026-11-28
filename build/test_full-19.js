@@ -139,7 +139,8 @@ T('Banner of Courage: +200 in your Battle Phase', () => {
 T('Barrel Behind the Door sends Cemetary Bomb back', () => {
   const g = duel({ board: [{ st: ['Cemetary Bomb'], gy: [FILL, FILL], turn: 2 }, { st: ['Barrel Behind the Door'], gy: [FILL, FILL, FILL] }] });
   act(g, 0, 'Cemetary Bomb'); choose(g, 'Barrel'); auto(g);
-  ok(g.p[1].lp === 8000 && g.p[0].lp === 7600, `A ${g.p[0].lp}, B ${g.p[1].lp}`);
+  // Barrel Behind the Door stays on the field until the chain ends (2026-11-27 audit), so B's GY holds 3 cards: 300 back to A
+  ok(g.p[1].lp === 8000 && g.p[0].lp === 7700, `A ${g.p[0].lp}, B ${g.p[1].lp}`);
 });
 T('Beckoning Light: discard the hand, add LIGHTs', () => {
   const g = duel({ board: [{ hand: [FILL, FILL], st: ['Beckoning Light'], gy: ['Shining Angel', 'Shining Angel', 'Mystical Elf', 'Mystical Elf'], turn: 2 }, {}] });

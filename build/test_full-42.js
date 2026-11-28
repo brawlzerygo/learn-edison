@@ -394,10 +394,10 @@ T('Prevention Star banishes the selected monster when the equipped one is destro
   act(g, 1, 'Smashing Ground'); auto(g);
   ok(inZ(g, 1, 'ban', 'Cranium Fish'), 'Cranium Fish banished');
 });
-T('Paralyzing Chain burns when the opponent\'s Deck is milled', () => {
+T('Paralyzing Chain: no burn for a mill paid as a cost (Card Trooper, 2026-11-27 audit; EDOPro: by a card effect only)', () => {
   const g = duel({ board: [{ hand: ['Card Trooper'] }, { st: [{ n: 'Paralyzing Chain', pos: 'up' }] }] });
   choose(g, 'ns:' + g.p[0].hand[0].u); auto(g); choose(g, 'Send 1-3'); auto(g);
-  ok(g.p[0].lp === 7700, `A took 300 (A ${g.p[0].lp})`);
+  ok(g.p[0].lp === 8000, `A took nothing (A ${g.p[0].lp})`);
 });
 console.log(fails ? `\n${fails} failed` : '\nAll full-42 checks passed.');
 process.exit(fails ? 1 : 0);

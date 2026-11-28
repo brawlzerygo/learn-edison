@@ -171,7 +171,7 @@ T('Spirit of the Pharaoh revives Zombie Normal Monsters', () => {
   // the summon by The First Sarcophagus, acted out: its card leaves the field this turn
   g.events.push({ type: 'move', c: { id: id('The First Sarcophagus'), u: -5, flags: {} }, wasField: true, turn: g.turnNo });
   const ph = card(g, 0, 'Spirit of the Pharaoh');
-  ok(E.lib.ss(g, 0, ph, 'atk') === true, 'Special Summoned with The First Sarcophagus');
+  ok(E.lib.ss(g, 0, ph, 'atk', { src: { id: id('The First Sarcophagus') } }) === true, 'Special Summoned with The First Sarcophagus');   // src: the card summoning it (summoning conditions, 2026-11-27)
 });
 T('Spirit of the Pot of Greed lets the player draw 1 more', () => {
   const g = duel({ board: [{ hand: ['Pot of Greed'], m: ['Spirit of the Pot of Greed'] }, {}] });
@@ -223,7 +223,7 @@ T('Super Conductor Tyranno: Tribute for 1000, then no attack', () => {
 T('Super Double Summon: Gemini status, back to the hand at the End Phase', () => {
   const g = duel({ board: [{ hand: ['Super Double Summon'], m: ['Elemental HERO Neos Alius'] }, {}] });
   act(g, 0, 'Super Double Summon'); auto(g);
-  ok(on(g, 0, 'Elemental HERO Neos Alius').flags.gemini === true, 'Gemini Summoned');
+  ok(g.p[0].m.find(c => c && E.data(c).n === 'Elemental HERO Neos Alius').flags.gemini === true, 'Gemini Summoned');   // its name is "Elemental HERO Neos" now (2026-11-27 audit)
   endTurn(g);
   ok(inZ(g, 0, 'hand', 'Elemental HERO Neos Alius'), 'returned to the hand');
 });

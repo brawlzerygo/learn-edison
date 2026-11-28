@@ -161,7 +161,9 @@ T('Destiny HERO - Dogma: Tribute 3, halve the LP next Standby Phase', () => {
 });
 T('Destiny HERO - Dogma can\'t be revived without its summon', () => {
   const g = duel({ board: [{ hand: ['Monster Reborn'], gy: ['Destiny HERO - Dogma'] }, {}] });
-  act(g, 0, 'Monster Reborn'); auto(g);
+  // 2026-11-27 summoning conditions: "Must be Special Summoned (from your hand)" is never revived, so with no other target Monster Reborn
+  // isn't offered (EDOPro: a summon condition, not only a revive limit)
+  if (hasOpt(g, 'a:' + cardOf(g, 0, 'Monster Reborn').u + ':')) { act(g, 0, 'Monster Reborn'); auto(g); }
   ok(!on(g, 0, 'Destiny HERO - Dogma'), 'not revived');
 });
 T('Destiny HERO - Doom Lord banishes a monster until the 2nd Standby Phase', () => {

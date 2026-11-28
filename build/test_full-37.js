@@ -342,11 +342,12 @@ T('Enlightenment lets a Spellcaster attack again', () => {
   ok(hasOpt(g, 'Attack Deep Diver'), 'Disenchanter can attack again');
 });
 T('Escape from the Dark Dimension: the monster is banished when it leaves', () => {
-  const g = duel({ board: [{ hand: ['Mystical Space Typhoon'], st: ['Escape from the Dark Dimension'], ban: ['Dark Armed Dragon'], turn: 2 }, {}] });
+  // a plain DARK: Dark Armed Dragon can't come back from the banished pile (its archive; summoning conditions, 2026-11-27)
+  const g = duel({ board: [{ hand: ['Mystical Space Typhoon'], st: ['Escape from the Dark Dimension'], ban: ['Dark Magician'], turn: 2 }, {}] });
   act(g, 0, 'Escape from the Dark Dimension'); passAll(g); settle(g);
-  ok(!!on(g, 0, 'Dark Armed Dragon'), 'Dark Armed Dragon Special Summoned');
+  ok(!!on(g, 0, 'Dark Magician'), 'Dark Magician Special Summoned');
   act(g, 0, 'Mystical Space Typhoon'); passAll(g); settle(g);
-  ok(inZ(g, 0, 'ban', 'Dark Armed Dragon'), 'Dark Armed Dragon destroyed and banished');
+  ok(inZ(g, 0, 'ban', 'Dark Magician'), 'Dark Magician destroyed and banished');
 });
 console.log(fails ? `\n${fails} failed` : '\nAll full-37 checks passed.');
 process.exit(fails ? 1 : 0);

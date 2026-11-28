@@ -147,8 +147,10 @@ T('Arcane Barrier counts destroyed Spellcasters and draws', () => {
   ok(g.p[0].hand.length === h + 1 && inZ(g, 0, 'gy', 'Breaker the Magical Warrior'), 'drew 1');
 });
 T('Arcanite Magician Assault Mode gets 2 counters and clears the field', () => {
-  const g = duel({ board: [{ hand: ['Monster Reborn'], gy: ['Arcanite Magician Assault Mode'], turn: 2 }, { m: ['Kuriboh'], st: ['Mirror Force'] }] });
-  act(g, 0, 'Monster Reborn'); auto(g); const a = on(g, 0, 'Arcanite Magician Assault Mode');
+  // summoned its own way (2026-11-27 summoning conditions: "Cannot be Special Summoned except with "Assault Mode Activate"", so Monster
+  // Reborn can't revive it)
+  const g = duel({ board: [{ st: [{ n: 'Assault Mode Activate', pos: 'set' }], m: ['Arcanite Magician'], deckTop: [FILL, 'Arcanite Magician Assault Mode'], turn: 2 }, { m: ['Kuriboh'], st: ['Mirror Force'] }] });
+  act(g, 0, 'Assault Mode Activate'); auto(g); const a = on(g, 0, 'Arcanite Magician Assault Mode');
   ok(a && E.atk(g, a) === 2900, 'Assault Mode has 2900 ATK');
   choose(g, 'a:' + a.u); auto(g); ok(!g.p[1].m.some(Boolean) && !g.p[1].st.some(Boolean) && E.atk(g, a) === 900, 'their field destroyed');
 });

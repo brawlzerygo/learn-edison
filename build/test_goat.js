@@ -107,7 +107,7 @@ T('Envoy: summoned by banishing a LIGHT and a DARK, banishes a monster, then can
   const g = duel({ board: [{ turn: 3, hand: ['Black Luster Soldier - Envoy of the Beginning'], gy: ['Sangan', 'Magician of Faith'] }, { m: [BIG] }] });
   choose(g, 'sp:' + handU(g, 0, 'Black Luster Soldier - Envoy of the Beginning')); passAll(g);
   ok(inZone(g, 0, 'm', 'Black Luster Soldier - Envoy of the Beginning') && inZone(g, 0, 'ban', 'Sangan') && inZone(g, 0, 'ban', 'Magician of Faith') && g.p[0].gy.length === 0, 'Envoy summoned, both GY monsters banished as the cost');
-  choose(g, 'Banish a monster'); passAll(g);
+  choose(g, 'Banish a monster'); choose(g, BIG); passAll(g);   // it may also banish itself (ruling), so the target is picked
   ok(inZone(g, 1, 'ban', BIG), 'Archfiend Soldier banished');
   ok(!hasOpt(g, 'Attack'), 'no attack option is listed in Main Phase');
   choose(g, 'bp'); passAll(g);

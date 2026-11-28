@@ -57,7 +57,8 @@ E.addScripts({
 **forbid actions:**
 - `{type:'activate', c, eff, p}` (any card or effect activation)
 - `{type:'ns', c, p}` and `{type:'set', c, p}`
-- `{type:'ss', c, p, how}`, where `how` is `special`, `synchro`, `fusion` or `ritual`
+- `{type:'ss', c, p, how, src, proc, proper}`, where `how` is `special`, `synchro`, `fusion` or `ritual`. `src` is the card summoning (default: the card activating now, else the link resolving); `proc: true` marks the card's own procedure.
+- **Summoning conditions are the engine's (2026-11-27):** `forbid` reads every monster's text for "Cannot be Special Summoned" (never), "Cannot be Special Summoned from the GY/hand/Deck", the summon-only lines ("Must be Special Summoned ...", "Must be Fusion Summoned", "Cannot be Special Summoned except ...", "... by other ways": only its own way, never revived) and "Must first be ..." / "can only be Special Summoned by" (its own way first, then revivable). Fusion, Synchro and Ritual Monsters in the GY or banished come back only if properly summoned (`c.proper`, set by procedures, Fusion/Synchro/Ritual Summons and the card's enabler, lost in the hand/Deck/Extra Deck). A card the condition names (`"Dark Fusion"`, `"Armed Dragon LV5"`) or the card itself is its own way; a source whose text says "ignoring its Summoning conditions" skips them. Don't write per-card "can't be Special Summoned" locks any more; filter summon targets with `canSS(g,p,c)`. `cfg.board` GY/banished monsters count as properly summoned unless given `{n, proper: false}`.
 - `{type:'search', p}` (add from the Deck to the hand)
 - `{type:'attack', c}`, `{type:'setST', c, p}`, `{type:'draw', p}`, `{type:'pos', c}`
 
@@ -91,12 +92,13 @@ E.addScripts({
 - **`trig`**: Trigger and Flip effects, which fire on events:
   - `move` `{c, from, to, wasField, reason, destroyed, battle, killer, by, prevCtrl, snap}`. `snap` is the card as it was on the field (atk, attr, lv, race, name). Reasons: draw, effect, cost, battle, tribute, synchro, fusion, ritual, discard, rule, summon, set, activate, equip.
   - `summon` `{cs, how, p, tribs, byEffect}`. `how` is one of: normal, tribute, flip, special, synchro, fusion, ritual, gemini.
-  - `flip` `{c, p, battle}`: a Flip effect is `on: (g,ev,c) => ev.type==='flip' && ev.c===c`.
+  - `flip` `{c, p, battle}`: a Flip effect is `on: (g,ev,c) => ev.type==='flip' && ev.c===c`. An effect that sets a face-down monster's `pos` face-up gets the `flip` event from the engine after its link resolves (`byEffect: true`), unless the resolving card's text says Flip effects are not activated; a script that emits its own `flip` isn't doubled.
   - `set` `{c, p}`, `attack` `{a, t, p, direct}` (the attack declaration), `dsStart` `{a, t}`.
   - `afterCalc` `{a, t, tWasDef, flipped}`, `dsEnd` `{a, t}`.
   - `damage` `{p, n, battle, src, srcP, direct}`, `phase` `{ph: 'standby'|'end', tp}`.
 - **Battle and chain state:**
-  - Attack declaration window: `g.aw = {a, t}`. During battle: `g.battle = {a, t}`. In the Damage Step: `g.inDS`.
+  - Attack declaration window: `g.aw = {a, t, ctrl, open, tpOpen}`. During battle: `g.battle = {a, t}`. In the Damage Step: `g.inDS`. A card whose text answers the attack declaration ("declares an attack", "targeted for an attack") and whose `cond` reads `g.aw` is usable only in the first chain after it (the engine checks `open`/`tpOpen`; no script change needed). At resolution, `attackingNow(g, t)` says whether t is still the attacking monster (not turned face-down, moved, negated or the Battle Phase ended).
+  - Normal and Quick-Play Spells, Normal and Counter Traps stay on the field until the whole chain has resolved (`c.pendLeave` meanwhile), then leave together with move option `chainEnd: true`, `link` and `chainLinks` (the whole chain). A `cont` with `loc: 'gy'` on such a card already applies while it waits. Scripts that count links or read what a Counter Trap negated from that move use `ev.chainLinks`, not `g.chain`.
   - The monster(s) just summoned, which "when summoned" Traps can respond to: `g.sw = {cs, p, how}`.
   - A summon being attempted, which Solemn can negate: `g.attempt = {cs, how, p}`. Set `g.attempt.negated = true` to negate it.
   - The chain: `g.chain` (links `L = {c, eff, p, t, data, negated, tags, cardAct}`). The link you respond to is `x.top` in `cond`.
@@ -106,9 +108,10 @@ E.addScripts({
   - The turn: `g.tp` (turn player), `g.turnNo`, `g.phase` (draw, standby, main1, battle, main2, end).
   - Card fields: `c.u` (unique id), `c.owner`, `c.ctrl`, `c.zone` (hand, deck, gy, ban, extra, m, st, fz), `c.pos` (atk, def, set for monsters; up, set for S/T), `c.turnIn`, `c.flags`, `c.mods`, `c.ctr`, `c.equipTo`, `c.linkTo`.
 - **Turn flags:**
-  - `g.noBP[p] = true` ("you can't conduct your Battle Phase").
-  - `g.noSummon[p]` (can't summon).
+  - `lockBP(g, p)` ("you can't conduct your Battle Phase the turn you activate this card": from `after` or `target` it belongs to the link, so a negated activation lifts it); `g.noBP[p] = true` for a lock with no link. Read it with `bpLocked(g, p)`.
+  - `g.noSummon[p]` (can't Normal Summon or Set; Scapegoat uses a rule instead, since it allows Sets).
   - `g.onlyAttacker[p] = u`.
+  - A rule added with `addRule` inside `after` belongs to that link: if the activation is negated (`L.actNegated`), the rule is gone; a negated effect (`L.negated` only: Imperial Order, Royal Oppression) keeps it. `negate(g, L)` reads the negating card's text to tell "negate the activation" from "negate the effect" (`{effect: true}` / `{activation: true}` override).
   - `g.p[p].noBattleDamage = g.turnNo` (no battle damage this turn).
   - `c.flags.extraAttack = g.turnNo` (a second attack this turn).
   - For "until the End Phase" or "until your next turn" restrictions, use `addRule(g, forbidFn, {end: g.turnNo})` or `{startOf: p}`.
@@ -123,13 +126,18 @@ E.addScripts({
 - **Moving cards:**
   - `move(g,c,to,o)`, where `to` is hand, deck (shuffled in), deckTop, gy, ban, m, st.
   - `destroy(g,cards,{by:p, src:c})` returns the destroyed cards. Pass `src` so "unaffected by Spells/Traps" works.
-  - `ss(g,p,c,pos,{negate, banishOnLeave, how})` returns false if it couldn't summon.
-  - `takeControl(g,p,c,untilEnd)` and `setFaceDown(g,c)`.
-- **LP and the Deck:** `draw(g,p,n)`, `damage(g,p,n,{src:c, srcP:p})`, `gain`, `pay`, `mill(g,p,n)`, and `yield* search(g,p,filter,text,to)`, where `to` is `'hand'` (the default) or `'gy'`.
-- **Stats:** `addMod(g,c,{atk, def, end:true})`, or `{set: 0, which: 'atk'|'def'|'both', end:true}`. `end` means "until the End Phase". Read the current values with `atk(g,c)` and `def(g,c)`.
+  - `ss(g,p,c,pos,{negate, banishOnLeave, how, src, proper})` returns false if it couldn't summon (`src`: the summoning card when no link is resolving; `proper: true` forces a proper summon). `canSS(g,p,c)` is the target-list check.
+  - Tokens can't be turned face-down: filter face-down targets with `canFaceDown(c)`; `setFaceDown` returns false on a Token.
+  - Effects that can't share a chain: one hand trigger that Special Summons itself (`type:'trig', loc:'hand', tags.ss`) per chain; `oneName: true` on an effect allows one copy of the card per chain (Treeborn Frog). An effect with `tags.ss` can't be activated while nothing can be Special Summoned (Vanity's Fiend), so tag every effect that Special Summons.
+  - `takeControl(g,p,c,untilEnd)` and `setFaceDown(g,c)`. `setFaceDown` clears the monster's mods, flags, counters and once-per-turn uses, sends its Equips to the GY (move option `lostTarget: true`) and cuts Call of the Haunted's link; it keeps the control-return flags in `KEEP_FACE_DOWN` (engine.js). A script that keeps a control change in its own flag on the monster adds the flag name there. Once-per-turn uses (`c.used[effect index]`) also reset when the card leaves the field; keep your own per-card data under a named key (`c.used.union`).
+- **LP and the Deck:** `draw(g,p,n)`, `damage(g,p,n,{src:c, srcP:p})`, `damageMany(g,[[p,n],[q,m]],o)` (damage to both players at once: every amount through the damage statics, one LP check, a draw if both reach 0), `gain`, `pay`, `mill(g,p,n)`, and `yield* search(g,p,filter,text,to)`, where `to` is `'hand'` (the default) or `'gy'`. Never cap a draw at the Deck size or guard it with `deck.length`: a draw past the Deck loses the duel (`draw` handles it). An optional draw effect checks the Deck in its `cond`. A hand win (`self.handWin`) is checked once the effect adding the card has resolved.
+- **What a link destroys:** `wouldDestroy(g, L)` (the cards it certainly destroys) and `destroysSome(g, L, filter)` (it will destroy at least one card passing the filter; counts "the 1 monster with the lowest ATK" picks). Any "would destroy" response (Stardust Dragon, Starlight Road, My Body as a Shield) asks these. They read the effect's `destroys(g, c, p, L)` if it has one, else a negate-and-destroy card's link below, else the card's one "destroy all ..." sentence plus its targets, else its targets, else the battle partner or summoned monsters for "destroy that monster". Give an effect `destroys` when its text can't be read that way (Red Dragon Archfiend, Bottomless Trap Hole, Deck Devastation Virus).
+- **Kycoo and Necrovalley style locks:** `banishesFromGY(c, eff)` (or `'proc'` for the summon procedure) says whether that effect banishes from a GY, read from the text; don't list card names.
+- **Attacks:** `attackEach` is the `self` for "can attack all your opponent's monsters once each" (Asura Priest): no attack after a direct one. `canTarget(g, x, {c, p})` checks "can't be targeted" in a `cond`.
+- **Stats:** `addMod(g,c,{atk, def, end:true})`, or `{set: 0, which: 'atk'|'def'|'both', end:true}`. `end` means "until the End Phase". Read the current values with `atk(g,c)` and `def(g,c)`. Halving is a `set` to the halved current value, never a fixed minus. `own: true` marks a monster's change to its own ATK/DEF that its negation removes for good (Card Trooper); `c.flags.ownBaseAtk` does the same for an original ATK the card sets itself (Chimeratech Fortress Dragon). Check negation with `negd(g,c)`, never `c.flags.negated` (that misses Skill Drain).
 - **Equips, links and counters:**
   - `equip(g,eq,target)` and `equippedTo(g,eq)`.
-  - `link(g,st,m)` (Call of the Haunted style: if either leaves the field, the other is destroyed).
+  - `link(g,st,m)` (Call of the Haunted style). The engine reads the linked card's text: "when this card leaves the field, destroy that monster" (not while this card's effect is negated: Jinzo), and "when that monster is destroyed, destroy this card" only on a destroy (Tributed, bounced or sent, the card stays), "leaves the field" on any move.
   - `addCtr(g,c,'spell',n)` and `ctr(c,'spell')`.
 - **Battle:** `negateAttack(g)` (Necro Gardna, Sakuretsu-style negation) and `endBattle(g)`.
 - **Tokens:**

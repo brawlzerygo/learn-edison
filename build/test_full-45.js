@@ -161,7 +161,7 @@ T('Union Attack', () => {
 T('Unleash Your Power!', () => {
   const g = duel({ board: [{ hand: ['Unleash Your Power!'], m: ['Elemental HERO Neos Alius'] }, {}] });
   act(g, 0, 'Unleash Your Power!'); settle(g);
-  const n = on(g, 0, 'Elemental HERO Neos Alius'); ok(n && n.flags.gemini, 'treated as an Effect Monster');
+  const n = g.p[0].m.find(c => c && E.data(c).n === 'Elemental HERO Neos Alius'); ok(n && n.flags.gemini, 'treated as an Effect Monster');   // named "Elemental HERO Neos" while it is (2026-11-27 audit)
   endTurn(g); ok(n.pos === 'set', 'Set in the End Phase');
 });
 T('Urgent Tuning', () => {

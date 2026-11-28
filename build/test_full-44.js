@@ -67,10 +67,10 @@ T('Shutendoji banishes 2 Zombies to draw', () => {
   const h = g.p[0].hand.length; actAny(g, 0, 'Shutendoji'); passAll(g);
   ok(g.p[0].ban.length === 2 && g.p[0].hand.length === h + 1, 'banished 2, drew 1');
 });
-T('Sillva Special Summons itself when discarded by Snipe Hunter', () => {
+T('Sillva stays in the GY when discarded for Snipe Hunter\'s cost (Dark World archive: "DO NOT activate when discarded as a cost", 2026-11-27 audit)', () => {
   const g = duel({ board: [{ hand: ['Sillva, Warlord of Dark World'], m: ['Snipe Hunter'], turn: 2 }, { m: [FILL] }] });
   actAny(g, 0, 'Snipe Hunter'); if (g.prompt.type === 'pick') choose(g, 'Sillva'); passAll(g); passAll(g); passAll(g);
-  ok(!!on(g, 0, 'Sillva, Warlord of Dark World'), 'Sillva on the field');
+  ok(!on(g, 0, 'Sillva, Warlord of Dark World') && g.p[0].gy.some(c => E.name(c) === 'Sillva, Warlord of Dark World'), 'Sillva stays in the GY');
 });
 T('Sillva discarded by the opponent sends 2 of their cards to the Deck bottom', () => {
   const g = duel({ board: [{ hand: ['Mind Crush', FILL, FILL, FILL], turn: 2 }, { hand: ['Sillva, Warlord of Dark World', FILL] }] });

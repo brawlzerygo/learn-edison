@@ -105,7 +105,9 @@ T('Inferno Reckless Summon summons copies for both players', () => {
   choose(g, 'sp:');
   for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { if (hasOpt(g, 'Inferno Reckless')) { choose(g, 'Inferno Reckless'); break; } if (g.prompt.type === 'respond') E.act(g, ['pass']); else auto(g); }
   auto(g);
-  ok(cnt(g, 0, 'm', 'Inferno') === 2, `A has 2 Inferno (${cnt(g, 0, 'm', 'Inferno')})`);
+  // the other Inferno (drawn this turn) stays in the hand: it "Must first be Special Summoned" by its own way, and IRS can't summon a monster
+  // that can't be Special Summoned (IRS ruling; 2026-11-27 summoning conditions)
+  ok(cnt(g, 0, 'm', 'Inferno') === 1 && g.p[0].hand.some(c => E.name(c) === 'Inferno'), `A's other Inferno can't be Special Summoned (${cnt(g, 0, 'm', 'Inferno')} on the field)`);
   ok(cnt(g, 1, 'm', FILL) >= 2, `B summoned Warwolf copies (${cnt(g, 1, 'm', FILL)})`);
 });
 T('Inferno Tempest banishes monsters in Decks and GYs after 3000 battle damage', () => {

@@ -25,7 +25,7 @@ From batch 3:
 - name() / attr() / race() overrides (Prisma name copy, LADD also DARK, Zombie World, Phantom of Chaos copy).
 - synCombos ignores per-material restrictions (Fishborg Blaster, Royal Swamp Eel) and Quickdraw Synchron's substitution.
 - tribNeed() hook (Geartown one less Tribute).
-- Banish-instead replacement in move() (Dimensional Fissure, Banisher of the Radiance).
+- ~~Banish-instead replacement in move() (Dimensional Fissure, Banisher of the Radiance).~~ Done 2026-11-28: `cont.gyBan` in move(), GY costs blocked (`gyCostBlocked`).
 - Destruction replacement (Machina Peacekeeper).
 From batch 6:
 - Field Zone ('fz') missing from emit() trigger scan and activatable() (Future Visions, Iron Core Specimen Lab; same as batch 3/5).
@@ -40,7 +40,7 @@ From batch 7:
 - Guard `SC(x).effs &&` where anyPlayer S/T effects are scanned (crash when an equipped monster card with no effs sits in a S/T zone); batch-7 adds empty effs to every script as a workaround.
 - Destruction replacement ("destroy another card instead": Slingen, Power Tool Dragon, Six Samurai) — same hook as batches 1, 2, 3.
 - tribNeed hook (Darklord Zerato).
-- Forbid moves to the Deck/Extra Deck (G.B. Hunter); banish-instead in move() (Macro Cosmos) — same as batch 3.
+- Forbid moves to the Deck/Extra Deck (G.B. Hunter). (Banish-instead for Macro Cosmos: done 2026-11-28, `cont.gyBan`.)
 - Field Zone activatable/emit (Ojama Country, Brain Research Lab).
 - Generic "destroyed after an effect that targets it resolves" (Reaper on the Nightmare).
 - "Cannot be Special Summoned" generic self flag (Witch of the Black Rose, Overdrive Teleporter, Faultroll).
@@ -54,7 +54,7 @@ Still open: cards written before these hooks keep their PARTIAL workarounds unti
 Every Goat deck card is now scripted (js/cards/goat-3.js to goat-7.js, tests build/test_goat-3.js to test_goat-7.js; `node build/test_goat.js 1000 all`: 0 crashes, 0 stuck, no unscripted cards). These cards are the closest version until the engine grows:
 - No window during damage calculation: Injection Fairy Lily, Cipher Soldier, Sasuke Samurai #4 and Reflect Bounder act in the Damage Step windows instead.
 - No forced attack: Berserk Gorilla's "must attack if able"; Last Turn works out its battle inside the card.
-- No banish-instead replacement in move(): Banisher of the Light moves cards that reach the GY straight to the banished pile.
+- ~~No banish-instead replacement in move(): Banisher of the Light...~~ Done 2026-11-28 (`cont.gyBan: 'all'`).
 - Targeting has no "who is targeting": King Dragun's Dragons can't be targeted by either player.
 - No face-up Defense Normal Summon and no Set-lock for face-down Special Summons: Light of Intervention.
 - No equip event: Gearfried the Iron Knight destroys a flipped-up Equip at the next game event.
@@ -92,3 +92,36 @@ From the classic batches (2026-11-25):
 - Open (full-31 review): ritualSummon() takes Tributes only from the hand and field, so the Djinns of Rituals can't banish themselves from the GY as Ritual material (their main use).
 - Done (2026-11-26): `destroy()` checks every card's protection before moving any of them, so cards destroyed together leave together (The Lady in Wight, Orichalcos Shunoros, Energy Bravery keep protecting during a Dark Hole). Battles: two 0 ATK monsters both survive.
 - Open (reviews 41, 43): monsters turned into Tuners by an effect (Natural Tune, Lightwave Tuning) aren't Tuners to `synCombos` (it reads printed data). An opponent can't attack directly when your only monster is an Earthbound Immortal (it can't be attacked, so a direct attack should be allowed). Road Synchron counts as Level 4 for every Synchro, not only Road Warrior.
+
+## Done 2026-11-27 (card audit, Group A: engine state)
+- `setFaceDown` keeps control changes (`KEEP_FACE_DOWN`), clears counters, once-per-turn uses and banish-on-leave, sends Equips to the GY (Snatch Steal's control stays) and cuts Call of the Haunted's link.
+- Once-per-turn uses reset when a card leaves the field (hard "You can only use this effect ... once per turn" texts excepted).
+- Effects that flip a face-down monster face-up emit `flip` after their link (`flipsByEffect`).
+- Hard-coded negation checks use `negd()`; `addMod {own: true}` and `flags.ownBaseAtk` are lost for good once negated (Card Trooper, Chimeratech).
+- Cold Wave blocks Spell/Trap activations and their field effects; halvings are `set` mods.
+Still open: a `set` mod is applied after every lasting effect, so an Equip or Field Spell that arrives after a halving or Black Rose Dragon's 0 adds nothing (it should add on top); Gaia's halving doesn't end when Gaia is turned face-down.
+
+## Done 2026-11-27 (card audit, Group B: summoning rules)
+- Summoning conditions from the card text in `forbid` (`ssCond`, `ssLimited`): "Cannot be Special Summoned" from anywhere, zone limits, summon-only monsters (never revived), "Must first be" monsters and Fusion/Synchro/Ritual Monsters revivable only after a proper summon (`c.proper`). The open "can't be Special Summoned" flag and "must first be properly summoned" gaps are closed; older per-card locks (noSSFromGY, nomiGY, LOCKS tables) are now redundant but harmless.
+- A negated summon emits its move with `wasField: false` (no "sent from the field" triggers); Tributes for a Tribute Summon leave in an earlier event group (Dupe Frog misses the timing).
+- `L.actNegated` (activation negated) vs `L.negated` (effect negated); `addRule` in `after` and `lockBP` belong to the link; Scapegoat, Soul Exchange, Sirocco, BLS - Envoy, Spirit Reaper follow it.
+- One hand self-summon per chain, `oneName` effects (Treeborn Frog), `tags.ss` effects off while nothing can be Special Summoned (`ssBlanket`), Tokens can't be turned face-down.
+- The summon's moment (`g.sw`) ends before a fresh idle or Battle Phase prompt (test_engine's Bottomless Trap Hole crash).
+Still open: effects that Special Summon but carry no `tags.ss` aren't stopped by Vanity's Fiend at activation (they summon nothing at resolution); "Must be Special Summoned" texts that a ruling makes revivable need `SS_AS_FIRST` (only Chaos Emperor Dragon so far).
+
+## Done 2026-11-27 (card audit, Group C: destruction, battle and chains)
+- `wouldDestroy` / `destroysSome` replace batch-1.js's `destroyList` name list (and batch-7's MON_WIPE/ST_WIPE, full-06's regex, Prime Material Falcon's regex): `eff.destroys`, negate-and-destroy links, the card's "destroy all" sentence (Attribute, Type, Level, position, owner, ATK/DEF filters), targets, battle partners. Stardust Dragon's cond uses it.
+- The attack declaration's moment (`g.aw.open`/`tpOpen`, `attackMoment`, `attackingNow`): Mirror Force and every "declares an attack" card only in the first chain; Dimensional Prison, Sakuretsu Armor, Magic Cylinder resolve only on a still-attacking monster and target through `tgt`.
+- Normal Spells/Traps leave when the whole chain ends; Dust Tornado Sets only after destroying; hand wins wait for the effect; `damageMany` for simultaneous damage; draws aren't capped at the Deck; Kycoo reads the text (`banishesFromGY`); Call of the Haunted's link follows its text and Jinzo; `attackEach`; Stardust's End Phase return needs its negation resolved and the same GY visit (`c.moved`); a negated attack is not "declared" for Red Dragon Archfiend (`c.negAtk`).
+Still open: a trigger chain right after an attack declaration (Battle Fader, Jetroid) closes the moment except where the script reopens it (Jetroid); Stardust can't return twice in one End Phase (ruling 11); "destroy N cards" picked at resolution (not targeted) count only through `maybe` for the lowest/highest-stat cards. Necrovalley's banish lock uses `banishesFromGY` too; its GY-target list (`GY_TARGET`) is still names.
+
+## Done 2026-11-27 (card audit, Group D: card by card)
+- Contact Fusions (`cfPool`): the player picks the materials, face-down ones they control and Machines on either field (Chimeratech), never a Token or a card that "can't be used as Fusion Material"; `fusionPool` takes face-down monsters you control for every Fusion Summon; Miracle Fusion uses the generic `fusionSummon` (every Elemental HERO Fusion), field-only under Kycoo (`eff.gyOpt` and a `{type:'banish', from:'gy'}` forbid).
+- `spellResolved` event when a Spell Card activation resolves (not when the activation was negated), with `L.upAt` (who was face-up at activation): `E.lib.spellCtrEv` / `spellResolvedBy` replace every "it left the S/T Zone by rule" reading, so Continuous/Equip/Field Spells and Set Spells flipped up count.
+- `E.lib.onDraw` hooks for drawn cards (Deck Devastation Virus destroys without a chain, after the drawing effect); `ev.asCost` on moves made while a cost is paid (Dark World triggers skip cost discards); a response window for the opponent after a Spell/Trap Set (`openWindow` `oppOnly`); battle triggers (damage, after damage calculation) resolve before a battle Flip effect, which is held and still activates from the GY; `raptinusSweep` (Superalloy Beast Raptinus) and Neos Alius's name in `name()`; Soul Exchange keeps a list per player and `tribPool` lets its targets pay Tribute costs; `negActOk` (Junk Synchron's "effects negated": still activatable); Swap Frog's extra summon is Summon-only and used first; Malicious Edge's 1-Tribute Set is gone (`tribNeed(..., set)`).
+- `own: true` on the self ATK/DEF changes EDOPro resets on disable (73 lines across the card files).
+Still open: Mind Crush still offers names from the opponent's cards in this duel (an online-play leak; needs a searchable name prompt and AI support); an attacked Set monster's flip is still not a Summon window; the tracked "?" ATK of a Token is only special-cased for Shrink.
+
+## Move layer (Group E1, 2026-11-28 audit)
+Done: banish-instead replacements in move() (`cont.gyBan` 'all'/'mon'/function; Macro Cosmos, Dimensional Fissure, Banisher of the Light/Radiance; Goat DMoC `self.battleBanish`); costs that send "to the GY" can't be paid under them (`gyCostKind`/`gyCostBlocked`, read from the text; plain "Discard" costs can); every banish checks `forbid({type:'banish'})` (Imperial Iron Wall, Necrovalley, Kycoo); Necrovalley from each format's text (`L.nvRules`, `cont.gyNegate`, `cont.gyHold`, Gravekeeper's Chief); Extra Deck monsters back to the Extra Deck from any zone; GY triggers that survive leaving the GY (`gyLeft`); `pendLeave` cards only destroyed; `battleDoomed` kept face-down and blocks the doomed monster's own activations.
+Still open: cards destroyed at the same time as the replacing card (Heavy Storm on Macro Cosmos and other cards) are moved one by one, so the result depends on order; under Dimensional Fissure a "send/discard 1 card to the GY" cost (Brionac) may still pick a monster, which is banished; other "instead" moves (Samsara, Degenerate Circuit, Transmigration Break, Grave Protector) still use their own hooks.
