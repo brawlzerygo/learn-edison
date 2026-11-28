@@ -19,6 +19,15 @@ import re
 import json, os, re, sys, time, glob, datetime, urllib.request, urllib.parse
 
 # monster type labels in edisonformat.net's data -> our kind (see the check in main())
+# Printed "?" ATK/DEF (2026-11-28 audit, pass2 edison-05): the source stores them as "0", which let Sangan and Mystic Tomato add Gren Maju
+# Da Eiza ("Monsters with '?' ATK cannot be added", archive). Kept as "?" here (Goat's data has "-1"); num() reads both as 0.
+Q_STATS = {  # name: (ATK is ?, DEF is ?)
+    'Gren Maju Da Eiza': (1, 1), 'Maju Garzett': (1, 0), 'Megarock Dragon': (1, 1), "Gradius' Option": (1, 1), 'Lost Guardian': (0, 1),
+    'King of the Skull Servants': (1, 0), 'Doomsday Horror': (1, 1), 'Evil Dragon Ananta': (1, 1), 'Greed Quasar': (1, 1),
+    'Helios - The Primordial Sun': (1, 1), 'Helios Duo Megistus': (1, 1), 'Helios Trice Megistus': (1, 1), 'Montage Dragon': (1, 0),
+    'Cyber Eltanin': (1, 1), 'Copycat': (1, 1), 'Fortune Lady Dark': (1, 1), 'Fortune Lady Earth': (1, 1), 'Fortune Lady Fire': (1, 1),
+    'Fortune Lady Light': (1, 1), 'Fortune Lady Water': (1, 1), 'Fortune Lady Wind': (1, 1),
+}
 KIND_OF = {'Normal': 'normal', 'Normal Tuner': 'normal', 'Effect': 'effect', 'Flip Effect': 'effect', 'Effect Tuner': 'effect',
            'Effect Gemini': 'effect', 'Effect Union': 'effect', 'Effect Spirit': 'effect', 'Effect Toon': 'effect',
            'Synchro': 'synchro', 'Fusion': 'fusion', 'Ritual': 'ritual'}
@@ -78,6 +87,9 @@ def main():
             rec['lv'] = c.get('Level')
             rec['atk'] = c.get('Atk')
             rec['def'] = c.get('Def')
+            qa, qd = Q_STATS.get(c['Name'], (0, 0))
+            if qa and str(rec['atk']) == '0': rec['atk'] = '?'
+            if qd and str(rec['def']) == '0': rec['def'] = '?'
             if 'Tuner' in extra:
                 rec['tu'] = 1
         b = {'Forbidden': 'F', 'Limited': 'L', 'Semi-Limited': 'S'}.get(c.get('Banlist'))

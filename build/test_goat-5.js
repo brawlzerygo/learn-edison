@@ -151,7 +151,7 @@ T('Back to Square One: discard 1, put a monster on top of the Deck', () => {
 });
 T('Light of Intervention: no monster Sets, no Book of Moon', () => {
   const g = duel({ board: [{ st: [{ n: 'Light of Intervention', pos: 'up' }], hand: [FILL, 'Book of Moon'], m: [BIG] }, {}] });
-  ok(!hasOpt(g, 'set:' + handU(g, 0, FILL)) && hasOpt(g, 'ns:' + handU(g, 0, FILL)), 'Normal Summon allowed, Set not');
+  ok(g.prompt.opts.filter(o => o.key === 'set:' + handU(g, 0, FILL)).every(o => o.label === 'Normal Summon in Defense') && hasOpt(g, 'ns:' + handU(g, 0, FILL)), 'Normal Summon allowed; a Set is a face-up Defense Normal Summon (2026-11-28 audit, E4c)');
   ok(!hasOpt(g, 'a:' + handU(g, 0, 'Book of Moon')), 'Book of Moon cannot be activated');
 });
 

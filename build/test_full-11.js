@@ -76,7 +76,7 @@ T('Light Laser banishes the monster it battled', () => {
 });
 T('Light of Intervention: no monster can be Set', () => {
   const g = duel({ board: [{ hand: [FILL] }, { st: [{ n: 'Light of Intervention', pos: 'up' }] }] });
-  ok(hasOpt(g, 'ns:') && !hasOpt(g, 'set:'), 'Normal Summon offered, Set not');
+  ok(hasOpt(g, 'ns:') && g.prompt.opts.filter(o => o.key.startsWith('set:')).every(o => o.label === 'Normal Summon in Defense'), 'Normal Summon offered; a Set is a face-up Defense Normal Summon (rulings 3; 2026-11-28 audit, E4c)');
 });
 T('Light of Judgment discards from their hand', () => {
   const g = duel({ board: [{ hand: ['The Sanctuary in the Sky', 'Light Effigy'], st: ['Light of Judgment'] }, { hand: ['Mirror Force'] }] });
@@ -317,7 +317,7 @@ T('Master of Oz and Metal Dragon recipes', () => {
 T('Metal Detector negates a Continuous Trap', () => {
   const g = duel({ board: [{ st: ['Light of Intervention'] }, { st: ['Metal Detector'] }] });
   act(g, 0, 'Light of Intervention'); respond(g, 1, 'Metal Detector'); auto(g);
-  ok(g.log.some(l => /Light of Intervention's activation was negated/.test(l)) && st(g, 0, 'Light of Intervention'), 'negated, the card stays');
+  ok(g.log.some(l => /Light of Intervention's activation was negated/.test(l)) && !st(g, 0, 'Light of Intervention'), 'negated, the card goes to the GY (a negated activation; 2026-11-28 audit, pass2 edison-09)');
 });
 T('Metal Shooter: counters for ATK and to survive', () => {
   const g = duel({ board: [{ hand: ['Metal Shooter', 'Dark Hole'], m: [FILL] }, {}] });
