@@ -77,7 +77,8 @@ T('Secutor summons 2 Gladiator Beasts; Torax draws', () => {
   for (const x of g.p[0].m) if (x) x.flags.gb = true;
   choose(g, 'bp'); passAll(g); attack(g, on(g, 0, 'Gladiator Beast Secutor')); attack(g, on(g, 0, 'Gladiator Beast Torax')); choose(g, 'endbp');
   const hand0 = g.p[0].hand.length;
-  passAll(g); yes(g); passAll(g); E.act(g, g.prompt.opts.filter(o => /Laquari|Hoplomus/.test(o.label)).map(o => o.key)); choose(g, 'Attack'); choose(g, 'Attack'); passAll(g);
+  // Secutor (mandatory) resolves on its own chain first, then Torax's on another (site ruling: one chain each; 2026-11-28 audit)
+  for (let i = 0; i < 30 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (pr.type === 'respond') E.act(g, ['pass']); else if (pr.type === 'yesno') E.act(g, ['y']); else if (pr.type === 'choose') choose(g, 'Attack'); else E.act(g, pr.opts.filter(o => /Laquari|Hoplomus/.test(o.label)).slice(0, pr.max).map(o => o.key)); }
   ok(on(g, 0, 'Gladiator Beast Laquari') && on(g, 0, 'Gladiator Beast Hoplomus') && on(g, 0, 'Gladiator Beast Secutor'), 'Laquari and Hoplomus summoned, Secutor stays');
   ok(inZ(g, 0, 'deck', 'Gladiator Beast Torax') && g.p[0].hand.length === hand0 + 1, 'Torax shuffled in and drew 1');
 });

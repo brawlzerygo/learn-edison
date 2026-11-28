@@ -185,7 +185,7 @@ T('Cobalt Eagle destroyed by battle goes to the Spell & Trap Zone', () => {
 T('Crystal Pair places a Crystal Beast and stops battle damage', () => {
   const g = duel({ main1: ['Crystal Beast Sapphire Pegasus'], board: [{ hand: [], m: ['Dark Magician', FILL], turn: 2 }, { hand: [], m: [{ n: 'Crystal Beast Amethyst Cat', pos: 'atk' }], st: ['Crystal Pair'] }] });
   bp(g); atkOn(g, on(g, 0, 'Dark Magician'), on(g, 1, 'Crystal Beast Amethyst Cat'));
-  for (let i = 0; i < 10 && g.prompt && g.prompt.type !== 'idle'; i++) { if (g.prompt.type === 'pick') E.act(g, [g.prompt.opts[0].key]); else if (g.prompt.type === 'yesno') say(g, /Crystal Pair/.test(g.prompt.text)); else passAll(g); }
+  for (let i = 0; i < 10 && g.prompt && g.prompt.type !== 'idle'; i++) { if (g.prompt.type === 'pick') E.act(g, [g.prompt.opts[0].key]); else if (g.prompt.type === 'yesno') E.act(g, [/Crystal Pair/.test(g.prompt.text) ? 'y' : 'n']); else passAll(g); }
   ok(inZ(g, 1, 'st', 'Crystal Beast Sapphire Pegasus') && g.p[1].noBattleDamage === g.turnNo, 'Pegasus placed, no more battle damage');
 });
 T('Cyberdark Keel equips a Dragon, gains its ATK and survives battle', () => {

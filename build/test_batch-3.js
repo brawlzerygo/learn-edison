@@ -25,7 +25,8 @@ T('Gladiator Beast tag out into Bestiari', () => {
   const g = duel({ board: [{ hand: [], m: ['Gladiator Beast Murmillo'], deckTop: [FILL, 'Gladiator Beast Bestiari'], turn: 2 }, { hand: [], st: [{ n: 'Mystical Space Typhoon', pos: 'up' }] }] });
   choose(g, 'bp'); passAll(g); choose(g, 'Attack directly'); passAll(g);
   ok(g.p[1].lp === 7200, 'Murmillo hit for 800');
-  ok(hasOpt(g, 'Tag out'), 'tag out offered after battling'); choose(g, 'Tag out'); passAll(g);
+  choose(g, 'endbp'); passAll(g);   // the tag out is a trigger at the end of the Battle Phase (2026-11-28 audit)
+  ok(g.prompt && g.prompt.type === 'yesno' && /Tag out/.test(g.prompt.text), 'tag out offered at the end of the Battle Phase after battling'); E.act(g, ['y']); passAll(g);
   if (g.prompt && g.prompt.type === 'choose') choose(g, 'Attack');
   passAll(g);
   const b = on(g, 0, 'Gladiator Beast Bestiari');

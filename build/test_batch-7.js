@@ -63,7 +63,9 @@ T('Hyper Psychic Blaster: Psychic-only Synchro, pierces and gains LP', () => {
 });
 T('Zanji destroys the monster it attacked even after losing', () => {
   const g = duel({ board: [{ hand: [], m: ['The Six Samurai - Zanji', 'The Six Samurai - Kamon'], turn: 2 }, { m: [FILL] }] });
-  choose(g, 'bp'); passAll(g); choose(g, 'atk:' + on(g, 0, 'The Six Samurai - Zanji').u); passAll(g); passAll(g); passAll(g);
+  choose(g, 'bp'); passAll(g); choose(g, 'atk:' + on(g, 0, 'The Six Samurai - Zanji').u); passAll(g);
+  if (g.prompt && g.prompt.type === 'yesno' && /Six Samurai/.test(g.prompt.text)) E.act(g, ['n']);   // Zanji's own replacement (Kamon instead): not used
+  passAll(g); passAll(g);
   ok(inZ(g, 0, 'gy', 'The Six Samurai - Zanji') && inZ(g, 1, 'gy', FILL), 'both Zanji and the Warwolf are in the GY');
 });
 T('Gravity Bind stops Level 4 attackers', () => {
