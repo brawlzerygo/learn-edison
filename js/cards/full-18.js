@@ -74,7 +74,7 @@ function ownNames(g, p) { const s = new Set(); for (const z of ['deck', 'hand', 
 const convulsion = g => allField(g).some(x => faceUp(x) && named(x, 'Convulsion of Nature'));
 // where a monster came to the field from in this summon's group
 const cameFromDeck = (g, x, grp) => g.events.some(e => e.type === 'move' && e.c === x && e.to === 'm' && e.group === grp && e.from === 'deck');
-const umiOn = g => [g.p[0].fz, g.p[1].fz].some(f => f && faceUp(f) && (named(f, 'Umi') || named(f, 'A Legendary Ocean')));
+const umiOn = g => [g.p[0].fz, g.p[1].fz].some(f => f && faceUp(f) && L.isUmi(f));
 const TYPES = ['Aqua', 'Beast', 'Beast-Warrior', 'Dinosaur', 'Divine-Beast', 'Dragon', 'Fairy', 'Fiend', 'Fish', 'Insect', 'Machine', 'Plant', 'Psychic', 'Pyro', 'Reptile', 'Rock', 'Sea Serpent', 'Spellcaster', 'Thunder', 'Warrior', 'Winged Beast', 'Zombie'];
 const ATTRS = ['DARK', 'LIGHT', 'EARTH', 'WATER', 'FIRE', 'WIND', 'DIVINE'];
 const isArchfiend = x => isMon(x) && /Archfiend/.test(D(x).n);

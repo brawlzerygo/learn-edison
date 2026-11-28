@@ -32,7 +32,7 @@ const inBattle = (g, c) => !!(g.battle && (g.battle.a === c || g.battle.t === c)
 const battling = (g, a, b) => g.inDS && g.battle && a !== b && ((g.battle.a === a && g.battle.t === b) || (g.battle.a === b && g.battle.t === a));
 // Does this card's effect inflict effect damage? (goat-4.js's test: battle damage text doesn't count)
 const burnText = c => { const t = tx(c).replace(/[^.]*battle damage[^.]*\.?/gi, ''); return /inflict[^.]*damage|damage to (both|each|your)|takes? [^.]*damage/i.test(t); };
-const umiOn = g => [g.p[0].fz, g.p[1].fz].some(f => f && faceUp(f) && named(f, 'Umi', 'A Legendary Ocean'));
+const umiOn = g => [g.p[0].fz, g.p[1].fz].some(f => f && faceUp(f) && L.isUmi(f));
 const sanctuaryOf = (g, p) => { const f = g.p[p].fz; return !!f && faceUp(f) && named(f, 'The Sanctuary in the Sky'); };
 const HARPIE = ['Harpie Lady', 'Harpie Lady 1', 'Harpie Lady 2', 'Harpie Lady 3', 'Cyber Harpie Lady'];
 // Equip Spells
@@ -309,7 +309,7 @@ E.addScripts({
   // control (read from their text); Creature Swap style effects that don't target still move it.
   // Review fix: a control-taking card can't be activated when the Goblin's controller has only face-up Goblins (rulings:
   // Change of Heart, Snatch Steal and Brain Control can't take it, and neither player can activate Creature Swap then).
-  'Blindly Loyal Goblin': { self: { cantBeTargeted: true, targetFilter: (g, x, L2) => /take control|control of|gain control|switch control|change control/i.test(tx(L2.c)) },
+  'Blindly Loyal Goblin': { self: { noCtrlSwitch: true, cantBeTargeted: true, targetFilter: (g, x, L2) => /take control|control of|gain control|switch control|change control/i.test(tx(L2.c)) },
     cont: { forbid: (g, src, a) => a.type === 'activate' && !!a.c && faceUp(src) && (a.p === opp(src.ctrl) || named(a.c, 'Creature Swap'))
       && /take control|control of|gain control|switch control|change control/i.test(tx(a.c))
       && monsOf(g, src.ctrl).every(m => faceUp(m) && named(m, 'Blindly Loyal Goblin')) },

@@ -248,7 +248,7 @@ E.addScripts({
     res: function* (g, c) { if (onField(c) && faceUp(c)) { addMod(g, c, { atk: 500 }); log(g, `${name(c)} gained 500 ATK.`); } } }] },
   // PARTIAL: "by your opponent's effect" is read from the move's own player when the effect gave one, else the turn player.
   'Major Riot': { effs: [trapTrig({ label: 'Return every monster and Set from the hand', tags: { ss: 1 },
-    on: (g, ev, c) => ev.type === 'move' && ev.wasField && ev.from === 'm' && ev.to === 'hand' && ev.prevCtrl === c.ctrl && (ev.by != null ? ev.by !== c.ctrl : g.tp !== c.ctrl),
+    on: (g, ev, c) => ev.type === 'move' && ev.wasField && ev.from === 'm' && ev.to === 'hand' && ev.prevCtrl === c.ctrl && (ev.by != null && ev.by !== c.ctrl),
     res: function* (g, c, p) {
       const cnt = [0, 0], ms = fieldMons(g).slice();
       for (const m of ms) { if (!onField(m)) continue; const back = D(m).k !== 'token' && !isExtraD(D(m)); const o = m.owner; move(g, m, 'hand', { reason: 'effect', by: p }); if (back) cnt[o]++; }
@@ -304,7 +304,7 @@ E.addScripts({
       res: function* (g, c, p) { damage(g, opp(p), 400, { src: c, srcP: p }); } }] },
   // Control can't switch while it is face-up: it goes back to the player who controlled it when it was face-up.
   // A face-down Mataza taken and then flipped stays; with its effect negated (Skill Drain) control can switch.
-  'Mataza the Zapper': { self: { maxAttacks: () => 2 },
+  'Mataza the Zapper': { self: { noCtrlSwitch: true, maxAttacks: () => 2 },
     effs: [{ type: 'trig', loc: 'any', res: noop, on: (g, ev, c) => {
       if (c.zone !== 'm' || !faceUp(c)) { c.f24mz = null; return false; }
       if (c.f24mz == null || negd(g, c)) { c.f24mz = c.ctrl; return false; }
@@ -397,7 +397,7 @@ E.addScripts({
   'Milus Radiant': { cont: { atk: (g, src, m) => faceUp(m) ? (attr(m) === 'EARTH' ? 500 : attr(m) === 'WIND' ? -400 : 0) : 0 } },
   // PARTIAL: "by your opponent's card" is read from the move's own player when the effect gave one, else the turn player.
   'Minar': { effs: [{ type: 'trig', loc: 'gy', mand: true, label: 'Inflict 1000 damage',
-    on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.from === 'hand' && ev.to === 'gy' && ['discard', 'effect'].includes(ev.reason) && (ev.by != null ? ev.by !== c.owner : g.tp !== c.owner),
+    on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.from === 'hand' && ev.to === 'gy' && ['discard', 'effect'].includes(ev.reason) && (ev.by != null && ev.by !== c.owner),
     res: function* (g, c, p) { damage(g, opp(p), 1000, { src: c, srcP: p }); } }] },
   'Mine Golem': { effs: [{ type: 'trig', loc: 'gy', mand: true, label: 'Inflict 500 damage',
     on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.battle && ev.destroyed && ev.to === 'gy',

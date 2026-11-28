@@ -372,7 +372,7 @@ E.addScripts({
       res: function* (g, c, p) { const ms = monsOf(g, opp(p)); if (!ms.length) return; const [x] = yield* pick(g, p, 'Return which of their monsters to the hand?', ms, 1, 1, 'bad');
         if (x && onField(x)) { move(g, x, 'hand', { reason: 'effect', by: p }); log(g, `${D(x).n} returned to the ${isExtraD(D(x)) ? 'Extra Deck' : 'hand'}.`); } } },
     { type: 'trig', loc: 'st', mand: true, label: 'Pay 500 LP or destroy this card', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
-      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, "Pay 500 LP to keep Spirit's Invitation?"))) pay(g, p, 500); else destroy(g, [c], { by: p }); } }] },
+      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, "Pay 500 LP to keep Spirit's Invitation?"))) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } }] },
   // ENGINE: "This card's activation and effect can't be negated" isn't enforced (no hook in negate()).
   'Spiritualism': { effs: [{ type: 'act', cond: (g, c, p) => stOf(g, opp(p)).length > 0,
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Return which Spell/Trap to the hand?', stOf(g, opp(p)), 1, 1, 'bad'); },

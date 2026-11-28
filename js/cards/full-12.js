@@ -25,7 +25,7 @@ const killFoe = (g, c, p, t) => { if (t && onField(t) && t.zone === 'm') destroy
 function halve(g, wall, m) {
   if (!onField(m) || !faceUp(m) || m.mods.some(x => x.mw === wall.u)) return;
   const a = stat(g, m, 'atk'), cut = a - Math.floor(a / 2); if (!cut) return;
-  m.mods.push({ atk: -cut, mw: wall.u, turn: g.turnNo }); log(g, `${name(m)}'s ATK was halved by Mirror Wall.`);
+  m.mods.push({ set: a - cut, which: 'atk', mw: wall.u, turn: g.turnNo }); log(g, `${name(m)}'s ATK was halved by Mirror Wall.`);
 }
 // Ojama King: up to 3 of the opponent's unused Monster Zones (Edison: unused ones only), chosen automatically, lowest first
 function kingZones(g, c) {
@@ -241,7 +241,7 @@ E.addScripts({
 
   'Mirror Wall': { effs: [
     { type: 'act', res: function* (g, c, p) { const b = g.aw || g.battle; if (b && b.a && b.a.ctrl !== p) halve(g, c, b.a); } },
-    { type: 'trig', loc: 'st', on: (g, ev, c) => { if (ev.type === 'attack' && ev.a.ctrl !== c.ctrl && faceUp(c)) halve(g, c, ev.a); return false; }, res: noop },
+    { type: 'trig', loc: 'st', on: (g, ev, c) => { if (ev.type === 'attack' && ev.a.ctrl !== c.ctrl && faceUp(c) && !L.negd(g, c)) halve(g, c, ev.a); return false; }, res: noop },   // a lasting effect: not while negated (Jinzo, goat-10)
     { type: 'trig', loc: 'any', on: (g, ev, c) => { if (ev.type === 'move' && ev.c === c && ev.wasField) for (const m of fieldMons(g)) m.mods = m.mods.filter(x => x.mw !== c.u); return false; }, res: noop },
     { type: 'trig', loc: 'st', mand: true, label: 'Pay 2000 LP or destroy it', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
       res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 2000 && (yield* yn(g, p, 'Pay 2000 LP to keep Mirror Wall?'))) pay(g, p, 2000); else destroy(g, [c], { rule: true }); } }] },
@@ -492,7 +492,7 @@ E.addScripts({
 E.addScripts({ 'Mystical Sheep #1': { effs: [] } }, 'goat'); // ENGINE: substitute Fusion Materials
 
 function fromDeckSS(g) { if (!g.sw) return []; const grp = g.sw.group; return g.sw.cs.filter(x => g.events.some(e => e.type === 'move' && e.c === x && e.group === grp && e.from === 'deck' && e.to === 'm')); }
-function umiOf(g, p) { const f = g.p[p].fz; return f && faceUp(f) && (named(f, 'Umi') || named(f, 'A Legendary Ocean')) ? f : null; }
+function umiOf(g, p) { const f = g.p[p].fz; return f && faceUp(f) && L.isUmi(f) ? f : null; }
 function ctrTargets(g, c) { return allField(g).filter(x => x !== c && faceUp(x) && /Spell Counter/i.test(D(x).tx || '')); }
 function chains(g, p) { return monsOf(g, p).filter(x => faceUp(x) && /^Iron Chain/.test(name(x))).length; }
 })();

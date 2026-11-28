@@ -13,7 +13,7 @@ const atk = L.atk, def = L.def;
 /* ----- helpers ----- */
 const named = (c, n) => D(c).n === n;
 const txt = c => { const d = D(c); return ((d.ps && /①/.test(d.ps)) ? d.ps + '\n' : '') + (d.tx || ''); };
-const isUmi = c => c && faceUp(c) && (name(c) === 'Umi' || named(c, 'A Legendary Ocean'));
+const isUmi = c => c && faceUp(c) && L.isUmi(c);
 const umiOn = g => [g.p[0].fz, g.p[1].fz].some(isUmi);
 const isDHero = c => isMon(c) && /^Destiny HERO/.test(name(c));
 const isGB = c => isMon(c) && /^Gladiator Beast/.test(name(c));

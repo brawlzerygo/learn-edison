@@ -13,7 +13,7 @@ const atk = L.atk, def = L.def;
 const named = (c, n) => D(c).n === n;
 const tx = c => D(c).ps || D(c).tx || '';
 const UMIS = ['Umi', 'A Legendary Ocean'];
-const umiUp = g => allField(g).some(x => faceUp(x) && UMIS.includes(D(x).n));
+const umiUp = g => allField(g).some(x => faceUp(x) && L.isUmi(x));
 const toDef = (g, c) => { if (!onField(c) || c.zone !== 'm' || c.pos !== 'atk') return; c.pos = 'def'; g.seq++; log(g, `${name(c)} was changed to Defense Position.`); };
 const toAtk = (g, c) => { if (!onField(c) || c.zone !== 'm' || c.pos === 'atk') return; c.pos = 'atk'; g.seq++; log(g, `${name(c)} was changed to Attack Position.`); };
 const mainPhase = g => g.phase === 'main1' || g.phase === 'main2';
@@ -165,6 +165,8 @@ E.addScripts({
   // the next turn, destroy up to 3 from the Deck) came later. If it is activated in the opponent's turn, that turn counts.
   // PARTIAL: the draw check runs as the card is drawn, without a chain link.
   'Crush Card Virus': { effs: [{ type: 'act', tags: { destroy: 1 },
+      // what it would destroy: the opponent's face-up monsters with 1500 or more ATK (Stardust ruling 7; Starlight Road ruling 9: face-down ones don't count)
+      destroys: (g, c, p) => monsOf(g, opp(p)).filter(m => faceUp(m) && stat(g, m, 'atk') >= 1500),
       cond: (g, c, p) => monsOf(g, p).some(m => attr(m) === 'DARK' && stat(g, m, 'atk') <= 1000),
       cost: function* (g, c, p) { const [m] = yield* pick(g, p, 'Tribute a DARK monster with 1000 or less ATK', monsOf(g, p).filter(m => attr(m) === 'DARK' && stat(g, m, 'atk') <= 1000), 1, 1, 'cost'); if (m) { move(g, m, 'gy', { reason: 'cost', by: p }); log(g, `${PN(g, p)} Tributed ${D(m).n}.`); } },
       res: function* (g, c, p) {
@@ -209,7 +211,7 @@ E.addScripts({
   'Embodiment of Apophis': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => mainPhase(g) && freeM(g, p) >= 0,
     res: function* (g, c, p) { if (!onField(c) || freeM(g, p) < 0) return; const i = yield* choose(g, p, 'Embodiment of Apophis: which position?', ['Attack Position', 'Defense Position']);
       if (!ss(g, p, c, i ? 'def' : 'atk')) return; c.flags.baseAtk = 1600; c.flags.lv = 4; c.flags.trapMon = true; addMod(g, c, { set: 1800, which: 'def' }); } }] },
-  'Energy Drain': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, p).some(faceUp),
+  'Energy Drain': { effs: [{ type: 'act', ds: true, cond: (g, c, p) => monsOf(g, p).some(faceUp),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Target which of your face-up monsters?', monsOf(g, p).filter(faceUp), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (!t || !faceUp(t)) return; const n = 200 * g.p[opp(p)].hand.length; if (!n) return; addMod(g, t, { atk: n, def: n, end: true }); log(g, `${name(t)} gained ${n} ATK and DEF.`); } }] },
   'Exchange of the Spirit': { effs: [{ type: 'act',
@@ -229,7 +231,7 @@ E.addScripts({
         if (coin(g, p) === call) { addMod(g, a, { set: 0, which: 'atk', end: true, fairy: c.u }); log(g, `${name(a)}'s ATK became 0.`); } else log(g, 'The call was wrong.'); } },
     { type: 'trig', loc: 'st', on: (g, ev, c) => { if (ev.type === 'phase' && ev.ph === 'bpEnd') for (const m of fieldMons(g)) m.mods = m.mods.filter(x => x.fairy !== c.u); return false; }, res: function* () {} },
     { type: 'trig', loc: 'st', mand: true, label: 'Pay 500 LP or destroy this card', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
-      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, 'Pay 500 LP to keep Fairy Box?'))) pay(g, p, 500); else destroy(g, [c], { by: p }); } }] },
+      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, 'Pay 500 LP to keep Fairy Box?'))) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } }] },
   // PARTIAL: the switched attack is worked out by the card (miniBattle).
   'Jam Defender': { effs: [
     { type: 'act', res: function* () {} },

@@ -420,7 +420,8 @@ E.addScripts({
       on: (g, ev, c) => evSummoned(ev, c, ['normal']), cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && isAlien(x) && lv(x) <= 4),
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Special Summon which Alien from your GY?', g.p[p].gy.filter(x => isMon(x) && isAlien(x) && lv(x) <= 4), 1, 1, 'good'); },
       res: function* (g, c, p, L) { const t = L.t[0]; if (nvNeg(g, c)) return; if (t && t.zone === 'gy' && ss(g, p, t)) t.flags.ammoBy = c.u; } },
-    { type: 'trig', loc: 'any', mand: true, tags: { destroy: 1 }, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'end' && fieldMons(g).some(x => x.flags.ammoBy === c.u),
+    // the End Phase destroy doesn't start a chain (site ruling 2, archive): engine noChain
+    { type: 'trig', loc: 'any', mand: true, noChain: true, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'end' && fieldMons(g).some(x => x.flags.ammoBy === c.u),
       res: function* (g, c, p) { destroy(g, fieldMons(g).filter(x => x.flags.ammoBy === c.u), { by: p }); } }] },
   'Alien Telepath': {
     cont: { atk: (g, src, c) => aBattle(g, c), def: (g, src, c) => aBattle(g, c) },
@@ -445,13 +446,15 @@ E.addScripts({
   'Fiendish Chain': { effs: [
     { type: 'act', cond: g => fieldMons(g).some(x => faceUp(x) && isEffectMon(x)),
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Chain which Effect Monster?', fieldMons(g).filter(x => faceUp(x) && isEffectMon(x)), 1, 1, 'bad'); },
-      res: function* (g, c, p, L) { const t = live(L)[0]; if (!t || !faceUp(t) || !onField(c)) return; c.flags.chainT = t.u; t.flags.negated = true; touch(g); t.flags.chainedBy = c.u; log(g, `${name(t)}'s effects are negated and it can't attack.`); } },
+      res: function* (g, c, p, L) { const t = live(L)[0]; if (!t || !faceUp(t) || !onField(c)) return; c.flags.chainT = t.u; touch(g); t.flags.chainedBy = c.u; log(g, `${name(t)}'s effects are negated and it can't attack.`); } },
     // when this card leaves the field, the negation ends (no chain)
-    { type: 'trig', loc: 'any', on: (g, ev, c) => { if (ev.type === 'move' && ev.c === c && ev.wasField) for (const m of fieldMons(g)) if (m.flags.chainedBy === c.u) { m.flags.negated = false; m.flags.chainedBy = null; } return false; }, res: function* () {} },
+    { type: 'trig', loc: 'any', on: (g, ev, c) => { if (ev.type === 'move' && ev.c === c && ev.wasField) for (const m of fieldMons(g)) if (m.flags.chainedBy === c.u) m.flags.chainedBy = null; return false; }, res: function* () {} },
     { type: 'trig', loc: 'st', mand: true, tags: { destroy: 1 },
       on: (g, ev, c) => ev.type === 'move' && ev.destroyed && ev.wasField && c.flags.chainT === ev.c.u,
       res: function* (g, c, p) { if (onField(c)) destroy(g, [c], { by: p }); } }],
-    cont: { grant: (g, src, c, flag) => flag === 'cantAttack' && src.flags.chainT === c.u && c.flags.chainedBy === src.u } },
+    // its negation is a lasting effect while it is face-up: it stops while Fiendish Chain is negated (Jinzo, Royal Decree; 2026-11-28 audit)
+    cont: { negates: (g, src, c) => c.zone === 'm' && src.flags.chainT === c.u && c.flags.chainedBy === src.u,
+      grant: (g, src, c, flag) => flag === 'cantAttack' && src.flags.chainT === c.u && c.flags.chainedBy === src.u } },
   'Offering to the Snake Deity': { effs: [{ type: 'act', tags: { destroy: 1 },
     cond: (g, c, p) => monsOf(g, p).some(x => faceUp(x) && race(x) === 'Reptile') && fieldOf(g, opp(p)).length >= 2,
     target: function* (g, c, p, L) { const [r] = yield* pick(g, p, 'Target which face-up Reptile you control?', monsOf(g, p).filter(x => faceUp(x) && race(x) === 'Reptile'), 1, 1, 'cost'); const ts = yield* pick(g, p, 'Target which 2 cards your opponent controls?', fieldOf(g, opp(p)), 2, 2, 'bad'); L.t = [r, ...ts]; },

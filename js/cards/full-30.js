@@ -71,7 +71,7 @@ const chrysalis = ns => ({ effs: [{ type: 'ign', tags: { ss: 1 }, label: `Tribut
 /* ----- Cloudians ----- */
 // "If this card is in face-up Defense Position, destroy it." (as batch-5.js: a mandatory trigger after the next event that shows it,
 // which includes the position-change, flip and summon events). PARTIAL: it uses a chain link.
-const cloudDoom = { type: 'trig', mand: true, tags: { destroy: 1 }, label: 'Destroyed in face-up Defense Position',
+const cloudDoom = { type: 'trig', mand: true, noChain: true, label: 'Destroyed in face-up Defense Position',   // a self-destroy rule, not a chain link (EDOPro; edison-15)
   on: (g, ev, c) => c.zone === 'm' && faceUp(c) && c.pos === 'def' && ev.type !== 'damage',
   cond: (g, c) => onField(c) && faceUp(c) && c.pos === 'def',
   res: function* (g, c, p) { if (onField(c) && faceUp(c) && c.pos === 'def') destroy(g, [c], { by: p }); } };

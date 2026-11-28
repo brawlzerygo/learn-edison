@@ -23,7 +23,7 @@ const equipAct = (filter = () => true, text = 'Equip to which face-up monster?')
   target: function* (g, c, p, L2) { yield* tgt(g, p, L2, text, fieldMons(g).filter(m => faceUp(m) && filter(m)), 1, 1, 'good'); },
   res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t && faceUp(t) && filter(t) && onField(c)) equip(g, c, t); } });
 // "by an effect of a card controlled by your opponent" (as full-39.js): the move's own `by` when given, else the turn player.
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 // Dark World: discarded from the hand to the GY by a card effect (as full-39.js). The hand size limit doesn't count.
 const dwDiscard = (g, ev, c) => {
   if (!(ev.type === 'move' && ev.c === c && ev.from === 'hand' && ev.to === 'gy' && ev.reason === 'discard' && !ev.asCost)) return false;

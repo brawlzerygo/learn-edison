@@ -60,11 +60,11 @@ T('Mystic Tomato works without Ha Des', () => {
   ok(g.prompt && g.prompt.type === 'yesno', 'Mystic Tomato asks'); choose(g, 'yes'); passAll(g);
   ok(inZone(g, 1, 'm', 'Sangan'), 'Sangan summoned');
 });
-T('Royal Decree stops Mirror Force', () => {
+T('Royal Decree negates Mirror Force', () => {   // Traps can still be activated under Royal Decree and resolve negated (Edison rulings, 2026-11-28 audit)
   const g = duel({ board: [{ hand: [], m: [FILL], turn: 2 }, { st: [{ n: 'Royal Decree', pos: 'up' }, 'Mirror Force'] }] });
   passAll(g); choose(g, 'bp'); passAll(g); choose(g, 'Attack directly');
-  ok(!hasOpt(g, 'Mirror Force'), 'Mirror Force not offered'); passAll(g);
-  ok(g.p[1].lp === 6000, 'direct damage went through');
+  ok(hasOpt(g, 'Mirror Force'), 'Mirror Force can be activated'); choose(g, 'Mirror Force'); passAll(g);
+  ok(g.p[0].m.some(Boolean) && g.p[1].lp === 6000, 'Mirror Force was negated, direct damage went through');
 });
 T('Prime Material Dragon turns effect damage into a gain', () => {
   const g = duel({ board: [{ hand: [], m: ['Tempest Magician'] }, { m: ['Prime Material Dragon'] }] });

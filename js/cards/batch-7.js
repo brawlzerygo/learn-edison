@@ -212,7 +212,7 @@ E.addScripts({
     res: function* (g, c, p, L) { const o = L.data.o; if (o && onField(o) && faceUp(o)) { addMod(g, o, { atk: -L.data.n, def: -L.data.n, end: true }); log(g, `${name(o)} lost ${L.data.n} ATK and DEF.`); } } }] },
   'Mind Protector': { cont: { forbid: (g, src, a) => a.type === 'attack' && atk(g, a.c) <= 2000 && race(a.c) !== 'Psychic' },
     effs: [{ type: 'trig', mand: true, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
-      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, 'Pay 500 LP to keep Mind Protector?'))) pay(g, p, 500); else destroy(g, [c], { by: p }); } }] },
+      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, 'Pay 500 LP to keep Mind Protector?'))) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } }] },
   'Level Eater': { // PARTIAL: "can't be Tributed except for a Tribute Summon" is not enforced
     effs: [{ type: 'ign', loc: 'gy', tags: { ss: 1 }, label: 'Lower a Level: Special Summon',
       cond: (g, c, p) => freeM(g, p) >= 0 && monsOf(g, p).some(x => faceUp(x) && lv(x) >= 5),
@@ -369,7 +369,7 @@ E.addScripts({
       const ia = g.p[p].m.indexOf(a), ib = g.p[o].m.indexOf(b); g.p[p].m[ia] = b; g.p[o].m[ib] = a; a.ctrl = o; b.ctrl = p;
       for (const x of [a, b]) { x.flags.ctrlUntil = null; x.flags.ctrlFrom = null; x.posChanged = true; }
       log(g, `${PN(g, p)} and ${PN(g, o)} switched control of ${L.shown(g, a)} and ${L.shown(g, b)}.`); } }] },
-  'Rush Recklessly': { effs: [{ type: 'act', cond: g => fieldMons(g).some(faceUp),
+  'Rush Recklessly': { effs: [{ type: 'act', ds: true, cond: g => fieldMons(g).some(faceUp),
     target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Which monster gains 700 ATK?', fieldMons(g).filter(faceUp), 1, 1, 'good'); },
     res: function* (g, c, p, L) { const t = live(L)[0]; if (t && faceUp(t)) { addMod(g, t, { atk: 700, end: true }); log(g, `${name(t)} gained 700 ATK.`); } } }] },
   'Macro Cosmos': { cont: { gyBan: 'all' },   // ② "Any card sent to the GY is banished instead": a replacement in move() (2026-11-28 audit)
@@ -387,7 +387,7 @@ E.addScripts({
     target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Equip Mage Power to which monster?', fieldMons(g).filter(faceUp), 1, 1, 'good'); },
     res: function* (g, c, p, L) { const t = live(L)[0]; if (t && faceUp(t)) equip(g, c, t); } }],
     cont: { atk: (g, src, m) => src.equipTo === m.u ? 500 * stOf(g, src.ctrl).length : 0, def: (g, src, m) => src.equipTo === m.u ? 500 * stOf(g, src.ctrl).length : 0 } },
-  'Gravity Bind': { effs: [{ type: 'act', res: function* (g) { if (g.aw && g.aw.a && lv(g.aw.a) >= 4) negateAttack(g); } }],
+  'Gravity Bind': { effs: [{ type: 'act', res: function* (g) { if (g.aw && g.aw.a && lv(g.aw.a) >= 4) L.stopAttack(g); } }],
     cont: { forbid: (g, src, a) => a.type === 'attack' && lv(a.c) >= 4 } },
   'Metal Reflect Slime': { // PARTIAL: as a monster it has no Type/Attribute and its Spell/Trap Zone is freed
     self: { cantAttack: true },

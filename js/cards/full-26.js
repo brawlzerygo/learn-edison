@@ -30,7 +30,7 @@ const noTargetLeft = (g, q) => monsOf(g, q).length > 0 && monsOf(g, q).every(m =
 const attackLock = (g, src, a) => a.type === 'attack' && a.c && a.c.ctrl !== src.ctrl && noTargetLeft(g, src.ctrl) && !has(g, a.c, 'directAttack');
 // "by an effect of a card controlled by your opponent" (same as goat-6.js): the move's own `by` when given, else the turn player.
 // PARTIAL: an opponent's Quick Effect on your own turn without `by` is missed.
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 const sentByOpp = (g, ev, c, froms) => ev.type === 'move' && ev.c === c && ev.to === 'gy' && froms.includes(ev.from) && ['effect', 'discard'].includes(ev.reason) && byOpp(g, ev, c);
 // Flip effect shape
 const flip = (label, more) => ({ type: 'trig', mand: true, faceDownOk: true, label, on: (g, ev, c) => ev.type === 'flip' && ev.c === c, ...more });
@@ -331,7 +331,7 @@ E.addScripts({
   'Regenerating Mummy': { effs: [{ type: 'trig', loc: 'gy', mand: true, label: 'Return to the hand',
     on: (g, ev, c) => sentByOpp(g, ev, c, ['hand']),
     res: function* (g, c, p) { if (c.zone === 'gy') { move(g, c, 'hand', { reason: 'effect' }); log(g, `${PN(g, p)} returned Regenerating Mummy to the hand.`); } } }] },
-  'Reinforcements': { effs: [{ type: 'act', cond: g => fieldMons(g).some(faceUp),
+  'Reinforcements': { effs: [{ type: 'act', ds: true, cond: g => fieldMons(g).some(faceUp),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Which face-up monster gains 500 ATK?', fieldMons(g).filter(faceUp), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t && faceUp(t)) { addMod(g, t, { atk: 500, end: true }); log(g, `${name(t)} gained 500 ATK this turn.`); } } }] },
   'Reload': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].hand.some(x => x !== c),

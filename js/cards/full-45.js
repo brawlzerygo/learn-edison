@@ -30,7 +30,7 @@ const eqOf = (g, c) => c.equipTo ? fieldMons(g).find(m => m.u === c.equipTo) || 
 // attack at all then (unless it can attack directly). Twilight Rose Knight adds that check while it applies (as full-26.js).
 const noTargetLeft = (g, q) => monsOf(g, q).length > 0 && monsOf(g, q).every(m => faceUp(m) && has(g, m, 'noAttackTarget'));
 const attackLock = (g, src, a) => a.type === 'attack' && a.c && a.c.ctrl !== src.ctrl && noTargetLeft(g, src.ctrl) && !has(g, a.c, 'directAttack');
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 // Monsters that can be Normal Summoned (Valhalla can't Special Summon a "Special Summon Monster")
 const nsMonster = x => isMon(x) && !['ritual', 'fusion', 'synchro', 'token'].includes(D(x).k) && !/Cannot be Normal Summoned|must (?:first )?be Special Summoned|can only be Special Summoned/i.test(D(x).tx || '');
 const isSix = x => isMon(x) && /Six Samurai/.test(D(x).n);
@@ -454,7 +454,7 @@ E.addScripts({
       g.p[opp(p)].noBattleDamage = T;
       addRule(g, (g2, a) => a.type === 'attack' && a.c && a.c.ctrl === p && a.c !== t && g2.turnNo === T, { end: T });
       log(g, `${name(t)} gains ${n} ATK during this Battle Phase. Other monsters can't attack.`); } }] },
-  'Unity': { effs: [{ type: 'act',
+  'Unity': { effs: [{ type: 'act', ds: true,
     cond: (g, c, p) => monsOf(g, p).length > 0,
     res: function* (g, c, p) { const xs = monsOf(g, p).filter(faceUp); if (!xs.length) return;
       const [t] = yield* pick(g, p, 'Which monster?', xs, 1, 1, 'good'); if (!t) return;

@@ -16,7 +16,7 @@ const nomiLock = { loc: 'gy', forbid: (g, src, a) => a.type === 'ss' && a.c === 
 const nomiMark = { type: 'trig', on: (g, ev, c) => { if (ev.type === 'move' && ev.c === c && ev.to === 'm' && ['hand', 'deck'].includes(ev.from)) c.nomi = true; return false; }, res: function* () {} };
 // "by an effect of a card controlled by your opponent": the move's own `by` when the effect gave one, else the turn player.
 // PARTIAL: most discard and mill helpers don't pass `by`, so an effect without it counts as the turn player's.
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 // Flip effect shape
 const flip = (label, more) => ({ type: 'trig', mand: true, faceDownOk: true, label, on: (g, ev, c) => ev.type === 'flip' && ev.c === c, ...more });
 // Kazejin, Sanga, Suijin: the attacker's ATK becomes 0 for this damage calculation, once while face-up.

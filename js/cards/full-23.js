@@ -213,14 +213,14 @@ E.addScripts({
     cont: { negates: (g, src, c) => isSpell(c) && onField(c) },
     effs: [noop, scanMenu('st'), scanWatch,
       { type: 'trig', loc: 'st', mand: true, label: 'Pay 700 LP or destroy this card', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby',
-        res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 700) pay(g, p, 700); else destroy(g, [c], { by: p }); } }] },
+        res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 700) pay(g, p, 700); else destroy(g, [c], { by: p, rule: true }); } }] },   // maintenance: a rule destroy, not an effect (Imperial Custom ruling 3)
   'Inaba White Rabbit': { cont: noSSFromGY, self: { directAttack: true, attackOk: () => false }, effs: [spiritReturn] },
   'Incandescent Ordeal': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, p) >= 0 && canRitual(g, p, { monster: x => named(x, 'Legendary Flame Lord') }),
     res: function* (g, c, p) { yield* ritualSummon(g, p, { monster: x => named(x, 'Legendary Flame Lord') }); } }] },
   // PARTIAL: the Standby Phase cost is a chain link; the die roll is done by chainScan (above).
   'Infernalqueen Archfiend': { effs: [scanMenu('m'), scanWatch,
     { type: 'trig', mand: true, label: 'Pay 500 LP', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
-      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500) pay(g, p, 500); else destroy(g, [c], { by: p }); } },
+      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } },
     { type: 'trig', mand: true, label: 'An Archfiend gains 1000 ATK', on: (g, ev) => ev.type === 'phase' && ev.ph === 'standby',
       cond: g => fieldMons(g).some(x => faceUp(x) && /Archfiend/.test(D(x).n)),
       target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Which Archfiend monster gains 1000 ATK?', fieldMons(g).filter(x => faceUp(x) && /Archfiend/.test(D(x).n)), 1, 1, 'good'); },

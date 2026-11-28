@@ -16,7 +16,7 @@ const isCB = c => /^Crystal Beast/.test(D(c).n);
 const isCBMon = c => isCB(c) && isMon(c);
 const cbST = (g, p) => g.p[p].st.filter(x => x && faceUp(x) && isCB(x)); // "Crystal Beast" cards in your Spell & Trap Zone
 const UMI = ['Umi', 'A Legendary Ocean', 'Forgotten Temple of the Deep'];
-const isUmi = c => faceUp(c) && UMI.includes(D(c).n);
+const isUmi = c => faceUp(c) && L.isUmi(c);   // the engine's Umi (Forgotten Temple of the Deep counts unless negated, 2026-11-28 audit)
 // face-up Continuous Spells, counting Crystal Beast monsters placed as Continuous Spells
 const contSpells = (g, p) => stOf(g, p).filter(x => faceUp(x) && ((isSpell(x) && D(x).sub === 'Continuous') || isMon(x)));
 const fog = c => ctr(c, 'fog');
@@ -37,8 +37,8 @@ const cbStay = { type: 'trig', loc: 'gy', label: 'Place it as a Continuous Spell
   res: function* (g, c, p) { if (c.zone === 'gy' && placeCB(g, p, c)) cbPlaced(g, p); } };
 /* Cloudian rules shared by the four Fog monsters */
 const cloudSelf = { noBattleDestroy: true };
-const cloudDoom = { type: 'trig', mand: true, tags: { destroy: 1 }, label: 'Destroyed in face-up Defense Position',
-  // PARTIAL: "destroy it" is a rule-like effect; here it runs as a chain link after the next event (position changes emit no event).
+const cloudDoom = { type: 'trig', mand: true, noChain: true, label: 'Destroyed in face-up Defense Position',   // a self-destroy rule, not a chain link (EDOPro; edison-15)
+  // "destroy it" is a rule-like effect: it happens at the next event, with no chain link (noChain; effect position changes emit pos).
   on: (g, ev, c) => c.zone === 'm' && faceUp(c) && c.pos === 'def' && ev.type !== 'damage',
   cond: (g, c) => onField(c) && faceUp(c) && c.pos === 'def',
   res: function* (g, c, p) { if (onField(c) && faceUp(c) && c.pos === 'def') destroy(g, [c], { by: p }); } };
@@ -112,7 +112,7 @@ E.addScripts({
       cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].deck.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && isBatt(x) && lv(x) <= 4 && D(x).n !== 'Batteryman Micro-Cell'),
       res: function* (g, c, p) { const cands = g.p[p].deck.filter(x => isMon(x) && isBatt(x) && lv(x) <= 4 && D(x).n !== 'Batteryman Micro-Cell'); const [x] = yield* pick(g, p, 'Special Summon a Level 4 or lower Batteryman from your Deck', cands, 1, 1, 'good'); if (x) ss(g, p, x); shuffleDeck(g, p); } },
     { type: 'trig', loc: 'gy', mand: true, label: 'Draw 1 card',
-      on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.battle && ev.to === 'gy' && ev.snap && ev.snap.flags && ev.snap.flags.mcFlipped,
+      on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.battle && ev.to === 'gy' && ev.snap && ev.snap.flags && (ev.snap.flags.mcFlipped || ev.snap.flags.flippedUp),   // flipped by anything (Ceasefire: site ruling)
       res: function* (g, c, p) { draw(g, p, 1); } }] },
   'Batteryman AA': { self: {
     atk: (g, c) => { const aa = monsOf(g, c.ctrl).filter(x => faceUp(x) && D(x).n === 'Batteryman AA'); return aa.every(x => x.pos === 'atk') ? 1000 * aa.length : 0; },
@@ -198,7 +198,7 @@ E.addScripts({
     cont: { forbid: (g, src, a) => a.type === 'attack' && a.c.ctrl !== src.ctrl && atk(g, a.c) <= (src.flags.wall || 0) },
     effs: [{ type: 'act', cond: (g, c, p) => g.p[p].lp > 1000,
       cost: function* (g, c, p) { const k = Math.min(8, Math.floor((g.p[p].lp - 1) / 1000)); const i = yield* choose(g, p, 'Pay how many LP?', [...Array(k).keys()].map(i => String(1000 * (i + 1)))); const n = 1000 * (i + 1); pay(g, p, n); c.flags.wall = n; },
-      res: function* (g, c, p) { if (g.aw && g.aw.a && g.aw.a.ctrl !== p && onField(c) && atk(g, g.aw.a) <= (c.flags.wall || 0)) negateAttack(g); } }] },
+      res: function* (g, c, p) { if (g.aw && g.aw.a && g.aw.a.ctrl !== p && onField(c) && atk(g, g.aw.a) <= (c.flags.wall || 0)) L.stopAttack(g); } }] },
   // PARTIAL: Field Spells can't be Set in this engine, so under Anti-Spell Fragrance they can't be activated at all.
   'Anti-Spell Fragrance': { cont: { forbid: (g, src, a) => a.type === 'activate' && a.eff && a.eff.type === 'act' && isSpell(a.c) && (a.c.zone === 'hand' || a.c.turnIn === g.turnNo || (g.tp !== a.p && a.c.turnIn === g.turnNo - 1)) },
     effs: [{ type: 'act', res: function* () {} }] },

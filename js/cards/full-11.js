@@ -98,7 +98,7 @@ function unionEffs(okTarget, text) {
 const unionCont = { replaceDestroy: (g, src, m, o) => {
   if (o.rule || !o.battle || src.zone !== 'st' || src.equipTo !== m.u || !src.flags.union) return false;
   move(g, src, 'gy', { reason: 'battle', destroyed: true, by: o.by }); log(g, `${D(src).n} was destroyed instead of ${name(m)}.`); return true; } };
-const isUmi = c => faceUp(c) && ['Umi', 'A Legendary Ocean'].includes(D(c).n);
+const isUmi = c => faceUp(c) && L.isUmi(c);
 const sanctuary = g => allField(g).some(x => faceUp(x) && named(x, 'The Sanctuary in the Sky'));
 const isPsy = c => isMon(c) && race(c) === 'Psychic';
 let REFLECT = 0;
@@ -352,7 +352,7 @@ E.addScripts({
     effs: [equipAct(() => true, 'Equip Mask of the Accursed to which monster?', 'bad'),
       { type: 'trig', loc: 'st', mand: true, opt: true, label: '500 damage', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl && !!c.equipTo,
         res: function* (g, c, p) { const t = eqOf(g, c); if (t && onField(c)) damage(g, t.ctrl, 500, { src: c, srcP: p }); } }] },
-  'Mask of Weakness': { effs: [{ type: 'act', label: 'Attacker loses 700 ATK',
+  'Mask of Weakness': { effs: [{ type: 'act', ds: true, label: 'Attacker loses 700 ATK',
     cond: (g, c, p) => !!(g.aw && g.aw.a && g.aw.a.ctrl !== p),
     target: function* (g, c, p, L2) { L2.t = [g.aw.a]; },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t && faceUp(t)) { addMod(g, t, { atk: -700, end: true }); log(g, `${name(t)} lost 700 ATK.`); } } }] },

@@ -29,7 +29,7 @@ const toDef = (g, c) => { if (!onField(c) || c.zone !== 'm' || c.pos !== 'atk') 
 const toAtk = (g, c) => { if (!onField(c) || c.zone !== 'm' || c.pos !== 'def') return; c.pos = 'atk'; g.seq++; log(g, `${name(c)} was changed to Attack Position.`); emit(g, { type: 'pos', c, p: c.ctrl, from: 'def' }); };
 // "by an effect of a card controlled by your opponent" (classic-2.js): the move's own `by` when given, else the turn player.
 // PARTIAL: an opponent's Quick Effect on your own turn without `by` is missed.
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 // "Cannot be Special Summoned". ENGINE: only enforced from the GY (no generic flag; build/ENGINE_TODO.md).
 const noSSFromGY = { loc: 'gy', forbid: (g, src, a) => a.type === 'ss' && a.c === src };
 // Spirit return: during the End Phase of the turn it was Normal Summoned or flipped face-up (as full-09.js)

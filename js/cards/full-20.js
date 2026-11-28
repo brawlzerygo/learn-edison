@@ -64,7 +64,7 @@ const archDice = (who, hits, label) => ({ type: 'quick', speed: 3, ds: true, lab
   res: function* (g, c, p, L2) { const T = L2.data.L; if (!T || T.negated) return; const n = dice(g, p); if (hits.includes(n)) { T.negBy = p; negate(g, T, true); } else log(g, 'Nothing happened.'); } });
 const archCost = { type: 'trig', mand: true, label: 'Pay 500 LP', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
   // PARTIAL: with 500 LP or less the card is destroyed instead of paying (the text gives no rule for it).
-  res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500) pay(g, p, 500); else destroy(g, [c], { by: p }); } };
+  res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } };
 // Cobra Jar's token remembers its Jar (the token is gone once it leaves the field)
 const cobraOf = (ev, c) => ev.type === 'move' && ev.snap && ev.snap.flags && ev.snap.flags.f20jar === c.u && ev.battle && ev.destroyed;
 
@@ -222,7 +222,7 @@ E.addScripts({
   'Darkbishop Archfiend': { effs: [archCost, archDice((g, c, m) => isArchfiend(m), [1, 3, 6], 'Roll a die (1, 3 or 6 negates)')] },
   'Darklord Marie': { effs: [{ type: 'trig', loc: 'gy', opt: true, mand: true, label: 'Gain 200 LP', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.owner,
     res: function* (g, c, p) { if (c.zone === 'gy') gain(g, p, 200); } }] },
-  'Deal of Phantom': { effs: [{ type: 'act', cond: g => fieldMons(g).some(faceUp),
+  'Deal of Phantom': { effs: [{ type: 'act', ds: true, cond: g => fieldMons(g).some(faceUp),
     target: function* (g, c, p, L2) { L2.data.n = 100 * g.p[p].gy.filter(isMon).length; yield* tgt(g, p, L2, 'Which face-up monster gains ATK?', fieldMons(g).filter(faceUp), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (!t || !faceUp(t) || !L2.data.n) return; addMod(g, t, { atk: L2.data.n, end: true }); log(g, `${name(t)} gained ${L2.data.n} ATK.`); } }] },
   'Decayed Commander': { effs: [
@@ -257,7 +257,7 @@ E.addScripts({
   // Whose effect sent it: the move's `by` when set, else an effect during the opponent's turn.
   // PARTIAL: an opponent's Quick Effect on your own turn that sends it with no "by" is missed.
   'Despair from the Dark': { effs: [{ type: 'trig', loc: 'gy', mand: true, tags: { ss: 1 }, label: 'Special Summon itself',
-    on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.to === 'gy' && ['hand', 'deck'].includes(ev.from) && ['effect', 'discard'].includes(ev.reason) && (ev.by != null ? ev.by !== c.owner : g.tp !== c.owner),
+    on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.to === 'gy' && ['hand', 'deck'].includes(ev.from) && ['effect', 'discard'].includes(ev.reason) && (ev.by != null && ev.by !== c.owner),
     cond: (g, c, p) => freeM(g, p) >= 0, res: function* (g, c, p) { if (c.zone === 'gy') ss(g, p, c, 'atk'); } }] },
   'Desrook Archfiend': { effs: [archCost, archDice((g, c, m) => m === c, [3], 'Roll a die (3 negates)'),
     { type: 'trig', loc: 'hand', when: true, tags: { ss: 1 }, label: 'Send this card: revive Terrorking Archfiend',

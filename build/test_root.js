@@ -807,5 +807,132 @@ T('68. Goat: stale overrides dropped, the shared scripts follow the Goat text (L
   ok(!/^\s*'(Gigantes|Premature Burial|Jinzo|Megamorph|Stumbling|Gilasaurus|Mataza the Zapper|Lava Golem|The Shallow Grave)': \{/m.test(goat), 'the stale Goat overrides are gone');
 });
 
+
+/* ----- Group E3 (2026-11-28 audit): negation, statics, timing, destruction checks ----- */
+const fld = (g, p, n) => E.fieldOf(g, p).find(c => E.name(c) === n);
+T('69. Continuous negators: the one face-up first wins (Skill Drain vs Jinzo), Royal Decree and Trap Stun negate Traps, a Trap on the chain is negated at resolution', () => {
+  let g = duel([{ m: ['Sangan'] }, { st: [{ n: 'Skill Drain', pos: 'up' }] }]); E.lib.negd(g, fld(g, 0, 'Sangan'));
+  let j = g.p[0].deck[0]; j.id = id('Jinzo'); E.lib.ss(g, 0, j, 'atk');
+  ok(E.lib.negd(g, j) && E.lib.negd(g, fld(g, 0, 'Sangan')) && !E.lib.negd(g, fld(g, 1, 'Skill Drain')), 'Skill Drain face-up first: Jinzo is negated, Skill Drain keeps negating (site ruling)');
+  const rd = g.p[0].deck[0]; rd.id = id('Royal Decree'); E.lib.move(g, rd, 'st', { pos: 'up' });
+  ok(!E.lib.negd(g, j) && E.lib.negd(g, fld(g, 1, 'Skill Drain')) && E.lib.negd(g, rd), 'then Royal Decree: Skill Drain negated, so Jinzo applies and negates both (Goat Netrep)');
+  g = duel([{ m: ['Sangan', 'Jinzo'] }, {}]); E.lib.negd(g, fld(g, 0, 'Sangan'));
+  const sd = g.p[1].deck[0]; sd.id = id('Skill Drain'); E.lib.move(g, sd, 'st', { pos: 'up' });
+  ok(E.lib.negd(g, sd) && !E.lib.negd(g, fld(g, 0, 'Sangan')), 'Jinzo face-up first: Skill Drain is negated');
+  g = duel([{ m: ['Cyber Dragon'], turn: 2 }, { st: [{ n: 'Royal Decree', pos: 'up' }, { n: 'Gravity Bind', pos: 'up' }] }]);
+  ok(!E.lib.forbid(g, { type: 'attack', c: fld(g, 0, 'Cyber Dragon') }), 'Royal Decree negates a face-up Gravity Bind (it used to only stop activations)');
+  g = duel([{ st: [{ n: 'Trap Stun', pos: 'set' }], m: ['Cyber Dragon'], turn: 3 }, { st: [{ n: 'Gravity Bind', pos: 'up' }] }]);
+  actU(g, g.p[0].st[0]); drive(g);
+  ok(E.lib.negd(g, fld(g, 1, 'Gravity Bind')) && !E.lib.forbid(g, { type: 'attack', c: fld(g, 0, 'Cyber Dragon') }), 'Trap Stun negates the face-up Gravity Bind this turn');
+  g = duel([{ st: [{ n: 'Dust Tornado', pos: 'set' }], turn: 3 }, { st: [{ n: 'Gravity Bind', pos: 'up' }, { n: 'Mystical Space Typhoon', pos: 'set' }] }]);
+  actU(g, g.p[0].st[0]); let did = false;
+  drive(g, { respond: pr => { if (!did) { did = true; const x = g.p[1].deck[0]; x.id = id('Jinzo'); E.lib.ss(g, 1, x, 'atk'); } return null; } });
+  ok(did && fld(g, 1, 'Gravity Bind') && g.log.some(l => /Dust Tornado's effect was negated/.test(l)), 'a Trap already on the chain when Jinzo arrives resolves negated (goat-08, Jinzo ruling)');
+  g = duel([{ m: ['Sangan'] }, { st: [{ n: 'Skill Drain', pos: 'up' }] }]); const sdl = fld(g, 1, 'Skill Drain');
+  g.chain.push({ c: sdl, eff: E.lib.effsOf(sdl)[0], p: 1, t: [], cardAct: true, tags: {}, data: {} }); g.seq++;
+  const onCh = E.lib.negd(g, fld(g, 0, 'Sangan')); g.chain.pop(); g.seq++;
+  ok(!onCh && E.lib.negd(g, fld(g, 0, 'Sangan')), 'a Continuous Trap applies only once its activation has resolved (Rainbow Ruins ruling 5)');
+});
+T('70. Under Skill Drain a monster can still activate an effect with a cost (it resolves negated), and loses its Spell Counters', () => {
+  let g = duel([{ m: ['Card Trooper'], turn: 3 }, { st: [{ n: 'Skill Drain', pos: 'up' }] }]); const ct = g.p[0].m[0];
+  ok(!!keyOf(g, ct), 'Card Trooper\'s ① can be activated under Skill Drain (ruling: "may still activate their effects and pay costs")');
+  actU(g, ct); drive(g);
+  ok(g.p[0].gy.length >= 1 && E.atk(g, ct) === 400, 'its cost is paid, the ATK gain is negated');
+  g = duel([{ m: ['Skilled Dark Magician'] }, {}]); const sk = g.p[0].m[0]; E.lib.addCtr(g, sk, 'spell', 2);
+  const sd = g.p[1].deck[0]; sd.id = id('Skill Drain'); E.lib.move(g, sd, 'st', { pos: 'up' });
+  ok(E.lib.ctr(sk, 'spell') === 0, 'Skill Drain removes the Spell Counters on a negated monster (site ruling)');
+});
+
+T('71. Timing and destruction checks: coin effects aren\'t certain, Crush Card Virus is, LP changes are events, effect position changes emit pos, Ceasefire\'s wording, Threatening Roar on player 0', () => {
+  let g = duel([{ m: ['Barrel Dragon'] }, { m: [FILL] }]); const bd = g.p[0].m[0];
+  ok(E.lib.wouldDestroy(g, { c: bd, eff: E.lib.effsOf(bd)[0], p: 0, t: [g.p[1].m[0]], tags: { destroy: 1 }, data: {} }).length === 0, 'Barrel Dragon\'s coin tosses may or may not destroy (Stardust ruling 6)');
+  g = duel([{ m: ['Spirit Reaper'] }, { m: ['Cyber Dragon'] }]); const ccv = g.p[0].deck[0]; ccv.id = id('Crush Card Virus');
+  ok(E.lib.wouldDestroy(g, { c: ccv, eff: E.lib.effsOf(ccv)[0], p: 0, t: [], tags: { destroy: 1 }, data: {} }).includes(g.p[1].m[0]), 'Crush Card Virus would destroy the face-up 1500+ monster (Stardust ruling 7: the Group C regression)');
+  g = duel([{ hand: ['Upstart Goblin'], deckTop: ['Infernity Archfiend'], turn: 3 }, {}]);
+  actU(g, hand(g, 'Upstart Goblin')); const seen = drive(g);
+  ok(!!hand(g, 'Infernity Archfiend') && !seen.some(t => /Infernity/.test(t)), 'Infernity Archfiend drawn by Upstart Goblin misses its timing: the LP gain came after (site ruling)');
+  g = duel([{ m: [FILL] }, { m: ['Dream Clown'] }]); const dc = g.p[1].m[0];
+  g.chain.push({ c: g.p[0].m[0], eff: { type: 'quick', res: function* () { dc.pos = 'def'; } }, p: 0, t: [], tags: {}, data: {}, link: 1 });
+  const it = E._internal.resolveChain(g); for (let r = it.next(), i = 0; !r.done && i < 9; i++) r = it.next();
+  ok(g.events.some(e => e.type === 'pos' && e.c === dc && e.from === 'atk'), 'an effect that changes a position by hand still emits the pos event (Dream Clown)');
+  const cf = C.find(x => x.n === 'Ceasefire'); ok(E.lib.NO_FLIP_RE.test('(Flip monsters\' effects are not activated at this time)') && E.lib.NO_FLIP_RE.test(cf.ps || cf.tx), 'Ceasefire\'s Goat and Edison wordings both stop Flip effects');
+  g = duel([{ m: ['Cyber Dragon'], turn: 3 }, {}]); g.roar = 0; E.act(g, ['bp']); passAll(g);
+  ok(!g.prompt.opts.some(o => o.key.startsWith('atk:')), 'Threatening Roar on player 0 stops their attacks');
+});
+
+T('72. Effect moves, names, searches and values: by defaults to the effect\'s player, battleKill counts Tokens, Rai-Oh at activation, Harpie and Umi names, halving and doubling set the value', () => {
+  let g = duel([{ m: [FILL] }, { m: [FILL] }]); const v = g.p[1].m[0];
+  g.resolvingL = { c: g.p[0].m[0], p: 0, t: [] }; E.lib.move(g, v, 'gy', { reason: 'effect' }); g.resolvingL = null;
+  ok(g.events.some(e => e.type === 'move' && e.c === v && e.by === 0), 'an effect move carries the resolving link\'s player as by (no turn-player guess)');
+  g = duel([{ m: ['Spyder Spider'] }, {}]); const sp = g.p[0].m[0], tk = E.lib.tokens(g, 1, { n: 'Sheep Token', a: 'EARTH', r: 'Beast', lv: 1, atk: 0, def: 0 }, 1, 'def')[0];
+  const ev = E.lib.move(g, tk, 'gy', { reason: 'battle', battle: true, destroyed: true, killer: sp }) || g.events[g.events.length - 1];
+  ok(E.lib.battleKill(g.events.filter(e => e.type === 'move' && e.c === tk).pop(), sp), 'a Token destroyed by battle counts for "destroys ... by battle" (Spyder Spider: no GY clause)');
+  g = duel([{ hand: ['Reinforcement of the Army'], turn: 3 }, { m: ['Thunder King Rai-Oh'] }]);
+  ok(!keyOf(g, hand(g, 'Reinforcement of the Army')), 'Reinforcement of the Army can\'t be activated while Rai-Oh is face-up (checked at activation)');
+  g = duel([{ m: [FILL] }, { m: ['Thunder King Rai-Oh'] }]); const top = g.p[0].deck[g.p[0].deck.length - 1];
+  g.resolvingL = { c: g.p[0].m[0], p: 0, t: [] }; E.lib.move(g, top, 'hand', { reason: 'effect' }); g.resolvingL = null;
+  ok(top.zone === 'deck', 'a script\'s own Deck-to-hand move also stops under Rai-Oh (Crystal Seer)');
+  g = duel([{ m: [FILL] }, { gy: ['Harpie Lady 2', 'Cyber Harpie Lady'], m: ['Harpie Lady 1'] }]);
+  ok(E.lib.nameIs(g.p[1].gy[0], 'Harpie Lady') && E.name(g.p[1].m[0]) === 'Harpie Lady 1' && E.lib.nameOff(g.p[1].m[0]) === 'Harpie Lady', 'Harpie Lady 1/2 and Cyber Harpie Lady are "Harpie Lady" (Karma Cut ruling 8), the printed name still shows');
+  g = duel([{ m: ['Proto-Cyber Dragon'] }, {}]);
+  ok(E.name(g.p[0].m[0]) === 'Cyber Dragon' && E.lib.nameOff(g.p[0].m[0]) === 'Proto-Cyber Dragon', 'Proto-Cyber Dragon is "Cyber Dragon" on the field only (Karma Cut ruling 7)');
+  g = duel([{ fz: 'Forgotten Temple of the Deep' }, {}]); ok(E.lib.isUmi(g.p[0].fz), 'Forgotten Temple of the Deep counts as Umi');
+  g = duel([{ m: ['Cyber Dragon', FILL] }, {}]); const cd = g.p[0].m[0];
+  const mw = g.p[1].deck[0]; mw.id = id('Mirror Wall'); E.lib.move(g, mw, 'st', { pos: 'up' });
+  E.lib.addMod(g, cd, { set: 1050, which: 'atk', mw: mw.u }); E.lib.addMod(g, cd, { atk: 500 });
+  ok(E.atk(g, cd) === 1550, 'a halved value is set, later gains add to it');
+  g = duel([{ m: ['Cyber Dragon'], hand: ['Limiter Removal'], turn: 3 }, {}]); const lr = hand(g, 'Limiter Removal');
+  ok(E.lib.effsOf(lr)[0].ds && E.lib.effsOf(lr)[1].loc === 'any', 'Limiter Removal works in the Damage Step, and its End Phase destroy outlives the card (goat-08)');
+  actU(g, lr); drive(g); const cd2 = g.p[0].m[0]; E.lib.addMod(g, cd2, { atk: 100 }); ok(E.atk(g, cd2) === 4300, 'Limiter Removal doubles by setting the value (4200), a later +100 adds');
+  g = duel([{ m: ['Unifrog', 'Unifrog'] }, {}]); ok(E.lib.isFrog(g.p[0].m[0]), 'Unifrog is a "Frog" card');
+});
+T('73. Destroys go through the checks: Call of the Haunted\'s link under Imperial Custom, a negated Continuous Trap leaves anyway, a negated hand effect\'s card is destroyed, maintenance destroys are rules', () => {
+  let g = duel([{ m: [FILL], st: [{ n: 'Call of the Haunted', pos: 'up' }, { n: 'Imperial Custom', pos: 'up' }] }, {}]); const coth = g.p[0].st[0]; coth.linkTo = g.p[0].m[0].u;
+  E.lib.destroy(g, [g.p[0].m[0]]);
+  ok(E.onField(coth), 'Imperial Custom keeps Call of the Haunted when its monster is destroyed (site ruling)');
+  g = duel([{ st: [{ n: 'Gravity Bind', pos: 'up' }, { n: 'Imperial Custom', pos: 'up' }] }, { m: [FILL] }]); const gb = g.p[0].st[0];
+  const L1 = { c: gb, eff: E.lib.effsOf(gb)[0], p: 0, t: [], cardAct: true, tags: {}, data: {} }; g.resolvingL = { c: g.p[1].m[0], p: 1 };
+  E.lib.negate(g, L1, true, { activation: true }); g.resolvingL = null;
+  ok(gb.zone === 'gy', 'a Continuous Trap whose activation is negated goes to the GY under Imperial Custom (site ruling)');
+  g = duel([{ hand: ['Battle Fader'] }, { m: [FILL] }]); const bf = g.p[0].hand[0];
+  E.lib.negate(g, { c: bf, eff: E.lib.effsOf(bf)[0], p: 0, t: [], tags: {}, data: {} }, true);
+  ok(bf.zone === 'gy', 'a negated hand effect "and destroy it" destroys the card in the hand (Battle Fader, Royal Oppression)');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../js/cards/full-23.js'), 'utf8');
+  ok(/pay\(g, p, 700\); else destroy\(g, \[c\], \{ by: p, rule: true \}\)/.test(src), 'Imperial Order\'s maintenance destroy is a rule (Imperial Custom ruling 3)');
+});
+
+T('74. Lasting effects of negated cards stop: Fiendish Chain under Jinzo, Level Limit - Area B under Imperial Order; "was flipped" by any flip; a GY once-per-turn resets when the card leaves the GY', () => {
+  let g = duel([{ m: ['Sangan'] }, { st: [{ n: 'Fiendish Chain', pos: 'up' }] }]); const sg = g.p[0].m[0], fc = g.p[1].st[0];
+  fc.flags.chainT = sg.u; sg.flags.chainedBy = fc.u; g.seq++;
+  const before = E.lib.negd(g, sg); const j = g.p[1].deck[0]; j.id = id('Jinzo'); E.lib.ss(g, 1, j, 'atk');
+  ok(before && !E.lib.negd(g, sg), 'Fiendish Chain\'s negation stops while Jinzo negates it (edison-13)');
+  g = duel([{ m: [{ n: 'Cyber Dragon', pos: 'atk' }] }, { st: [{ n: 'Level Limit - Area B', pos: 'up' }, { n: 'Imperial Order', pos: 'up' }] }]);
+  E.lib.move(g, g.p[0].deck[0], 'hand', { reason: 'effect' });
+  ok(g.p[0].m[0].pos === 'atk', 'Level Limit - Area B doesn\'t change positions while Imperial Order negates it (goat-03)');
+  g = duel([{ m: [{ n: 'Batteryman Micro-Cell', pos: 'set' }], st: [{ n: 'Ceasefire', pos: 'set' }], turn: 3 }, {}]); const mc = g.p[0].m[0];
+  actU(g, g.p[0].st[0]); drive(g);
+  ok(E.lib.faceUp(mc) && mc.flags.flippedUp, 'a monster flipped by Ceasefire "was flipped face-up" (Batteryman Micro-Cell ruling)');
+  g = duel([{ gy: ['Volcanic Shell'] }, {}]); const vs = g.p[0].gy[0]; vs.used[0] = g.turnNo;
+  E.lib.move(g, vs, 'deckTop', { reason: 'effect' }); ok(vs.used[0] == null, 'a soft once-per-turn GY effect resets when the card leaves the GY (Volcanic Shell)');
+});
+
+T('75. Gravity Bind stops an attack without negating it, and "does not start a chain" effects happen with no link (Junk Archer under Skill Drain)', () => {
+  let g = duel([{ m: ['Cyber Dragon'] }, {}]); const a = g.p[0].m[0]; g.aw = { a, t: null, ctrl: 0, open: true, tpOpen: true };
+  E.lib.stopAttack(g); ok(E.lib.attackingNow(g, a), 'after Gravity Bind the monster is still the attacking monster for the chain (Dimensional Prison site ruling)'); g.aw = null; g.attackStopped = false;
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../js/cards/batch-7.js'), 'utf8');
+  ok(/'Gravity Bind'[^\n]*L\.stopAttack\(g\)/.test(src), 'Gravity Bind uses stopAttack, not negateAttack');
+  g = duel([{ m: ['Junk Archer'], turn: 3 }, { m: ['Cyber Dragon'], st: [{ n: 'Skill Drain', pos: 'up' }] }]); const ja = g.p[0].m[0], cd = g.p[1].m[0];
+  E.lib.move(g, cd, 'ban', { reason: 'effect', by: 0 }); Object.assign(cd.flags, { archerBy: ja.u, archerTurn: g.turnNo, archerPos: 'atk', archerCtrl: 1 });
+  E.act(g, ['end']); drive(g);
+  ok(cd.zone === 'm' && cd.ctrl === 1, 'the banished monster returns even with Junk Archer negated: no chain link (archive)');
+});
+
+T('76. "Control of this card can\'t switch" is checked by takeControl (Botanical Lion), and not while negated', () => {
+  let g = duel([{ m: [FILL] }, { m: ['Botanical Lion'] }]); const bl = g.p[1].m[0];
+  ok(!E.lib.takeControl(g, 0, bl, true) && bl.ctrl === 1, 'Botanical Lion stays with its controller (site: ② control can\'t switch)');
+  g = duel([{ m: [FILL] }, { m: ['Botanical Lion'], st: [{ n: 'Skill Drain', pos: 'up' }] }]);
+  ok(E.lib.takeControl(g, 0, g.p[1].m[0], true), 'under Skill Drain its control can be taken');
+});
+
 console.log(fails ? `\n${fails} failed` : '\nAll root-cause guards passed.');
 process.exit(fails ? 1 : 0);

@@ -380,7 +380,7 @@ E.addScripts({
   // Ported from classic-5.js. Umi or A Legendary Ocean (treated as Umi) counts.
   'Tornado Wall': (() => {
     const UMIS = ['Umi', 'A Legendary Ocean'];
-    const umiUp = g => allField(g).some(x => faceUp(x) && UMIS.includes(D(x).n));
+    const umiUp = g => allField(g).some(x => faceUp(x) && L.isUmi(x));
     return { cont: { dmg: (g, src, p, n, o) => (o && o.battle && p === src.ctrl && umiUp(g) && g.battle && g.battle.a && g.battle.a.ctrl !== p) ? 0 : n },
       effs: [{ type: 'act', cond: g => umiUp(g), res: noop },
         { type: 'trig', loc: 'st', mand: true, tags: { destroy: 1 }, label: 'Destroyed when Umi leaves', on: (g, ev, c) => faceUp(c) && ev.type === 'move' && ev.wasField && UMIS.includes(D(ev.c).n) && !umiUp(g),

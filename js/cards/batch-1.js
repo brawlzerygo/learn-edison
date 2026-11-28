@@ -16,10 +16,10 @@ const isZombie = c => isMon(c) && race(c) === 'Zombie';
 const isDragon = c => isMon(c) && race(c) === 'Dragon';
 const named = (c, n) => D(c).n === n;
 const upNamed = (g, n) => allField(g).filter(x => faceUp(x) && D(x).n === n);
-// Royal Decree on the field (other than src) negates Trap effects.
-const decreeOn = (g, src) => allField(g).some(x => x !== src && faceUp(x) && D(x).n === 'Royal Decree' && !decreeBlocked(g, x));
-const decreeBlocked = (g, x) => allField(g).some(y => y !== x && faceUp(y) && D(y).n === 'Royal Decree' && y.u < x.u); // two Decrees: the older one applies
-const trapLive = (g, c) => faceUp(c) && !decreeOn(g, c);
+// a face-up Trap applies unless its effects are negated (Royal Decree, Jinzo, Trap Stun: the engine's negd, 2026-11-28 audit: Mask of Restrict
+// and Light-Imprisoning Mirror kept applying under Jinzo; two Royal Decrees: the one face-up first applies, engine negLive)
+const decreeOn = (g, src) => L.negd(g, src);
+const trapLive = (g, c) => faceUp(c) && !L.negd(g, c);
 const maskOn = g => allField(g).some(x => D(x).n === 'Mask of Restrict' && trapLive(g, x));
 // a "?" ATK isn't "1500 or less" outside the field, so Sangan can't add Gren Maju Da Eiza or Maju Garzett (Goat Sangan ruling)
 const atkLE = (x, n) => /^\d+$/.test(String(D(x).atk)) && baseAtk(x) <= n;
@@ -55,7 +55,6 @@ function blockedTrig(g, t) {
   const c = t.c; if (!c || !c.flags) return false;
   if (c.flags.b1hades && (c.zone === 'gy' || onField(c))) return true; // Revived King Ha Des
   if (isMon(c) && attr(c) === 'LIGHT' && (c.zone === 'gy' || c.zone === 'm') && mirrorOn(g)) return true; // Light-Imprisoning Mirror
-  if (isTrap(c) && (t.eff.loc === 'st' || onField(c)) && allField(g).some(x => x !== c && D(x).n === 'Royal Decree' && faceUp(x))) return true; // Royal Decree
   return false;
 }
 function hubInit(g) {
@@ -148,8 +147,9 @@ const S = {
   'Starlight Road': { effs: [{ type: 'act', tags: { ss: 1, ssOpt: 1 },   // Royal Oppression can negate it (Starlight ruling 11); the summon is optional, so Vanity's Fiend doesn't stop it
     cond: (g, c, p, x) => wouldDestroyMine(g, x.top, p).length >= 2,
     target: function* (g, c, p, L2) { L2.data.L = g.chain[g.chain.length - 1]; },
-    res: function* (g, c, p, L2) { const Lk = L2.data.L, was = onField(Lk.c); Lk.negBy = p; negate(g, Lk, true);
-      if (!(was && !onField(Lk.c))) return;
+    // "and if you do, destroy it": the card is destroyed wherever it is, the Extra Deck included (Absolute Zero archive), then Stardust
+    res: function* (g, c, p, L2) { const Lk = L2.data.L, z0 = Lk.c.zone, mv0 = Lk.c.moved; Lk.negBy = p; negate(g, Lk, true);
+      if (!(['m', 'st', 'fz', 'hand', 'extra', 'deck'].includes(z0) && Lk.c.moved !== mv0)) return;
       const sd = g.p[p].extra.filter(x => D(x).n === 'Stardust Dragon');
       if (sd.length && freeM(g, p) >= 0 && (yield* yn(g, p, 'Special Summon Stardust Dragon from your Extra Deck?'))) ss(g, p, sd[0]); } }] },
   'Lightning Vortex': { effs: [{ type: 'act', tags: { destroy: 1 }, cond: (g, c, p) => g.p[p].hand.some(x => x !== c) && oppFaceUp(g, p).length > 0,
@@ -274,8 +274,9 @@ const S = {
       if (a.type === 'activate' && D(a.c).n === 'Soul Exchange') return true;   // its whole use is the Tribute it allows
       return false; } },
     effs: [{ type: 'act', res: function* () {} }] },
-  // PARTIAL: other Traps can't be activated (and Trap triggers don't start) instead of being negated when they resolve.
-  'Royal Decree': { hook: true, cont: { forbid: (g, src, a) => a.type === 'activate' && isTrap(a.c) && a.c !== src && !decreeBlocked(g, src) },
+  // "Negate all other Trap effects on the field": Traps can still be activated and resolve negated on the field, a Trap sent off the field
+  // by a chained card is still negated, Trap effects in the GY aren't (Edison rulings; engine negd, resolveChain)
+  'Royal Decree': { hook: true, cont: { negates: (g, src, c) => c !== src && isTrap(c) && onField(c) },
     effs: [{ type: 'act', res: function* () {} }] },
   /* ----- Diva Hero Beat ----- */
   'D.D. Warrior Lady': { effs: [{ type: 'trig', label: 'Banish both monsters',
@@ -298,7 +299,9 @@ const S = {
   'Call of the Haunted': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(isMon),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which monster from your GY?', g.p[p].gy.filter(isMon), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy' && onField(c) && ss(g, p, t, 'atk')) link(g, c, t); } }] },
-  'Hero Blast': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].gy.some(x => D(x).k === 'normal' && /^Elemental HERO/.test(D(x).n)),
+  // tags.destroy + destroys: "destroy 1 of them" is certain when one would be there (site: Stardust "only if there is a monster on the field
+  // that would be destroyed"); which one is chosen at resolution, so it is a maybe of 1 (engine wouldDestroy)
+  'Hero Blast': { effs: [{ type: 'act', tags: { destroy: 1 }, destroys: (g, c, p, L2) => { const t = L2.t[0]; if (!t || t.zone !== 'gy') return []; const cs = oppFaceUp(g, p).filter(x => atk(g, x) <= baseAtk(t)); return Object.assign([], cs.length ? { maybe: cs, n: 1 } : {}); }, cond: (g, c, p) => g.p[p].gy.some(x => D(x).k === 'normal' && /^Elemental HERO/.test(D(x).n)),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Add which Elemental HERO Normal Monster?', g.p[p].gy.filter(x => D(x).k === 'normal' && /^Elemental HERO/.test(D(x).n)), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = L2.t[0]; if (!t || t.zone !== 'gy') return; move(g, t, 'hand', { reason: 'effect' }); log(g, `${PN(g, p)} added ${name(t)} to the hand.`);
       const A = baseAtk(t), cs = oppFaceUp(g, p).filter(x => atk(g, x) <= A); if (!cs.length) return; const [x] = yield* pick(g, p, 'Destroy which monster?', cs, 1, 1, 'bad'); if (x) destroy(g, [x], { by: p, src: c }); } }] },

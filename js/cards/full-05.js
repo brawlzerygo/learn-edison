@@ -265,7 +265,7 @@ E.addScripts({
       { type: 'trig', loc: 'gy', mand: true, label: 'Equip to and take control of a monster',
         on: (g, ev, c) => {
           if (ev.type === 'move' && ev.c === c && ev.from === 'm' && ev.to === 'gy' && ev.destroyed && ev.prevCtrl === c.owner) {
-            const byOpp = ev.battle ? ev.killer && ev.killer.ctrl !== c.owner : ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+            const byOpp = ev.battle ? ev.killer && ev.killer.ctrl !== c.owner : ev.by != null && ev.by !== c.owner;
             if (byOpp) c.flags.necro = g.turnNo;
           }
           return ev.type === 'phase' && ev.ph === 'end' && c.flags.necro === g.turnNo;

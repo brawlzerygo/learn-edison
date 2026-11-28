@@ -39,7 +39,7 @@ const trapTrig = o => ({ type: 'trig', loc: 'any', label: o.label,
   res: function* (g, c, p, L2) { if (onField(c)) yield* o.res(g, c, p, L2); if (onField(c) && c.zone === 'st') move(g, c, 'gy', { reason: 'rule' }); } });
 const battleDeath = (ev, q) => ev.type === 'move' && ev.battle && ev.destroyed && ev.to === 'gy' && ev.wasField && ev.from === 'm' && isMon(ev.c) && ev.prevCtrl === q;
 // "by an effect of a card controlled by your opponent" (same as full-26.js): the move's own `by` when given, else the turn player
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 // Normal Monsters: Normal cards, and Gemini monsters that are not Gemini Summoned (in the GY or face-up on the field)
 const isNormal = x => isMon(x) && (D(x).k === 'normal' || (isGemini(x) && !(onField(x) && x.flags.gemini)));
 // a monster with ? ATK: the card data stores it as 0, so it is read from the text.
@@ -430,6 +430,8 @@ E.addScripts({
   // the next turn, destroy up to 3 from the Deck) came later. If it is activated in the opponent's turn, that turn counts.
   // PARTIAL: the draw check runs as the card is drawn, without a chain link.
   'Crush Card Virus': { effs: [{ type: 'act', tags: { destroy: 1 },
+      // what it would destroy: the opponent's face-up monsters with 1500 or more ATK (Stardust ruling 7; Starlight Road ruling 9: face-down ones don't count)
+      destroys: (g, c, p) => monsOf(g, opp(p)).filter(m => faceUp(m) && stat(g, m, 'atk') >= 1500),
       cond: (g, c, p) => monsOf(g, p).some(m => attr(m) === 'DARK' && stat(g, m, 'atk') <= 1000),
       cost: function* (g, c, p) { const [m] = yield* pick(g, p, 'Tribute a DARK monster with 1000 or less ATK', monsOf(g, p).filter(m => attr(m) === 'DARK' && stat(g, m, 'atk') <= 1000), 1, 1, 'cost'); if (m) { move(g, m, 'gy', { reason: 'cost', by: p }); log(g, `${PN(g, p)} Tributed ${D(m).n}.`); } },
       res: function* (g, c, p) {

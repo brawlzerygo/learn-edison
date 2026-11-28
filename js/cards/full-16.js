@@ -32,7 +32,7 @@ function isEffMon(c) {
   if (d.k === 'ritual') return tx.replace(/^You can Ritual Summon this card with "[^"]+"\.\s*/i, '').replace(/^This card can only be Ritual Summoned[^.]*\.\s*/i, '').trim().length > 0;
   return false;
 }
-const umiOn = g => [g.p[0].fz, g.p[1].fz].some(f => f && faceUp(f) && (named(f, 'Umi') || named(f, 'A Legendary Ocean')));
+const umiOn = g => [g.p[0].fz, g.p[1].fz].some(f => f && faceUp(f) && L.isUmi(f));
 const lordUp = g => fieldMons(g).some(m => faceUp(m) && named(m, 'Lord of D.'));
 const noNS = x => /Cannot be Normal Summoned/i.test(D(x).tx || '');
 // subsets of cards whose Levels add up to n

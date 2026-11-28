@@ -42,7 +42,7 @@ const toDeckOrExtra = (g, x) => move(g, x, isExtraD(D(x)) ? 'extra' : 'deck', { 
 // a monster that was Special Summoned (tokens count; summonType is set by every summon)
 const wasSS = c => onField(c) && isMon(c) && (c.summonType ? !['normal', 'tribute'].includes(c.summonType) : D(c).k === 'token');
 // "by an opponent's card effect" (as full-26.js): the move's own `by` when given, else the turn player
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 function* discardN(g, p, n, text) { const ds = yield* pick(g, p, text, g.p[p].hand, n, n, 'cost'); for (const x of ds) move(g, x, 'gy', { reason: 'discard' }); if (ds.length) log(g, `${PN(g, p)} discarded ${ds.map(name).join(', ')}.`); return ds; }
 const ritualEffs = rn => [{ type: 'act', tags: { ss: 1 },
   cond: (g, c, p) => canRitual(g, p, { monster: x => named(x, rn) }),
@@ -142,7 +142,7 @@ E.addScripts({
       { type: 'trig', mand: true, label: '1000 damage', on: (g, ev, c) => ev.type === 'summon' && ev.how === 'flip' && ev.cs.some(x => attr(x) === 'EARTH' && x !== c),
         res: function* (g, c, p) { if (onField(c) && faceUp(c)) damage(g, opp(p), 1000, { src: c, srcP: p }); } }] },
   // Banishing the Morphtronics is part of the effect (ruling), so it happens even if the target is gone.
-  'Factory of 100 Machines': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, p).some(x => faceUp(x) && race(x) === 'Machine'),
+  'Factory of 100 Machines': { effs: [{ type: 'act', ds: true, cond: (g, c, p) => monsOf(g, p).some(x => faceUp(x) && race(x) === 'Machine'),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Which Machine gains ATK?', monsOf(g, p).filter(x => faceUp(x) && race(x) === 'Machine'), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const ms = g.p[p].gy.filter(x => isMon(x) && /Morphtronic/.test(D(x).n)); for (const x of ms) move(g, x, 'ban', { reason: 'effect', by: p });
       log(g, `${PN(g, p)} banished ${ms.length} Morphtronic monster${ms.length === 1 ? '' : 's'}.`);
@@ -243,7 +243,7 @@ E.addScripts({
       cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Banish a Pyro monster from your GY', g.p[p].gy.filter(x => isMon(x) && race(x) === 'Pyro'), 1, 1, 'cost'); if (x) { move(g, x, 'ban', { reason: 'cost' }); log(g, `${PN(g, p)} banished ${D(x).n}.`); } },
       res: function* (g) { if (g.aw) negateAttack(g); } },
     { type: 'trig', loc: 'st', mand: true, label: 'Pay 500 LP or destroy this card', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
-      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, 'Pay 500 LP to keep Firewall?'))) pay(g, p, 500); else destroy(g, [c], { by: p }); } }] },
+      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, 'Pay 500 LP to keep Firewall?'))) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } }] },
   'Fish Depth Charge': { effs: [{ type: 'act', tags: { destroy: 1 },
     cond: (g, c, p) => monsOf(g, p).some(x => race(x) === 'Fish') && fieldOf(g, opp(p)).length > 0,
     cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Tribute a Fish monster', monsOf(g, p).filter(x => race(x) === 'Fish'), 1, 1, 'cost'); if (x) { move(g, x, 'gy', { reason: 'cost', by: p }); log(g, `${PN(g, p)} Tributed ${D(x).n}.`); } },
@@ -469,6 +469,6 @@ E.addScripts({
       // the battle damage its controller would take from its battles goes to the opponent instead
       cont: { dmg: (g, src, p, n, o) => { if (!o.battle || p !== src.ctrl || !g.battle || (g.battle.a !== src && g.battle.t !== src)) return undefined; damage(g, opp(p), n, { battle: true, src: o.src, srcP: p }); return 0; } },
       effs: [{ type: 'trig', mand: true, label: 'Pay 1000 LP or destroy this Token', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
-        res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 1000 && (yield* yn(g, p, 'Pay 1000 LP to keep the Metal Fiend Token?'))) pay(g, p, 1000); else destroy(g, [c], { by: p }); } }] },
+        res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 1000 && (yield* yn(g, p, 'Pay 1000 LP to keep the Metal Fiend Token?'))) pay(g, p, 1000); else destroy(g, [c], { by: p, rule: true }); } }] },
 });
 })();

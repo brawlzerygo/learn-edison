@@ -109,7 +109,7 @@ E.addScripts({
       const [x] = yield* pick(g, p, 'Place a Spell Counter on which card?', xs, 1, 1, 'good'); if (x && onField(x)) { addCtr(g, x, 'spell', 1); log(g, `${name(x)} got a Spell Counter.`); } } }] },
   // PARTIAL: "original ATK becomes 0" is a -original ATK modifier until the End Phase, so it stacks the same way with other changes.
   'Alchemy Cycle': { effs: [
-    { type: 'act', cond: (g, c, p) => monsOf(g, p).some(m => faceUp(m) && baseAtk(m) > 0),
+    { type: 'act', ds: true, cond: (g, c, p) => monsOf(g, p).some(m => faceUp(m) && baseAtk(m) > 0),
       res: function* (g, c, p) { const ms = monsOf(g, p).filter(m => faceUp(m) && baseAtk(m) > 0); for (const m of ms) addMod(g, m, { atk: -baseAtk(m), end: true });
         c.f35cyc = { turn: g.turnNo, us: ms.map(m => m.u) }; if (ms.length) log(g, `The original ATK of ${PN(g, p)}'s face-up monsters became 0 until the End Phase.`); } },
     { type: 'trig', loc: 'any', mand: true, label: 'Draw 1 card',

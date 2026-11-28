@@ -189,7 +189,7 @@ E.addScripts({
       res: function* (g, c) { const x = c.f04pendT; c.f04pendT = null; if (x && x.zone === 'gy') { toBottom(g, x); log(g, `${D(x).n} went to the bottom of the Deck.`); } } }] },
 
   /* ----- Curses ----- */
-  'Curse of Aging': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].hand.length > 0,
+  'Curse of Aging': { effs: [{ type: 'act', ds: true, cond: (g, c, p) => g.p[p].hand.length > 0,
     cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Discard 1 card', g.p[p].hand, 1, 1, 'cost'); if (x) { move(g, x, 'gy', { reason: 'discard' }); log(g, `${PN(g, p)} discarded ${name(x)}.`); } },
     res: function* (g, c, p) { const ms = oppFaceUp(g, p); for (const m of ms) addMod(g, m, { atk: -500, def: -500, end: true }); if (ms.length) log(g, `${PN(g, opp(p))}'s face-up monsters lost 500 ATK and DEF.`); } }] },
   'Curse of Anubis': { effs: [{ type: 'act',

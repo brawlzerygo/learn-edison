@@ -43,7 +43,7 @@ const LOCKS = {
 const lockInstall = { type: 'trig', loc: 'any', res: noop,
   on: (g) => { if (!g.f33lock) { g.f33lock = true; addRule(g, (g2, a) => { if (!a.c || !a.c.id || !['ns', 'set', 'ss'].includes(a.type)) return false; const d = D(a.c); const f = d && LOCKS[d.n]; return !!f && f(g2, a); }); } return false; } };
 // "by an opponent's card effect": the move's own `by`, else the turn player. PARTIAL: an opponent's Quick Effect on your turn without `by` is missed.
-const byOpp = (g, ev) => ev.by != null ? ev.by !== ev.prevCtrl : g.tp !== ev.prevCtrl;
+const byOpp = (g, ev) => ev.by != null && ev.by !== ev.prevCtrl;
 // Gemini: the effect applies only while Gemini Summoned and not negated
 const gem = (g, c) => onField(c) && faceUp(c) && c.flags.gemini && !negd(g, c);
 const equipAct = (filter = () => true, text = 'Equip to which face-up monster?') => ({ type: 'act',

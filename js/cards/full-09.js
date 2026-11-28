@@ -372,7 +372,7 @@ E.addScripts({
   // ENGINE: takeControl() has no "control can't switch" check, so the first sentence isn't applied.
   // Control can't switch: a take of control is undone at once (the full-07.js Element pattern).
   // PARTIAL / ENGINE: takeControl() has no forbid check, so Change of Heart and the like resolve and then control goes straight back.
-  'Horus the Black Flame Dragon LV4': { effs: [horusKill, horusUp('LV6'), { type: 'trig', loc: 'any', res: noop, on: (g, ev, c) => {
+  'Horus the Black Flame Dragon LV4': { self: { noCtrlSwitch: true }, effs: [horusKill, horusUp('LV6'), { type: 'trig', loc: 'any', res: noop, on: (g, ev, c) => {
     if (!onField(c) || !faceUp(c)) { c.f09ctrl = null; return false; }
     if (c.f09ctrl != null && c.ctrl !== c.f09ctrl && !negd(g, c) && freeM(g, c.f09ctrl) >= 0) { const back = c.f09ctrl; c.flags.ctrlUntil = null; c.flags.ctrlFrom = null; L.takeControl(g, back, c, false); log(g, `Control of ${name(c)} can't switch.`); }
     c.f09ctrl = c.ctrl; return false; } }] },

@@ -105,7 +105,7 @@ T('Fiendish Chain', () => {
   const ct = on(g, 0, 'Card Trooper');
   // B activates Fiendish Chain at the start of the Battle Phase
   choose(g, 'bp'); choose(g, 'Fiendish', 1); passAll(g); passAll(g);
-  ok(ct.flags.negated && !hasOpt(g, 'atk:'), 'Card Trooper negated and can’t attack');
+  ok(E.lib.negd(g, ct) && !hasOpt(g, 'atk:'), 'Card Trooper negated and can’t attack');
 });
 T('Necrovalley negates a GY-targeting effect but not Rite of Spirit', () => {
   const g = duel({ board: [{ hand: ['Necrovalley'], st: ['Rite of Spirit'], gy: ["Gravekeeper's Commandant"] }, {}] });

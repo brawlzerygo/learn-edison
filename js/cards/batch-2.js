@@ -179,8 +179,8 @@ E.addScripts({
 
   /* ----- Amaryllis / Plants ----- */
   'Botanical Lion': {
-    // ENGINE: "control of this card can't switch" needs a check in takeControl().
-    self: { atk: (g, c) => 300 * monsOf(g, c.ctrl).filter(x => faceUp(x) && race(x) === 'Plant').length } },
+    // ② "Control of this card can't Switch": the engine's takeControl reads noCtrlSwitch
+    self: { noCtrlSwitch: true, atk: (g, c) => 300 * monsOf(g, c.ctrl).filter(x => faceUp(x) && race(x) === 'Plant').length } },
   'Dandylion': { effs: [{ type: 'trig', loc: 'gy', mand: true, tags: { ss: 1 },
     on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.to === 'gy',
     cond: (g, c, p) => nFreeM(g, p) >= 2,
@@ -252,8 +252,8 @@ E.addScripts({
     target: function* (g, c, p, L) { yield* E.lib.tgt(g, p, L, 'Target the attacking monster', [g.aw.a], 1, 1, 'bad'); },
     res: function* (g, c, p, L) { const t = live(L)[0]; if (!E.lib.attackingNow(g, t)) return; negateAttack(g); damage(g, t.ctrl, atk(g, t), { src: c, srcP: p }); } }] },
   'Skill Drain': {
-    // ENGINE: a monster effect already on the chain when Skill Drain starts applying still resolves (resolveChain only checks c.flags.negated).
-    cont: { negates: (g, src, c) => !trapStunned(g) && isMon(c) && c.zone === 'm' && faceUp(c) },
+    // actOk: monsters can still activate their effects (and pay costs) under it (Edison ruling 4; engine negActAllowed)
+    cont: { actOk: true, negates: (g, src, c) => !trapStunned(g) && isMon(c) && c.zone === 'm' && faceUp(c) },
     effs: [{ type: 'act', cond: (g, c, p) => g.p[p].lp > 1000, cost: function* (g, c, p) { pay(g, p, 1000); }, res: function* () {} }] },
 
   /* ----- Cat ----- */
@@ -305,11 +305,11 @@ E.addScripts({
       cost: function* (g, c, p) { move(g, c, 'gy', { reason: 'cost' }); },
       res: function* (g) { if (g.attempt) { g.attempt.negated = true; log(g, 'The Special Summon was negated.'); } } }] },
   'Trap Stun': { effs: [{ type: 'act',
-    // PARTIAL: Traps activated later this turn can't be activated at all (instead of being activated and negated); Traps already on the chain are negated.
+    // Traps can still be activated; every other Trap effect on the field is negated this turn (engine ruleNeg: face-up ones stop applying,
+    // ones activated later resolve negated; Edison rulings "does not prevent Trap Cards from being activated"). Traps on the chain too.
     res: function* (g, c, p) {
-      g.trapStun = g.turnNo;
-      for (const L2 of g.chain) if (isTrap(L2.c) && L2.c !== c && !L2.negated) { L2.negated = true; log(g, `${name(L2.c)}'s effect was negated.`); }
-      addRule(g, (g2, a) => a.type === 'activate' && isTrap(a.c) && a.c !== c, { end: g.turnNo });
+      g.trapStun = g.turnNo; g.trapStunU = c.u; g.seq++;
+      for (const L2 of g.chain) if (isTrap(L2.c) && L2.c !== c && !L2.negated && !['gy', 'hand'].includes(L2.eff.loc)) { L2.negated = true; log(g, `${name(L2.c)}'s effect was negated.`); }
       log(g, 'Trap effects are negated this turn.'); } }] },
 
   /* ----- Dragon Aggro ----- */

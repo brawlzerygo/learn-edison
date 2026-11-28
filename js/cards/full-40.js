@@ -50,7 +50,7 @@ function randomDiscard(g, p) {
 const burns = c => !['Wave-Motion Cannon', 'Thestalos the Firestorm Monarch'].includes(D(c).n) && /inflicts? [^.]*damage|damage to your opponent|takes? \d+ damage/i.test(txt(c).replace(/battle damage/gi, ''));
 const ruleDiscard = (g, ev) => g.phase === 'end' && !g.chain.length && !g.resolvingL && ev.c.owner === g.tp && g.p[g.tp].hand.length >= 6;
 // "by an opponent's card effect": the move's own `by` when given, else the turn player (as full-26.js)
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 // Spirit return (as full-09.js): during the End Phase of the turn it was Normal Summoned or flipped face-up
 const spiritReturn = { type: 'trig', mand: true, label: 'Return to the hand',
   on: (g, ev, c) => {
@@ -282,13 +282,13 @@ E.addScripts({
     cond: g => fieldMons(g).length > 0,
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Destroy which monster?', fieldMons(g), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { destroy(g, live(L2), { by: p, src: c }); } }] },
-  'Karma Cut': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].hand.some(x => x !== c) && oppFaceUp(g, p).length > 0,
+  'Karma Cut': { effs: [{ type: 'act', kycooOk: true, cond: (g, c, p) => g.p[p].hand.some(x => x !== c) && oppFaceUp(g, p).length > 0,
     cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Discard which card?', g.p[p].hand.filter(x => x !== c), 1, 1, 'cost'); if (x) { move(g, x, 'gy', { reason: 'discard', by: p }); log(g, `${PN(g, p)} discarded ${D(x).n}.`); } },
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Banish which face-up monster?', oppFaceUp(g, p), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) {
-      const t = live(L2)[0]; if (!t || !faceUp(t) || t.ctrl === p) return; const n = name(t);
+      const t = live(L2)[0]; if (!t || !faceUp(t) || t.ctrl === p) return; const n = L.nameOff(t);   // the name off the field (ruling 7: Proto-Cyber Dragon), Harpie Ladies share one (ruling 8)
       move(g, t, 'ban', { reason: 'effect', by: p }); log(g, `${n} was banished.`);
-      const xs = g.p[opp(p)].gy.filter(x => D(x).n === n); for (const x of xs) move(g, x, 'ban', { reason: 'effect', by: p });
+      const xs = g.p[opp(p)].gy.filter(x => L.nameIs(x, n) || L.nameOff(x) === n); for (const x of xs) move(g, x, 'ban', { reason: 'effect', by: p });
       if (xs.length) log(g, `${xs.length} more ${n} in the GY ${xs.length > 1 ? 'were' : 'was'} banished.`); } }] },
   'Kasha': {
     proc: { label: 'Special Summon (you control 2 Zombies)', cond: (g, c, p) => monsOf(g, p).filter(x => faceUp(x) && race(x) === 'Zombie').length >= 2 },

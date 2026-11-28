@@ -66,7 +66,7 @@ const lockInstall = { type: 'trig', loc: 'any', res: noop,
 const isArchfiend = c => isMon(c) && /Archfiend/.test(name(c));
 const archCost = n => ({ type: 'trig', mand: true, label: `Pay ${n} LP`, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
   // the card is destroyed when its controller can't pay; Pandemonium removes the cost
-  res: function* (g, c, p) { if (!onField(c) || allField(g).some(x => faceUp(x) && named(x, 'Pandemonium'))) return; if (g.p[p].lp > n) pay(g, p, n); else destroy(g, [c], { by: p }); } });
+  res: function* (g, c, p) { if (!onField(c) || allField(g).some(x => faceUp(x) && named(x, 'Pandemonium'))) return; if (g.p[p].lp > n) pay(g, p, n); else destroy(g, [c], { by: p, rule: true }); } });
 // ENGINE: no "as a targeting effect resolves" hook, so the roll is an optional Spell Speed 3 response to the targeting link.
 const archDice = (hits, label) => ({ type: 'quick', speed: 3, ds: true, label,
   cond: (g, c, p, x) => { const T = x.top; return !!T && !T.negated && T.p !== p && !(T.f28dice || []).includes(c.u) && T.t.includes(c); },
@@ -84,7 +84,7 @@ const guardian = [
   { type: 'trig', on: (g, ev) => { if ((ev.type === 'afterCalc' || ev.type === 'dsEnd') && ev.a && ev.a.mods.some(m => m.guardZero)) { ev.a.mods = ev.a.mods.filter(m => !m.guardZero); g.seq++; } return false; }, res: noop },
 ];
 const UMIS = ['Umi', 'A Legendary Ocean'];
-const umiUp = g => allField(g).some(x => faceUp(x) && UMIS.includes(D(x).n));
+const umiUp = g => allField(g).some(x => faceUp(x) && L.isUmi(x));
 const umiMod = c => { const r = race(c); return ['Fish', 'Sea Serpent', 'Thunder', 'Aqua'].includes(r) ? 200 : ['Machine', 'Pyro'].includes(r) ? -200 : 0; };
 const MAGNETS = ['Alpha The Magnet Warrior', 'Beta The Magnet Warrior', 'Gamma the Magnet Warrior'];
 const nomiGY = { loc: 'gy', forbid: (g, src, a) => a.type === 'ss' && a.c === src && !src.nomiOk };

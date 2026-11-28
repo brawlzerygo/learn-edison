@@ -49,7 +49,7 @@ const fromHandToGY = ev => ev.type === 'move' && ev.from === 'hand' && ev.to ===
 
 E.addScripts({
   'Energy Bravery': { cont: { grant: (g, src, c, flag) => flag === 'noEffectDestroy' && c.ctrl === src.ctrl && onField(c) && isGemini(c) && !!c.flags.gemini } },
-  'Energy Drain': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, p).some(faceUp),
+  'Energy Drain': { effs: [{ type: 'act', ds: true, cond: (g, c, p) => monsOf(g, p).some(faceUp),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Target which of your face-up monsters?', monsOf(g, p).filter(faceUp), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (!t || !faceUp(t)) return; const n = 200 * g.p[opp(p)].hand.length; if (!n) return; addMod(g, t, { atk: n, def: n, end: true }); log(g, `${name(t)} gained ${n} ATK and DEF.`); } }] },
   // The damage of the link it chains to becomes a gain (a damage hook from the GY, for that one link only).
@@ -68,7 +68,7 @@ E.addScripts({
         if (coin(g, p) === call) { addMod(g, a, { set: 0, which: 'atk', end: true, fairy: c.u }); log(g, `${name(a)}'s ATK became 0.`); } else log(g, 'The call was wrong.'); } },
     { type: 'trig', loc: 'st', on: (g, ev, c) => { if (ev.type === 'phase' && ev.ph === 'bpEnd') for (const m of fieldMons(g)) m.mods = m.mods.filter(x => x.fairy !== c.u); return false; }, res: function* () {} },
     { type: 'trig', loc: 'st', mand: true, label: 'Pay 500 LP or destroy this card', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
-      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, 'Pay 500 LP to keep Fairy Box?'))) pay(g, p, 500); else destroy(g, [c], { by: p }); } }] },
+      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500 && (yield* yn(g, p, 'Pay 500 LP to keep Fairy Box?'))) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } }] },
   // PARTIAL: only Spells the engine marks as sent by the opponent count (destroyed or negated by their card; discards
   // and mills from the Deck carry no "by" yet).
   'Fairy Guardian': { effs: [{ type: 'ign', label: 'Tribute: return a Spell to the Deck',
@@ -285,7 +285,7 @@ E.addScripts({
   'Goblin Thief': { effs: [{ type: 'act', res: function* (g, c, p) { damage(g, opp(p), 500, { src: c, srcP: p }); gain(g, p, 500); } }] },
   'Graceful Charity': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].deck.length >= 3,
     res: function* (g, c, p) { draw(g, p, 3); yield* discardPick(g, p, 2, 'Discard 2 cards'); } }] },
-  'Graceful Dice': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, p).length > 0,
+  'Graceful Dice': { effs: [{ type: 'act', ds: true, cond: (g, c, p) => monsOf(g, p).length > 0,
     res: function* (g, c, p) { const n = dice(g, p) * 100; for (const m of monsOf(g, p)) addMod(g, m, { atk: n, def: n, end: true }); if (monsOf(g, p).length) log(g, `${PN(g, p)}'s monsters gained ${n} ATK and DEF.`); } }] },
   'Graceful Revival': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && lv(x) <= 2),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which Level 2 or lower monster?', g.p[p].gy.filter(x => isMon(x) && lv(x) <= 2), 1, 1, 'good'); },

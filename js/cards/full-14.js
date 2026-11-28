@@ -309,7 +309,7 @@ E.addScripts({
   // before a link resolves).
   'Skull Archfiend of Lightning': { effs: [
     { type: 'trig', mand: true, tags: { destroy: 1 }, label: 'Pay 500 LP or destroy this card', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
-      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500) pay(g, p, 500); else destroy(g, [c], { by: p }); } },
+      res: function* (g, c, p) { if (!onField(c)) return; if (g.p[p].lp > 500) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } },
     { type: 'quick', speed: 3, ds: true, label: 'Roll a die',
       cond: (g, c, p, x) => { const t = x.top; return !!(t && !t.negated && t.p !== p && t.c !== c && (t.t || []).includes(c) && faceUp(c) && !(t.data && t.data.f14die)); },
       target: function* (g, c, p, L2) { L2.data.L = g.chain[g.chain.length - 1]; L2.data.L.data.f14die = true; },

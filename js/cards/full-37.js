@@ -21,7 +21,7 @@ const ritualSpell = (pred, exact) => ({ effs: [{ type: 'act', tags: { ss: 1 },
   cond: (g, c, p) => canRitual(g, p, { monster: pred, exact }),
   res: function* (g, c, p) { yield* ritualSummon(g, p, { monster: pred, exact }); } }] });
 // "by an effect of a card controlled by your opponent" (same as full-26.js): the move's own `by` when given, else the turn player.
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 // Countdown on a face-up Spell/Trap: counts the controller's (mine) or the opponent's (!mine) phases of one kind after activation.
 const countdown = (ph, mine, n, label, how = 'destroy') => ({ type: 'trig', loc: 'st', mand: true, label,
   on: (g, ev, c) => { if (ev.type !== 'phase' || ev.ph !== ph || c.flags.f37cd == null) return false;

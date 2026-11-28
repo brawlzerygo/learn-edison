@@ -16,7 +16,7 @@ const noopG = function* () {};
 const noop = { type: 'act', res: noopG };
 const mainPhase = g => g.phase === 'main1' || g.phase === 'main2';
 // "by a card effect your opponent controls": the mover the script named, else the turn player
-const byOpp = (g, ev, c) => ev.by != null ? ev.by !== c.owner : g.tp !== c.owner;
+const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
 const effMove = ev => ev.reason !== 'cost' && ev.reason !== 'rule' && ev.reason !== 'draw' && !ev.battle;
 const isUnion = c => isMon(c) && /Union/.test(D(c).ab || '');
 const isNormalMon = c => D(c).k === 'normal' || !!c.flags.trapMon;
@@ -259,9 +259,9 @@ E.addScripts({
   'Electro-Whip': { cont: eqBonus(300, 300), effs: [equipAct(m => race(m) === 'Thunder', 'Equip to which face-up Thunder monster?')] },
   // Ported from classic-4.js.
   'Elegant Egotist': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => freeM(g, p) >= 0 && fieldMons(g).some(m => faceUp(m) && name(m) === 'Harpie Lady') && [...g.p[p].hand, ...g.p[p].deck].filter(x => E.lib.ssable(g, p, x)).some(x => named(x, 'Harpie Lady', 'Harpie Lady Sisters')),
-    res: function* (g, c, p) { if (freeM(g, p) < 0 || !fieldMons(g).some(m => faceUp(m) && name(m) === 'Harpie Lady')) return;
-      const cs = [...g.p[p].hand, ...g.p[p].deck].filter(x => named(x, 'Harpie Lady', 'Harpie Lady Sisters')); const [x] = yield* pick(g, p, 'Special Summon Harpie Lady or Harpie Lady Sisters', cs, 1, 1, 'good');
+    cond: (g, c, p) => freeM(g, p) >= 0 && fieldMons(g).some(m => faceUp(m) && L.nameIs(m, 'Harpie Lady')) && [...g.p[p].hand, ...g.p[p].deck].filter(x => E.lib.ssable(g, p, x)).some(x => L.nameIs(x, 'Harpie Lady') || named(x, 'Harpie Lady Sisters')),
+    res: function* (g, c, p) { if (freeM(g, p) < 0 || !fieldMons(g).some(m => faceUp(m) && L.nameIs(m, 'Harpie Lady'))) return;
+      const cs = [...g.p[p].hand, ...g.p[p].deck].filter(x => L.nameIs(x, 'Harpie Lady') || named(x, 'Harpie Lady Sisters')); const [x] = yield* pick(g, p, 'Special Summon Harpie Lady or Harpie Lady Sisters', cs, 1, 1, 'good');
       if (x) { const fromDeck = x.zone === 'deck'; ss(g, p, x); if (fromDeck) shuffleDeck(g, p); } } }] },
   // Ported from classic-4.js.
   "Elf's Light": { cont: eqBonus(400, -200), effs: [equipAct(m => attr(m) === 'LIGHT', 'Equip to which face-up LIGHT monster?')] },

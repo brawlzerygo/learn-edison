@@ -213,12 +213,12 @@ E.addScripts({
       const names = fusionNames(f); const x = yield* search(g, p, x => isMon(x) && names.includes(nm(x)), 'Send which listed monster to the GY?', 'gy');
       if (x && onField(c)) { c.flags.prismaName = nm(x); c.flags.prismaTurn = g.turnNo; log(g, `Elemental HERO Prisma's name became ${nm(x)} until the End Phase.`); } } }] },
   // Shrink: the original ATK becomes half, then other changes apply on top. A second Shrink does nothing more.
-  'Shrink': { effs: [{ type: 'act', cond: g => fieldMons(g).some(faceUp),
+  'Shrink': { effs: [{ type: 'act', ds: true, cond: g => fieldMons(g).some(faceUp),
     target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Halve the original ATK of which monster?', fieldMons(g).filter(faceUp), 1, 1, 'bad'); },
     res: function* (g, c, p, L) { const t = live(L)[0]; if (!t || !faceUp(t) || t.mods.some(m => m.shrink)) return; const b = baseAtk(t) + (t.flags.gb && nm(t) === 'Gladiator Beast Laquari' ? 300 : 0);
       // a Token whose "?" ATK is the amount its effect gave (Emissary of Darkness Token): its original ATK is 0, so it becomes 0 (Gorz archive)
       if (t.flags.tokAtk != null && isNaN(parseInt(D(t).atk, 10))) { addMod(g, t, { set: 0, which: 'atk', end: true, shrink: true }); log(g, `${name(t)}'s ATK became 0.`); return; }
-      addMod(g, t, { atk: -(b - Math.ceil(b / 2)), end: true, shrink: true }); log(g, `${name(t)}'s original ATK became ${Math.ceil(b / 2)}.`); } }] },
+      addMod(g, t, { base: Math.ceil(b / 2), which: 'atk', end: true, shrink: true }); log(g, `${name(t)}'s original ATK became ${Math.ceil(b / 2)}.`); } }] },   // a new original ATK: later changes add to it
   'Gladiator Beast War Chariot': { effs: [{ type: 'act',
     cond: (g, c, p, x) => x.top && !x.top.negated && !x.top.cardAct && isMon(x.top.c) && monsOf(g, p).some(y => faceUp(y) && gbMon(y)),
     target: function* (g, c, p, L) { L.data.L = g.chain[g.chain.length - 1]; },
@@ -250,7 +250,7 @@ E.addScripts({
     { type: 'quick', loc: 'hand', ds: true, label: 'Halve ATK: survive this battle',
       cond: (g, c, p) => g.inDS && g.battle && g.battle.t && [g.battle.a, g.battle.t].some(x => x && x.ctrl === p && onField(x) && faceUp(x)),
       cost: function* (g, c, p, L) { L.data.m = [g.battle.a, g.battle.t].find(x => x && x.ctrl === p); move(g, c, 'gy', { reason: 'cost' }); },
-      res: function* (g, c, p, L) { const m = L.data.m; if (!m || !onField(m) || !faceUp(m)) return; const A = atk(g, m); addMod(g, m, { atk: -(A - Math.ceil(A / 2)), end: true }); m.flags.noBattleDestroy = true; m.flags.hedgeBy = c.u; log(g, `${name(m)}'s ATK was halved and it can't be destroyed by this battle.`); } },
+      res: function* (g, c, p, L) { const m = L.data.m; if (!m || !onField(m) || !faceUp(m)) return; const A = atk(g, m); addMod(g, m, { set: Math.ceil(A / 2), which: 'atk', end: true }); m.flags.noBattleDestroy = true; m.flags.hedgeBy = c.u; log(g, `${name(m)}'s ATK was halved and it can't be destroyed by this battle.`); } },
     { type: 'trig', loc: 'gy', on: (g, ev, c) => { if (ev.type === 'dsEnd') for (const m of fieldMons(g)) if (m.flags.hedgeBy === c.u) { delete m.flags.noBattleDestroy; delete m.flags.hedgeBy; } return false; }, res: function* () {} }] },
   // ENGINE: the engine collects no triggers from the Field Zone, so the ② (destroy attackers) is written but does not fire yet.
   // PARTIAL: it is set for the End Phase, not the end of the Battle Phase.
@@ -323,7 +323,7 @@ E.addScripts({
     self: { directAttack: (g, c) => c.flags.drillDirect === g.turnNo },
     effs: [
       { type: 'ign', opt: true, label: 'Halve ATK: attack directly', cond: g => g.phase === 'main1',
-        res: function* (g, c) { if (!onField(c) || !faceUp(c)) return; const A = atk(g, c); addMod(g, c, { atk: -(A - Math.ceil(A / 2)) }); c.flags.drillDirect = g.turnNo; log(g, 'Drill Warrior halved its ATK and can attack directly this turn.'); } },
+        res: function* (g, c) { if (!onField(c) || !faceUp(c)) return; const A = atk(g, c); addMod(g, c, { set: Math.ceil(A / 2), which: 'atk' }); c.flags.drillDirect = g.turnNo; log(g, 'Drill Warrior halved its ATK and can attack directly this turn.'); } },
       { type: 'ign', opt: true, label: 'Discard: banish until your next Standby Phase', cond: (g, c, p) => g.p[p].hand.length > 0,
         res: function* (g, c, p) { if (!g.p[p].hand.length) return; const [x] = yield* pick(g, p, 'Discard a card', g.p[p].hand, 1, 1, 'cost'); move(g, x, 'gy', { reason: 'discard' }); log(g, `${PN(g, p)} discarded ${nm(x)}.`);
           if (onField(c)) { move(g, c, 'ban', { reason: 'effect' }); c.flags.drillRet = { p: c.owner, turn: g.turnNo }; log(g, 'Drill Warrior was banished.'); } } },
@@ -336,7 +336,8 @@ E.addScripts({
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Banish which monster until the End Phase?', monsOf(g, opp(p)), 1, 1, 'bad'); },
       res: function* (g, c, p, L) { const t = live(L)[0]; if (!t) return; const pos = t.pos, ctrl = t.ctrl; move(g, t, 'ban', { reason: 'effect', by: p });
         if (t.zone === 'ban') { t.flags.archerBy = c.u; t.flags.archerTurn = g.turnNo; t.flags.archerPos = pos; t.flags.archerCtrl = ctrl; } log(g, `${D(t).n} was banished until the End Phase.`); } },
-    { type: 'trig', loc: 'any', mand: true, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'end' && allCards(g, 'ban').some(x => x.flags.archerBy === c.u && x.flags.archerTurn === g.turnNo),
+    // "The target returns without starting a Chain", even if Junk Archer is flipped face-down, negated or gone (archive): engine noChain
+    { type: 'trig', loc: 'any', mand: true, noChain: true, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'end' && allCards(g, 'ban').some(x => x.flags.archerBy === c.u && x.flags.archerTurn === g.turnNo),
       res: function* (g, c) { for (const x of allCards(g, 'ban').filter(x => x.flags.archerBy === c.u && x.flags.archerTurn === g.turnNo)) { const f = x.flags; x.flags = {};
         if (freeM(g, f.archerCtrl) >= 0) { move(g, x, 'm', { ctrl: f.archerCtrl, pos: f.archerPos, reason: 'effect' }); log(g, `${x.pos === 'set' ? 'A face-down monster' : nm(x)} returned to the field.`); }
         else { move(g, x, 'gy', { reason: 'rule' }); log(g, `${nm(x)} was sent to the GY (no free zone).`); } } } }] },
@@ -358,7 +359,7 @@ E.addScripts({
     self: { cantBeTargeted: true },
     effs: [
       { type: 'trig', mand: true, on: (g, ev, c) => ev.type === 'attack' && ev.a === c && ev.t && faceUp(ev.t) && D(ev.t).k === 'synchro' && lv(ev.t) >= 6,
-        res: function* (g, c, p, L) { const t = g.aw ? g.aw.t : L.ev.t; if (!t || !onField(t) || !faceUp(t)) return; const A = atk(g, t); addMod(g, t, { atk: -(A - Math.ceil(A / 2)), end: true, turbo: c.u }); log(g, `${name(t)}'s ATK was halved.`); } },
+        res: function* (g, c, p, L) { const t = g.aw ? g.aw.t : L.ev.t; if (!t || !onField(t) || !faceUp(t)) return; const A = atk(g, t); addMod(g, t, { set: Math.ceil(A / 2), which: 'atk', end: true, turbo: c.u }); log(g, `${name(t)}'s ATK was halved.`); } },
       { type: 'trig', on: (g, ev, c) => { if (ev.type === 'dsEnd' && ev.a === c && ev.t) ev.t.mods = ev.t.mods.filter(m => m.turbo !== c.u); return false; }, res: function* () {} }] },
   'System Down': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].lp > 1000 && [...monsOf(g, opp(p)).filter(faceUp), ...g.p[opp(p)].gy].some(x => isMon(x) && race(x) === 'Machine'),
     cost: function* (g, c, p) { pay(g, p, 1000); },
@@ -412,10 +413,10 @@ E.addScripts({
   'Zombie World': { effs: [{ type: 'act', res: function* () {} }],
     cont: { forbid: (g, src, a) => a.type === 'ns' && lv(a.c) >= 5 && race(a.c) !== 'Zombie' } },
   'Limiter Removal': { effs: [
-    { type: 'act', cond: (g, c, p) => monsOf(g, p).some(x => faceUp(x) && race(x) === 'Machine'),
-      res: function* (g, c, p) { const ms = monsOf(g, p).filter(x => faceUp(x) && race(x) === 'Machine'); for (const m of ms) { addMod(g, m, { atk: atk(g, m), end: true }); m.flags.limiterBy = c.u; m.flags.limiterTurn = g.turnNo; } if (ms.length) log(g, `${ms.map(name).join(', ')} doubled ATK.`); } },
-    // PARTIAL: the End Phase destruction runs from Limiter Removal in the GY, so it is skipped if the card left the GY.
-    { type: 'trig', loc: 'gy', mand: true, tags: { destroy: 1 }, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'end' && fieldMons(g).some(x => x.flags.limiterBy === c.u && x.flags.limiterTurn === g.turnNo),
+    { type: 'act', ds: true, cond: (g, c, p) => monsOf(g, p).some(x => faceUp(x) && race(x) === 'Machine'),
+      res: function* (g, c, p) { const ms = monsOf(g, p).filter(x => faceUp(x) && race(x) === 'Machine'); for (const m of ms) { addMod(g, m, { set: 2 * atk(g, m), which: 'atk', end: true }); /* doubling sets the value, like halving (2026-11-28 audit) */ m.flags.limiterBy = c.u; m.flags.limiterTurn = g.turnNo; } if (ms.length) log(g, `${ms.map(name).join(', ')} doubled ATK.`); } },
+    // the End Phase destruction is a lasting effect of the resolved card: it happens wherever Limiter Removal is now (goat-08)
+    { type: 'trig', loc: 'any', mand: true, tags: { destroy: 1 }, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'end' && fieldMons(g).some(x => x.flags.limiterBy === c.u && x.flags.limiterTurn === g.turnNo),
       res: function* (g, c, p) { destroy(g, fieldMons(g).filter(x => x.flags.limiterBy === c.u && x.flags.limiterTurn === g.turnNo), { by: p }); } }] },
   // "Any card that would be sent to the GY is banished instead": a replacement in move() (cont.gyBan)
   'Banisher of the Radiance': { cont: { gyBan: 'all' } },
