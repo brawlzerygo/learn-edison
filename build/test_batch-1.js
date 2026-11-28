@@ -116,7 +116,7 @@ T('Trident Dragion: Synchro Summon, destroy a card, extra attack', () => {
   choose(g, 'syn:'); choose(g, 'Attack Position'); passAll(g);
   ok(g.prompt && g.prompt.type === 'yesno', 'Trident asks'); choose(g, 'yes');
   const t = g.p[0].m.find(c => c && E.name(c) === 'Trident Dragion');
-  ok(t && t.flags.extraAttack === g.turnNo && E.lib.allCards(g, 'gy').some(c => E.name(c) === 'Mirror Force'), 'Mirror Force destroyed, Trident gets an extra attack');
+  ok(t && t.flags.maxAttacks === 2 && t.flags.maxAttacksTurn === g.turnNo && E.lib.allCards(g, 'gy').some(c => E.name(c) === 'Mirror Force'), 'Mirror Force destroyed, Trident gets an extra attack (1 destroyed: 2 attacks)');
 });
 T('Trident Dragion can\'t be revived by Call of the Haunted', () => {
   const g = duel({ board: [{ hand: [], gy: ['Trident Dragion'], st: ['Call of the Haunted'] }, {}] });

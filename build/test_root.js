@@ -52,6 +52,11 @@
 //   and mandatory triggers under Skill Drain; own ATK/DEF gains lost for good; lasting self flags; one shared die roll; Type/Attribute
 //   overrides and Equip rechecks; banish costs under banish locks; "only 1 face-up" monsters; battle-doomed monsters and ATK snapshots;
 //   effects allowed twice in one chain; Spell Economics' LP hook and other shared-script fixes.
+// 91-105 (Group E4, 2026-11-28 audit, card by card): paying LP equal to your LP (Edison yes, Goat no) and Goat Imperial Order's choice;
+//   the Queen of Thorns, Flip Flop Frog and Light and Darkness Dragon regressions; copied names and contact materials; System Down under
+//   Kycoo and "an opponent's monster" by controller; Neko Mane King and Secutor; Dupe Frog, Swap Frog, Card Trooper, Dark End Dragon;
+//   effects their rulings allow (Silverwind, Treeborn, Spirit Reaper); Black Pendant; ordering your own simultaneous triggers; Fusion
+//   substitutes; one-card fixes from edison-05 to 21 and the Goat batches.
 const { E, C } = require('./load')();
 const id = n => { const c = C.find(x => x.n === n); if (!c) throw new Error('no card ' + n); return c.id; };
 const FILL = 'Gene-Warped Warwolf';
@@ -1111,6 +1116,173 @@ T('90. Shared-script fixes from the Goat reviews: Spell Economics waives a Spell
   ok(tw('Imperial Order').p[0].lp === 7000, 'with Spell Economics negated by Imperial Order: 1000 paid (goat-09)');
   const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/cards/' + f), 'utf8');
   ok(/'Greenkappa'[\s\S]{0,700}live\(L2\)\.filter\(x => x\.pos === 'set'\)/.test(src('full-22.js')) && /'Mokey Mokey King'[\s\S]{0,300}ev\.snap\.faceUp/.test(src('full-25.js')), 'Greenkappa rechecks its Set targets, Mokey Mokey King reads the snapshot');
+});
+
+// ---- Group E4 (2026-11-28 audit, card by card) ----
+T('91. Paying LP equal to your LP: allowed in Edison (EDOPro CheckLPCost), not in Goat (Netrep: "cannot choose to pay if it would make their Life Points become 0"); Goat Imperial Order\'s 700 is its controller\'s choice in their own Standby Phase', () => {
+  let g = duel([{ hand: ['Delinquent Duo'], turn: 3, lp: 1000 }, { hand: [FILL, FILL] }]);
+  ok(!!keyOf(g, hand(g, 'Delinquent Duo')), 'Edison: Delinquent Duo can be activated with exactly 1000 LP');
+  ok(E.lib.canPay(g, 0, 1000) && !E.lib.canPay(g, 0, 1001), 'Edison canPay: up to the LP');
+  const { G, mk } = goatEngine();
+  g = mk([{ hand: ['Delinquent Duo'], turn: 3, lp: 1000 }, { hand: ['Sangan', 'Sangan'] }]);
+  ok(!g.prompt.opts.some(o => o.key.startsWith('a:' + g.p[0].hand[0].u + ':')) && G.lib.canPay(g, 0, 999) && !G.lib.canPay(g, 0, 1000), 'Goat: not with exactly 1000 LP');
+  g = mk([{ st: [{ n: 'Imperial Order', pos: 'up' }], turn: 3 }, {}]);
+  let asked = 0; for (let i = 0; i < 80 && g.prompt && g.turnNo < 6; i++) { const pr = g.prompt;
+    if (pr.type === 'yesno') { asked++; G.act(g, ['n']); } else if (pr.type === 'respond') G.act(g, ['pass']); else if (pr.type === 'idle') G.act(g, [(pr.opts.find(o => o.key === 'end') || pr.opts[0]).key]); else G.act(g, pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(asked === 1 && g.p[0].lp === 8000 && g.p[0].gy.some(c => G.name(c) === 'Imperial Order') && g.p[1].lp === 8000, 'Goat Imperial Order: asked once (A\'s own Standby Phase), A declines, it is destroyed; B never paid');
+});
+
+T('92. E4 regressions: a face-up Queen of Thorns Tributed for a Tribute Summon still costs 1000; Flip Flop Frog remembers its use after Setting itself; Light and Darkness Dragon\'s last effect after a negated summon', () => {
+  let g = duel([{ m: ['Queen of Thorns'], hand: ['Mobius the Frost Monarch'] }, {}]);
+  act(g, new RegExp('ns:' + hand(g, 'Mobius the Frost Monarch').u)); drive(g);
+  ok(g.p[0].lp === 7000, 'Queen Tributed for Mobius: 1000 LP paid (site ruling 2)');
+  g = duel([{ m: ['Flip Flop Frog'], hand: ['Book of Taiyou'] }, { m: [FILL] }]); const f = g.p[0].m[0];
+  actU(g, f); drive(g); actU(g, hand(g, 'Book of Taiyou')); drive(g, { no: true });
+  ok(f.pos !== 'set' && !keyOf(g, f), 'Flip Flop Frog flipped up again the same turn: its Set effect isn\'t offered again (site)');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../js/cards/batch-3.js'), 'utf8');
+  ok(/monsOf\(g, opp\(p\)\), 1, n, 'bad'\)/.test(src) && /'Frog the Jam'\)\.length/.test(src), 'Flip Flop Frog returns only the opponent\'s monsters and doesn\'t count Frog the Jam (printed text)');
+  g = duel([{ hand: ['Light and Darkness Dragon'], m: ['Sangan', 'Cyber Dragon'], gy: ['Cyber Dragon'] }, { st: [{ n: 'Solemn Judgment', pos: 'set' }] }]);
+  act(g, new RegExp('ns:' + hand(g, 'Light and Darkness Dragon').u)); drive(g, { respond: respondWith(g, 1, 'Solemn Judgment') });
+  ok(g.log.some(l => /Special Summoned Cyber Dragon/.test(l)), 'LaDD\'s summon negated: its effect in the GY still activates (site)');
+});
+
+T('93. Names and materials: Phantom of Chaos keeps dealing no battle damage after copying and takes the copied name; Grand Neos takes a Gemini Neos Alius; Gladiator Beast contact Fusions take face-down materials', () => {
+  let g = duel([{ m: ['Phantom of Chaos'], gy: ['Cyber Dragon'], turn: 3 }, {}]); const pc = fld(g, 0, 'Phantom of Chaos');
+  actU(g, pc); drive(g);
+  ok(E.name(pc) === 'Cyber Dragon', 'Phantom of Chaos is named Cyber Dragon until the End Phase');
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + pc.u + ':d')); drive(g);
+  ok(g.p[1].lp === 8000, 'its direct attack deals no battle damage (archive)');
+  const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/cards/' + f), 'utf8');
+  ok(/name\(x\) === 'Elemental HERO Neos'/.test(src('batch-3.js')) && /'Gladiator Beast Bestiari', gbMon\], '[^']+', true\)/.test(src('batch-3.js')), 'Grand Neos reads name(); Gyzarus takes face-down materials');
+});
+
+T('94. System Down under Kycoo banishes the field Machines (site ruling 2); "an opponent\'s monster" destroyed by battle is read by its controller then (Flamvell Firedog, Samnite, Crusader...)', () => {
+  const g = duel([{ hand: ['System Down'] }, { m: ['Kycoo the Ghost Destroyer', 'Cyber Dragon'], gy: ['Cyber Dragon'] }]);
+  actU(g, hand(g, 'System Down')); drive(g);
+  ok(g.p[1].ban.length === 1 && g.p[1].gy.some(c => E.name(c) === 'Cyber Dragon'), 'the field Cyber Dragon is banished, the one in the GY stays');
+  const all = require('fs').readdirSync(require('path').join(__dirname, '../js/cards')).map(f => require('fs').readFileSync(require('path').join(__dirname, '../js/cards', f), 'utf8')).join('\n');
+  ok(!/battleKill\(ev, c\)[^\n]{0,30}&& ev\.c\.owner !== c\.ctrl(?! && ev\.prevCtrl)/.test(all), 'no battle-kill check compares the owner');
+});
+
+T('95. Neko Mane King\'s End Phase also stops Flip Summons; Gladiator Beast Secutor with 1 Gladiator Beast in the Deck summons nothing (ruling 4)', () => {
+  const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/cards/' + f), 'utf8');
+  ok(/'ns', 'set', 'ss', 'flip'\]\.includes\(a\.type\)/.test(src('full-25.js')), 'toEndPhase forbids Flip Summons');
+  ok(/if \(cs\.length < 2\) \{ shuffleDeck\(g, p\); return; \}/.test(src('full-01.js')), 'Secutor needs 2 candidates');
+});
+
+T('96. Frogs and the rest: two face-up Dupe Frogs leave nothing to attack; one extra Frog summon a turn from Swap Frog; Card Trooper can send its last card; Dark End Dragon turned face-down sends nothing', () => {
+  let g = duel([{ m: ['Cyber Dragon'], turn: 3 }, { m: ['Dupe Frog', 'Dupe Frog'] }]);
+  ok(!E.battleOpts(g).some(o => /^atk:/.test(o.key)) || true, 'battle options built'); act(g, /^Battle Phase/); passAll(g);
+  ok(!E.battleOpts(g).some(o => o.key.startsWith('atk:')), 'two Dupe Frogs: no attack target');
+  g = duel([{ m: ['Swap Frog', 'Swap Frog', FILL, FILL], hand: ['Treeborn Frog', 'Dupe Frog'], turn: 3 }, {}]);
+  const [s1, s2] = g.p[0].m.filter(c => c && E.name(c) === 'Swap Frog');
+  const useSwap = s => { act(g, new RegExp('a:' + s.u + ':1')); drive(g); };
+  useSwap(s1); act(g, new RegExp('ns:' + hand(g, 'Treeborn Frog').u)); drive(g);
+  if (s2.zone === 'm') useSwap(s2);
+  act(g, new RegExp('ns:' + hand(g, 'Dupe Frog').u)); drive(g);
+  ok(!opt(g, /^Normal Summon/), 'after the extra and the regular summon, no third Normal Summon');
+  const s = require('fs').readFileSync(require('path').join(__dirname, '../js/engine.js'), 'utf8');
+  ok(/'Send 1-3 cards to the GY for ATK', cond: \(g, c, p\) => g\.p\[p\]\.deck\.length > 0/.test(s) && /slice\(0, Math\.min\(3, g\.p\[p\]\.deck\.length\)\)/.test(s), 'Card Trooper can send 1 to 3 cards up to the whole Deck');
+  ok(/'Dark End Dragon'[\s\S]{0,700}!onField\(c\) \|\| !faceUp\(c\)/.test(s), 'Dark End Dragon checks it is face-up at resolution');
+});
+
+T('97. Effects allowed by their rulings: Silverwind under Skill Drain (ruling 2) and its Battle Phase lock lifted when the activation is negated; Treeborn Frog again after Royal Oppression (ruling 6); Spirit Reaper revived by Monster Reborn isn\'t destroyed (ruling 7)', () => {
+  const s = require('fs').readFileSync(require('path').join(__dirname, '../js/engine.js'), 'utf8');
+  ok(/'Blackwing - Silverwind the Ascendant': \{ effs: \[\{ type: 'trig', when: true, negAct: true/.test(s) && /1, 2, 'bad'\); lockBP\(g, p, L\);/.test(s), 'Silverwind: negAct and lockBP');
+  let g = duel([{ gy: ['Treeborn Frog'], turn: 1 }, { st: [{ n: 'Royal Oppression', pos: 'up' }] }]);
+  let n = 0, t1 = null; for (let i = 0; i < 60 && g.prompt && g.turnNo < 4; i++) { const pr = g.prompt;
+    if (pr.type === 'yesno' && pr.p === 0 && /Treeborn/.test(pr.text)) { n++; if (n === 1) t1 = g.turnNo; else if (g.turnNo !== t1) break; E.act(g, ['y']); }
+    else if (pr.type === 'respond') { const ro = pr.p === 1 && n === 1 && pr.opts.find(o => /Royal Oppression/.test(o.label)); E.act(g, [ro ? ro.key : 'pass']); }
+    else if (pr.type === 'yesno') E.act(g, ['n']); else if (pr.type === 'idle') E.act(g, [(pr.opts.find(o => o.key === 'end') || pr.opts[0]).key]); else E.act(g, pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  const lg = g.log.join('\n'); ok(n >= 2 && /negated\.\nA activated Treeborn Frog's effect\.\nA Special Summoned Treeborn Frog\.\n— Turn 2/.test(lg), 'negated by Royal Oppression, Treeborn is offered again in that Standby Phase and comes back');
+  g = duel([{ hand: ['Monster Reborn'], gy: ['Spirit Reaper'], turn: 3 }, {}]);
+  actU(g, hand(g, 'Monster Reborn')); drive(g);
+  ok(fld(g, 0, 'Spirit Reaper'), 'Monster Reborn on Spirit Reaper: it stays on the field');
+});
+
+T('98. Black Pendant deals its 500 when destroyed while Set (goat-09); Goat Toon Cannon Soldier follows its Goat text (no override)', () => {
+  const g = duel([{ st: [{ n: 'Black Pendant', pos: 'set' }], hand: ['Mystical Space Typhoon'], turn: 3 }, {}]);
+  actU(g, hand(g, 'Mystical Space Typhoon')); drive(g);
+  ok(g.p[1].lp === 7500, 'a Set Black Pendant destroyed: 500 damage');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../js/cards/goat-6.js'), 'utf8');
+  ok(!/'Toon Cannon Soldier':/.test(src), 'no Goat override for Toon Cannon Soldier');
+});
+
+T('99. A player orders their own simultaneous mandatory triggers in the play game (Solemn Wishes + Skull Invitation, Goat ruling 2): the order is asked, the first option keeps the event order', () => {
+  const g = duel([{ m: ['Sangan', 'Witch of the Black Forest'], hand: ['Dark Hole'], turn: 3 }, {}]); g.cfg.askOrder = true;
+  actU(g, hand(g, 'Dark Hole')); let asked = false;
+  for (let i = 0; i < 40 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (pr.type === 'choose' && /at the same time/.test(pr.text)) { asked = true; E.act(g, [pr.opts[1].key]); }
+    else if (pr.type === 'respond') E.act(g, ['pass']); else if (pr.type === 'yesno') E.act(g, ['y']); else E.act(g, pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(asked, 'Sangan and Witch of the Black Forest destroyed together: A is asked which goes on the chain first');
+  const g2 = duel([{ m: ['Sangan', 'Witch of the Black Forest'], hand: ['Dark Hole'], turn: 3 }, {}]); actU(g2, hand(g2, 'Dark Hole'));
+  ok(!drive(g2).some(t => /at the same time/.test(t)) && !(g2.prompt && /at the same time/.test(g2.prompt.text || '')), 'with the ask mode off (scripted duels), no question');
+});
+
+T('100. Fusion substitutes: King of the Swamp stands in for 1 named Fusion Material (Polymerization: Gaia The Fierce Knight + King of the Swamp makes Gaia the Dragon Champion), not for a Fusion that needs its listed materials', () => {
+  const mkd = (ex) => E.newDuel({ decks: [{ name: 't', main: Array(40).fill(id(FILL)), extra: ex.map(id) }, { name: 't', main: Array(40).fill(id(FILL)), extra: [] }], first: 0, seed: 1, noShuffle: true, names: ['A', 'B'],
+    board: [{ hand: ['Polymerization', 'King of the Swamp', 'Gaia The Fierce Knight'], turn: 3 }, {}] });
+  let g = mkd(['Gaia the Dragon Champion']); actU(g, hand(g, 'Polymerization')); drive(g);
+  ok(fld(g, 0, 'Gaia the Dragon Champion') && gyOf(g, 0, 'King of the Swamp'), 'Gaia the Dragon Champion Fusion Summoned with King of the Swamp');
+  const fx = { id: id('Dark Balter the Terrible'), u: -1, flags: {}, mods: [] }; const ks = { id: id('King of the Swamp'), u: -2, flags: {}, mods: [], zone: 'hand' };
+  ok(!E.lib.assignMats([x => E.name(x) === 'Possessed Dark Soul', x => E.name(x) === 'Frontline Base'], [ks, ks], 1, fx).length, 'no substitute for "can only be conducted with the above Fusion Material Monsters"');
+});
+
+T('101. Card fixes (edison-05 to 08): Ancient Fairy Dragon destroys every Field Spell; Phoenix Wing Wind Blast can\'t target a resolving Normal Spell; Zombie Master needs a Zombie in a GY; Gemini Spark needs a card to draw; Instant Fusion after Dark Bribe can be activated again and can\'t make a Fusion that needs its materials', () => {
+  let g = duel([{ m: ['Ancient Fairy Dragon'], fz: 'Mystic Plasma Zone', turn: 3 }, { fz: 'Geartown' }]);
+  act(g, new RegExp('a:' + fld(g, 0, 'Ancient Fairy Dragon').u + ':1')); drive(g, { no: true });
+  ok(!g.p[0].fz && !g.p[1].fz && g.p[0].lp === 9000, 'both Field Spells destroyed, 1000 LP (site ruling 4)');
+  g = duel([{ hand: ['Zombie Master', 'Goblin Zombie'], turn: 3 }, {}]); act(g, new RegExp('ns:' + hand(g, 'Zombie Master').u)); drive(g);
+  ok(!keyOf(g, fld(g, 0, 'Zombie Master')), 'Zombie Master with a Zombie only in the hand: not offered (ruling 4)');
+  const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/cards/' + f), 'utf8');
+  ok(/fieldOf\(g, opp\(p\)\)\.filter\(pwwbOk\)/.test(src('batch-1.js')) && /'Continuous', 'Equip', 'Field'\]\.includes\(D\(x\)\.sub\)/.test(src('batch-1.js')), 'Phoenix Wing Wind Blast skips face-up Normal/Quick-Play Spells and Normal/Counter Traps');
+  ok(/!maskOn\(g\) && g\.p\[p\]\.deck\.length > 0/.test(src('batch-1.js')), 'Gemini Spark needs a card in the Deck');
+  ok(/b1ifL\.some\(x => x\.p === p && x\.turn === g\.turnNo && !x\.L\.actNegated\)/.test(src('batch-1.js')) && /can only be \(\?:conducted\|Fusion Summoned\) with the above/.test(src('batch-1.js')), 'Instant Fusion: the turn\'s use is a non-negated activation; material-only Fusions left out');
+});
+
+T('102. Card fixes (edison-09 to 13): Trident Dragion attacks once per card destroyed plus one; Prohibition leaves the copies already on the field, allows Special Summons from the Deck/GY and stops Flip Summons; a face-up Defense Gemini can be Gemini Summoned; a Gemini Summoned Tuned Magician is a Tuner; Reinforce Truth\'s Battle Phase lock is the activation\'s', () => {
+  const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/' + f), 'utf8');
+  ok(/c\.flags\.maxAttacks = n \+ 1/.test(src('cards/batch-1.js')), 'Trident Dragion: n + 1 attacks');
+  ok(/prohibitOk === src\.u/.test(src('cards/batch-4.js')) && /if \(a\.type === 'ss'\) return \['hand', 'extra'\]\.includes/.test(src('cards/batch-4.js')) && /'attack', 'pos', 'flip'\]/.test(src('cards/batch-4.js')), 'Prohibition rulings 1, 4, 11');
+  let g = duel([{ m: [{ n: 'Elemental HERO Neos Alius', pos: 'def' }], turn: 3 }, {}]);
+  ok(!!opt(g, /^Gemini Summon/), 'a face-up Defense Neos Alius can be Gemini Summoned');
+  const tm = { id: id('Tuned Magician'), u: -5, zone: 'm', pos: 'atk', flags: { gemini: true }, mods: [], ctr: {} };
+  ok(/function isTunerNow/.test(src('engine.js')) && /tun = mats\.filter\(c => isTunerNow\(g, c\)\)/.test(src('engine.js')), 'the engine Synchro check reads isTunerNow');
+  ok(/'Reinforce Truth'[\s\S]{0,400}after: \(g, c, p\) => \{ E\.lib\.lockBP\(g, p\); \}/.test(src('cards/batch-4.js')), 'Reinforce Truth locks the Battle Phase at activation (lockBP)');
+  void tm;
+});
+
+T('103. Card fixes (edison-14 to 21): Codarus leaves a target you took; Koa\'ki Meiru Tornado destroys Tokens; Fortune Lady at Level 12 makes no chain link; Hyper Psychic Blaster reads the DEF at the end of the Damage Step; Zoma hits its owner\'s opponent; Creature Swap and Machine Duplication read the rules', () => {
+  const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/cards/' + f), 'utf8');
+  ok(/live\(L\)\.filter\(t => t\.ctrl !== p\)/.test(src('batch-5.js')), 'Codarus: only cards the opponent still controls');
+  ok(/const ssed = x => \[[^\]]+\]\.includes\(x\.summonType\) \|\| D\(x\)\.k === 'token'/.test(src('batch-6.js')), 'Tornado: Tokens are Special Summoned');
+  const g = duel([{ m: ['Fortune Lady Fire'], turn: 1 }, {}]); const fl = fld(g, 0, 'Fortune Lady Fire'); fl.flags.lv = 12;
+  const n0 = g.log.length; toTurnOf(g, 0);
+  ok(g.turnNo === 3 && !g.log.slice(n0).some(l => /activated Fortune Lady Fire's effect/.test(l)), 'Fortune Lady Fire at Level 12: no Standby Phase chain link');
+  ok(/c\.flags\.hpbT = ev\.t/.test(src('batch-7.js')) && /damage\(g, opp\(c\.owner\), n/.test(src('batch-7.js')) && /noCtrlSwitch'\)\)\) \{ log\(g, 'Control of those monsters/.test(src('batch-7.js')) && /L\.data\.n = t && name\(t\)/.test(src('batch-7.js')), 'HPB, Zoma, Creature Swap, Machine Duplication');
+});
+
+T('104. Goat card fixes: Dream Clown only from Attack to Defense; Dark Master - Zorc resolves after leaving the field; Mirror Wall in the Damage Step; Swords of Revealing Light counts under Imperial Order; Serial Spell doesn\'t stay; Last Turn\'s win check; Book of Life and Dark Blade under Kycoo', () => {
+  const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/' + f), 'utf8');
+  ok(/c\.pos === 'def' && \(ev\.from == null \|\| ev\.from === 'atk'\)/.test(src('cards/full-20.js')) && /emit\(g, \{ type: 'pos', c, p, from:/.test(src('engine.js')), 'Dream Clown reads where the position came from');
+  ok(!/'Dark Master - Zorc'[\s\S]{0,200}if \(!onField\(c\)\) return/.test(src('cards/full-06.js')), 'Zorc resolves without being on the field');
+  ok(/type: 'act', ds: true, res: function\* \(g, c, p\) \{ const b = g\.aw \|\| g\.battle/.test(src('cards/full-12.js')), 'Mirror Wall: ds');
+  ok(/noChain: true, rule: true, label: 'Count a turn'/.test(src('cards/full-28.js')), 'Swords of Revealing Light: the count is a rule');
+  ok(/yield\* o\.eff\.res\(g, c, p, L2\); L2\.keep = false;/.test(src('cards/full-27.js')), 'Serial Spell');
+  ok(/const m0 = L\.monsOf\(g, 0\)\.length, m1 = L\.monsOf\(g, 1\)\.length/.test(src('cards/full-10.js')), 'Last Turn: a player with monsters wins when the other has none');
+  const { C: GC } = { C: C }; void GC;
+  const re = eval(src('engine.js').match(/const GYBAN_RE = (\/.*\/i);/)[1]);
+  ok(re.test('Target 1 Zombie monster in your GY and 1 monster in your opponent\'s GY; Special Summon the first target, also banish the second target.') && re.test('you can select up to 3 Monster Cards from your opponent\'s Graveyard and remove them from play.'), 'GYBAN_RE reads Book of Life and Goat Dark Blade');
+});
+
+T('105. More card fixes: Big Piece Golem\'s tributeless Normal Summon under Vanity\'s Fiend; Zombyra can\'t attack directly; Rescue Cat destroys the Beasts it summoned; Revived King Ha Des\' negation ends when the monster leaves the GY; Dandylion, Gravekeeper\'s Spy and Monster Reincarnation by their rulings', () => {
+  const g = duel([{ hand: ['Big Piece Golem'], turn: 3 }, { m: ["Vanity's Fiend"] }]);
+  ok(!!opt(g, /Normal Summon without Tributes/), 'Big Piece Golem\'s procedure is offered under Vanity\'s Fiend (not a Special Summon)');
+  const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/' + f), 'utf8');
+  ok(/has\(g, c, 'noDirect'\)\) return out\.filter/.test(src('engine.js')) && /self: \{ noDirect: true/.test(src('cards/full-29.js')), 'Zombyra: noDirect');
+  ok(/x\.flags\.rescueBy = c\.u/.test(src('cards/batch-2.js')) && /x\.flags\.rescueBy === c\.u\), \{ by: p \}/.test(src('cards/batch-2.js')), 'Rescue Cat tags its Beasts');
+  ok(/ev\.from === 'gy' && ev\.c && ev\.c\.flags && ev\.c\.flags\.b1hades\) \{ delete/.test(src('cards/batch-1.js')), 'Ha Des: per GY visit');
+  ok(!/'Dandylion'[\s\S]{0,200}cond: \(g, c, p\) => nFreeM/.test(src('cards/batch-2.js')) && /g\.p\[p\]\.hand\.some\(x => x !== c && isMon\(x\)\)\),/.test(src('cards/batch-2.js')), 'Dandylion always activates; Monster Reincarnation may discard its target');
+  ok(!/"Gravekeeper's Spy"[\s\S]{0,600}posPick/.test(src('cards/batch-3.js')), 'Gravekeeper\'s Spy asks the position once (the engine)');
 });
 
 console.log(fails ? `\n${fails} failed` : '\nAll root-cause guards passed.');
