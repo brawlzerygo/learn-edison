@@ -87,8 +87,11 @@ let RANCH = 0;
 
 // Barrel Behind the Door: the link's damage is certain and hits this player (rulings: not Barrel itself, not coin/dice effects like Time
 // Wizard or Dice Jar, only damage to YOUR LP; 2026-11-28 audit, E4b, goat-04)
+const barrelEff = x => { const d = D(x); if (d.k === 'effect' || d.k === 'trap') return true; return ['fusion', 'synchro'].includes(d.k) && (d.tx || '').split(/\r?\n/).filter(v => v.trim()).length > 1; };   // an Effect Monster (as full-19 isEffMon)
 const barrelOk = (t, p) => { const tx = String(D(t.c).ps || D(t.c).tx || ''); if (D(t.c).n === 'Barrel Behind the Door' || /\bcoin\b|\bdie\b|\bdice\b/i.test(tx)) return false;
-  if (/damage to (?:both|each)|(?:both|each) players? (?:take|takes)/i.test(tx)) return true; return t.p !== p ? /opponent/i.test(tx) : /damage to you\b|you take|inflict[^.]*damage to (?:you|its controller)|take[^.]*damage/i.test(tx); };
+  // damage counted "for each Effect Monster" that may come to 0 (Ceasefire with only face-down monsters or face-up Normal Monsters: archive)
+  if (/for each Effect Monster/i.test(tx) && t.c.g && !L.fieldMons(t.c.g).some(x => L.faceUp(x) && barrelEff(x))) return false;
+  if (/damage to (?:both|each)|(?:both|each) players? (?:take|takes)/i.test(tx)) return true; return t.p !== p ? /opponent/i.test(tx) : /damage to you\b|\byou take\b|\bcontroller takes\b|inflict[^.]*damage to (?:you\b|its controller)/i.test(tx); };   // "you" as a word: not "your opponent" (pass2 goat-07)
 E.addScripts({
   /* ----- A ----- */
   'Archlord Zerato': {
@@ -270,9 +273,8 @@ E.addScripts({
       { type: 'trig', mand: true, label: 'Lose 500 ATK', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'end' && ev.tp === c.ctrl,
         res: function* (g, c) { if (onField(c) && faceUp(c)) { addMod(g, c, { atk: -500, own: true }); log(g, 'Berserk Dragon lost 500 ATK.'); } } }] },
   // Port of goat-3.js. "Must attack if able": self.mustAttack (the engine keeps the Battle Phase open while it can attack, 2026-11-28 audit).
-  'Berserk Gorilla': { self: { mustAttack: true }, effs: [{ type: 'trig', mand: true, label: 'Destroy itself (face-up Defense Position)',
-    on: (g, ev, c) => faceUp(c) && c.pos === 'def',
-    res: function* (g, c, p) { if (onField(c) && faceUp(c) && c.pos === 'def') destroy(g, [c], { by: p }); } }] },
+  // its self-destruction in face-up Defense is a continuous check (engine defSweep, self.destroyInDef), applied at once (pass2 goat-05)
+  'Berserk Gorilla': { self: { mustAttack: true, destroyInDef: true }, effs: [{ type: 'trig', on: () => false, res: function* () {} }] },   // (kept so the effect indexes don't move)
 
   /* ----- Bi to Bu ----- */
   'Bickuribox': { effs: [] },

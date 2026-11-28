@@ -523,6 +523,6 @@ function tunerMats(g, p) {
 // Synchro Monsters that can be Synchro Summoned now with monsters you control (Urgent Tuning)
 function synTargets(g, p) {
   if (freeM(g, p) < 0 && !monsOf(g, p).length) return [];
-  return g.p[p].extra.filter(x => D(x).k === 'synchro' && !(E.SCRIPTS[D(x).n] && E.SCRIPTS[D(x).n].noSynchro) && !forbid(g, { type: 'ss', c: x, p, how: 'synchro' }) && synCombos(g, p, x).length > 0);
+  return g.p[p].extra.filter(x => D(x).k === 'synchro' && !(E.lib.SC(x) && E.lib.SC(x).noSynchro) && !forbid(g, { type: 'ss', c: x, p, how: 'synchro' }) && synCombos(g, p, x).length > 0);
 }
 })();

@@ -467,7 +467,7 @@ E.addScripts({
     'Metal Fiend Token': {
       self: { cantAttack: true },
       // the battle damage its controller would take from its battles goes to the opponent instead
-      cont: { dmg: (g, src, p, n, o) => { if (!o.battle || p !== src.ctrl || !g.battle || (g.battle.a !== src && g.battle.t !== src)) return undefined; damage(g, opp(p), n, { battle: true, src: o.src, srcP: p }); return 0; } },
+      cont: { dmg: (g, src, p, n, o) => { if (!o.battle || p !== src.ctrl || !g.battle || (g.battle.a !== src && g.battle.t !== src)) return undefined; return { redirect: opp(p) }; } },   // applied after the other hooks (engine dmgAmount)
       effs: [{ type: 'trig', mand: true, label: 'Pay 1000 LP or destroy this Token', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
         res: function* (g, c, p) { if (!onField(c)) return; if (E.lib.canPay(g, p, 1000) && (yield* yn(g, p, 'Pay 1000 LP to keep the Metal Fiend Token?'))) pay(g, p, 1000); else destroy(g, [c], { by: p, rule: true }); } }] },
 });

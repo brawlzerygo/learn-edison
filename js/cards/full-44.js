@@ -398,15 +398,18 @@ E.addScripts({
       res: function* (g, c, p, L2) { if (!monsOf(g, p).some(x => x !== c && faceUp(x) && /roid/.test(name(x)))) return; const t = live(L2)[0]; if (t) destroy(g, [t], { by: p, src: c }); } }] },
   'Steam Gyroid': {},
   'Steamroid': { self: { atk: (g, c) => { const b = g.inDS && g.battle; if (!b || !b.t) return 0; if (b.a === c && b.t.ctrl !== c.ctrl) return 500; if (b.t === c && b.a.ctrl !== c.ctrl) return -500; return 0; } } },
-  // PARTIAL: the monster goes to the GY first and is then put on top of the Deck (an optional trigger), so GY effects still see it.
-  // ENGINE: no "send somewhere else instead" replacement in move().
-  'Storm Caller': { effs: [
-    { type: 'trig', label: 'Put the destroyed monster on top of its owner\'s Deck',
-      on: (g, ev, c) => ev.type === 'move' && ev.battle && ev.destroyed && ev.to === 'gy' && !!ev.killer && ev.killer !== c && race(ev.killer) === 'Psychic' && (onField(ev.killer) ? ev.killer.ctrl : ev.killer.owner) === c.ctrl && ev.c.owner !== c.ctrl && ev.prevCtrl !== c.ctrl,
-      // PARTIAL: a trigger after the GY, not a true "instead of the GY" replacement; a field monster that can't go to the Deck (G.B. Hunter,
-      // ruling 5) gives no option (pass2 edison-19)
-      cond: (g, c, p, x) => x.ev.c.zone === 'gy' && !E.lib.toDeckBlocked(g, x.ev.c, true),
-      res: function* (g, c, p, L2) { const x = L2.ev.c; if (x.zone === 'gy' && !E.lib.toDeckBlocked(g, x, true)) { move(g, x, 'deckTop', { reason: 'effect', by: p }); log(g, `${D(x).n} was put on top of ${PN(g, x.owner)}'s Deck.`); } } },
+  // "You can put your opponent's monsters that are destroyed by battle with other Psychic monsters on top of their owner's Deck instead of
+  // sending them to the GY": a true replacement (engine cont.replaceAsk, asked in the Damage Step before the destruction; 2026-11-28 audit,
+  // E4e): the monster never reaches the GY, so its GY effects don't happen; not when it can't go to the Deck (G.B. Hunter, ruling 5).
+  'Storm Caller': {
+    cont: { replaceAsk: { opts: (g, h, c, o) => o.battle && o.killer && o.killer !== h && onField(h) && faceUp(h) && !E.lib.negd(g, h) && race(o.killer) === 'Psychic' && o.killer.ctrl === h.ctrl
+        && c.ctrl !== h.ctrl && c.owner !== h.ctrl && isMon(c) && !E.lib.toDeckBlocked(g, c, true) ? [true] : [],
+      who: (g, h) => h.ctrl,
+      text: (g, h, c) => `Storm Caller: put ${name(c)} on top of its owner's Deck instead of sending it to the GY?`,
+      apply: (g, h, c, o) => { move(g, c, 'deckTop', { reason: 'battle', destroyed: true, battle: true, killer: o.killer, by: h.ctrl, noLater: true });
+        if (!['deck', 'deckTop'].includes(c.zone) && !g.p[c.owner].deck.includes(c)) return false; log(g, `${D(c).n} was put on top of ${PN(g, c.owner)}'s Deck.`); return 'moved'; } } },
+    effs: [
+    { type: 'trig', on: () => false, res: function* () {} },   // (kept so the effect indexes don't move; the replacement is cont.replaceAsk)
     { type: 'trig', loc: 'any', mand: true, label: 'Its controller takes damage',
       on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.destroyed && !ev.battle,
       res: function* (g, c, p, L2) { damage(g, L2.ev.prevCtrl, num(D(c).atk), { src: c, srcP: opp(L2.ev.prevCtrl) }); } }] },

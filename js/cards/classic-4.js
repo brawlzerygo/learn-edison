@@ -102,8 +102,8 @@ E.addScripts({
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t && faceUp(t) && t.pos === 'atk') { t.pos = 'def'; g.seq++; log(g, `${name(t)} was changed to Defense Position.`); emit(g, { type: 'pos', c: t, p }); } } }] },
   'Breath of Light': { effs: [{ type: 'act', tags: { destroy: 1 }, cond: g => fieldMons(g).some(m => faceUp(m) && race(m) === 'Rock'),
     res: function* (g, c, p) { destroy(g, fieldMons(g).filter(m => faceUp(m) && race(m) === 'Rock'), { by: p, src: c }); } }] },
-  'Change of Heart': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, opp(p)).length > 0 && freeM(g, p) >= 0,
-    target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Take control of which monster?', monsOf(g, opp(p)), 1, 1, 'bad'); },
+  'Change of Heart': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, opp(p)).some(x => !E.lib.ctrlLocked(g, x)) && freeM(g, p) >= 0,   // not on a face-up Mataza (its ruling)
+    target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Take control of which monster?', monsOf(g, opp(p)).filter(x => !E.lib.ctrlLocked(g, x)), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t && t.zone === 'm' && t.ctrl !== p) takeControl(g, p, t, true); } }] },
   'De-Spell': { effs: [{ type: 'act', tags: { destroy: 1 },
     cond: (g, c) => stOnField(g).some(x => x !== c && (x.pos === 'set' || isSpell(x))),

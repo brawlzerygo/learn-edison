@@ -272,8 +272,8 @@ E.addScripts({
   // Control is the Equip's continuous effect (the engine's cont.setCtrl, as Mark of the Rose; 2026-11-28 audit, E4b): it follows Tailor of
   // the Fickle to another monster and ends when Snatch Steal leaves; turned face-down, the monster stays (its Equip is sent, control kept)
   'Snatch Steal': { cont: { setCtrl: (g, src) => { const t = L.equippedTo(g, src); return t ? { t, p: src.ctrl } : null; } }, effs: [
-    { type: 'act', cond: (g, c, p) => oppFaceUp(g, p).length > 0 && freeM(g, p) >= 0,
-      target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Take control of which monster?', oppFaceUp(g, p), 1, 1, 'bad'); },
+    { type: 'act', cond: (g, c, p) => oppFaceUp(g, p).some(x => !L.ctrlLocked(g, x)) && freeM(g, p) >= 0,   // not on a face-up Mataza (its ruling)
+      target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Take control of which monster?', oppFaceUp(g, p).filter(x => !L.ctrlLocked(g, x)), 1, 1, 'bad'); },
       res: function* (g, c, p, L2) { const t = live(L2)[0]; if (!t || !faceUp(t) || t.ctrl === p || !onField(c)) return; const from = t.ctrl; t.flags.ctrlBase = from; if (!takeControl(g, p, t, false)) { delete t.flags.ctrlBase; if (freeM(g, p) < 0) destroy(g, [t], { by: p, src: c }); return; } c.equipTo = t.u; c.flags.snatch = { u: t.u, from }; g.seq++; log(g, `Snatch Steal was equipped to ${name(t)}.`); } },
     { type: 'trig', loc: 'st', mand: true, label: 'Opponent gains 1000 LP', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp !== c.ctrl && !!c.equipTo,
       res: function* (g, c, p) { gain(g, opp(p), 1000); } },
@@ -322,7 +322,7 @@ E.addScripts({
   // FLIP, delayed: when it is sent to the GY after being flipped, each player may Special Summon 1 monster from their own GY
   // (not this card) in Attack Position or face-down Defense Position.
   'Spear Cretin': { effs: [
-    { type: 'trig', loc: 'any', res: noop, on: (g, ev, c) => { if (ev.type === 'flip' && ev.c === c) c.f27fl = true; else if (ev.type === 'move' && ev.c === c && ev.to === 'm') c.f27fl = false; return false; } },
+    { type: 'trig', loc: 'any', res: noop, on: (g, ev, c) => { if (ev.type === 'flip' && ev.c === c) c.f27fl = !L.negd(g, c); else if (ev.type === 'move' && ev.c === c && ev.to === 'm') c.f27fl = false; return false; } },
     { type: 'trig', loc: 'gy', mand: true, tags: { ss: 1 }, label: 'Each player revives a monster',
       on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.to === 'gy' && !!c.f27fl,
       res: function* (g, c, p) { c.f27fl = false;

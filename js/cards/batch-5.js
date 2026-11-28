@@ -130,16 +130,20 @@ E.addScripts({
       let useDragon = dr && !gen; if (dr && gen) useDragon = (yield* choose(g, p, 'Fusion Summon which monster?', ['Chimeratech Overdragon', 'Another DARK Machine Fusion'])) === 0;
       if (!useDragon) { yield* fusionSummon(g, p, { from: ['m', 'gy'], banish: true, filter: fx => E.lib.isAttr(fx, 'DARK') && race(fx) === 'Machine' && D(fx).n !== 'Chimeratech Overdragon' }); return; }
       const pool = ovPool(g, p); const fx = g.p[p].extra.find(x => D(x).n === 'Chimeratech Overdragon');
-      const [cd] = yield* pick(g, p, 'Banish which Cyber Dragon?', pool.filter(x => name(x) === 'Cyber Dragon'), 1, 1, 'cost');
+      const cds = pool.filter(x => ovCD(x) && pool.some(y => y !== x && race(y) === 'Machine'));
+      const [cd] = yield* pick(g, p, 'Banish which "Cyber Dragon" (or a Fusion substitute)?', cds, 1, 1, 'cost'); if (!cd) return;
       const mach = pool.filter(x => x !== cd && race(x) === 'Machine');
       const ms = yield* pick(g, p, 'Banish which Machine monsters (1 or more)?', mach, 1, mach.length, 'good');
       const grp = g.group; const mats = [cd, ...ms];
-      for (const m of mats) move(g, m, 'ban', { reason: 'fusion', group: grp });
-      log(g, `${PN(g, p)} banished ${mats.map(x => D(x).n).join(' + ')} as Fusion Material.`);
-      if (freeM(g, p) >= 0) ss(g, p, fx, 'atk', { how: 'fusion', group: grp }); } }] },
-  'Chimeratech Overdragon': { mats: [x => name(x) === 'Cyber Dragon', x => race(x) === 'Machine'],
-    self: { maxAttacks: (g, c) => Math.max(1, c.flags.ovMats || 1) },   // "can attack monsters a number of times each Battle Phase, up to the number of Fusion Material Monsters"
-    // PARTIAL: Polymerization-style summons through fusionSummon use exactly 2 materials (its recipe is "1 or more"); Overload Fusion lets you pick any number.
+      const moved = mats.filter(m => move(g, m, 'ban', { reason: 'fusion', group: grp, by: p }) && m.zone === 'ban');
+      log(g, `${PN(g, p)} banished ${moved.map(x => D(x).n).join(' + ')} as Fusion Material.`);
+      // a material that couldn't be banished leaves the summon undone (Imperial Iron Wall chained: "resolves without effect")
+      if (moved.length === mats.length && freeM(g, p) >= 0) ss(g, p, fx, 'atk', { how: 'fusion', group: grp }); } }] },
+  'Chimeratech Overdragon': { mats: Object.assign([Object.assign(x => name(x) === 'Cyber Dragon', { named: 'Cyber Dragon' }), x => race(x) === 'Machine'], { more: true }),   // "1 or more Machine-Type monsters" (engine moreMats)
+    // "can attack your opponent's monsters a number of times each Battle Phase, up to the number of Fusion Material Monsters": the extra
+    // attacks are on monsters only, so a direct attack is its first attack, and nothing follows one (ruling 4; pass2 edison-15)
+    self: { maxAttacks: (g, c) => g.events.some(e => e.type === 'attack' && e.a === c && e.turn === g.turnNo && e.direct) ? c.attacks : Math.max(1, c.flags.ovMats || 1),
+      noDirect: (g, c) => c.attacks > 0 },
     effs: [
       { type: 'trig', mand: true, label: 'Send all your other cards to the GY',
         on: (g, ev, c) => { if (!evSummoned(ev, c, ['fusion'])) return false; const n = g.events.filter(e => e.type === 'move' && e.reason === 'fusion' && e.group === ev.group).length || 2; c.flags.baseAtk = 800 * n; c.flags.ownBaseAtk = true; c.flags.ovMats = n; addMod(g, c, { def: 800 * n, own: true }); log(g, `Chimeratech Overdragon's original ATK/DEF became ${800 * n}.`); return true; },
@@ -338,12 +342,16 @@ E.addScripts({
 });
 
 /* Overload Fusion helpers */
-function ovPool(g, p) { return [...monsOf(g, p), ...g.p[p].gy.filter(isMon)]; }
-function ovGeneric(g, p) { return canFusion(g, p, { from: ['m', 'gy'], filter: fx => E.lib.isAttr(fx, 'DARK') && race(fx) === 'Machine' && D(fx).n !== 'Chimeratech Overdragon' }); }
+// the materials are banished, so a card that can't be (Imperial Iron Wall, Necrovalley for the GY) isn't in the pool (site ruling)
+function ovPool(g, p) { return [...monsOf(g, p), ...g.p[p].gy.filter(isMon)].filter(x => !E.lib.banBlocked(g, x, x.zone, { by: p })); }
+// "Cyber Dragon", or 1 Fusion substitute in its place (King of the Swamp; Overdragon ruling 1)
+const ovCD = x => name(x) === 'Cyber Dragon' || E.lib.isFusionSub(x);
+function ovGeneric(g, p) { return canFusion(g, p, { from: ['m', 'gy'], banish: true, filter: fx => E.lib.isAttr(fx, 'DARK') && race(fx) === 'Machine' && D(fx).n !== 'Chimeratech Overdragon' }); }
 function ovDragonOk(g, p) {
   if (!g.p[p].extra.some(x => D(x).n === 'Chimeratech Overdragon')) return false;
-  const pool = ovPool(g, p); const cd = pool.find(x => name(x) === 'Cyber Dragon');
-  if (!cd || !pool.some(x => x !== cd && race(x) === 'Machine')) return false;
+  const pool = ovPool(g, p);
+  if (!pool.some(cd => ovCD(cd) && pool.some(x => x !== cd && race(x) === 'Machine'))) return false;
+  if (E.lib.forbid(g, { type: 'ss', c: g.p[p].extra.find(x => D(x).n === 'Chimeratech Overdragon'), p, how: 'fusion' })) return false;
   return freeM(g, p) >= 0 || monsOf(g, p).length > 0;
 }
 function nFreeST(g, p) { return g.p[p].st.filter(z => !z).length; }

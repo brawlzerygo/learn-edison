@@ -17,7 +17,7 @@ const umiUp = g => allField(g).some(x => faceUp(x) && L.isUmi(x));
 const toDef = (g, c) => { if (!onField(c) || c.zone !== 'm' || c.pos !== 'atk') return; c.pos = 'def'; g.seq++; log(g, `${name(c)} was changed to Defense Position.`); };
 const toAtk = (g, c) => { if (!onField(c) || c.zone !== 'm' || c.pos === 'atk') return; c.pos = 'atk'; g.seq++; log(g, `${name(c)} was changed to Attack Position.`); };
 const mainPhase = g => g.phase === 'main1' || g.phase === 'main2';
-const spellImmune = (g, c) => { const sc = (E.format() !== 'edison' && E.SCRIPTS[D(c).n]) || E.SCRIPTS[D(c).n]; const f = sc && sc.self && sc.self.unaffectedSpells; try { return !!(typeof f === 'function' ? f(g, c) : f); } catch (e) { return false; } };
+const spellImmune = (g, c) => { const sc = E.lib.SC(c); const f = sc && sc.self && sc.self.unaffectedSpells; try { return !!(typeof f === 'function' ? f(g, c) : f); } catch (e) { return false; } };
 const burnText = c => { const t = tx(c).replace(/[^.]*battle damage[^.]*\.?/gi, ''); return /inflict[^.]*damage|damage to (both|each|your)|takes? [^.]*damage/i.test(t); };
 
 /* A Trap that answers a moment with no response window in the engine (a battle destruction, a Set):

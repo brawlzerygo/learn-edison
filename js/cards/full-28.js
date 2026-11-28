@@ -36,7 +36,7 @@ const eqBonus = (a, d) => ({ atk: (g, src, m) => src.equipTo === m.u ? a : 0, de
 // Field Spells: a stat change for every monster that passes filter
 // (a monster unaffected by Spells, like Torpedo Fish under Umi, is skipped)
 // (only the monster's own flag is read, not other cards' grants, so a stat check never loops back here)
-const spellOk = (g, m) => { if (m.flags.unaffectedSpells) return false; const sc = E.SCRIPTS[D(m).n], v = sc && sc.self && sc.self.unaffectedSpells; return !(v && !L.negd(g, m) && (typeof v === 'function' ? v(g, m) : v)); };
+const spellOk = (g, m) => { if (m.flags.unaffectedSpells) return false; const sc = E.lib.SC(m), v = sc && sc.self && sc.self.unaffectedSpells; return !(v && !L.negd(g, m) && (typeof v === 'function' ? v(g, m) : v)); };
 const fieldMod = (filter, a, d) => ({ effs: [actNoop], cont: { atk: (g, src, m) => filter(m) && spellOk(g, m) ? a : 0, def: (g, src, m) => filter(m) && spellOk(g, m) ? d : 0 } });
 // A Normal Trap whose condition is an event the engine opens no window for (as full-17.js): offered as an optional trigger
 // while it is Set (not the turn it was Set); it is turned face-up as it activates and goes to the GY after it resolves.
@@ -431,6 +431,7 @@ E.addScripts({
     // the Type is declared on activation, from the Types face-up on the field (Edison ruling)
     target: function* (g, c, p, L2) { const types = [...new Set(fieldMons(g).filter(faceUp).map(race))]; if (!types.length) return;
       const i = types.length > 1 ? yield* choose(g, p, 'Declare which Type?', types) : 0; L2.data.type = types[i]; log(g, `${PN(g, p)} declared ${types[i]}.`); },
+    destroys: (g, c, p, L2) => L2.data.type ? fieldMons(g).filter(x => faceUp(x) && race(x) === L2.data.type) : [],   // the declared Type (My Body as a Shield; pass2 goat-08)
     res: function* (g, c, p, L2) { if (L2.data.type) destroy(g, fieldMons(g).filter(x => faceUp(x) && race(x) === L2.data.type), { by: p }); } }] },
 });
 })();

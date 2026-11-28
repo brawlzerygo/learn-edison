@@ -69,8 +69,8 @@ const archCost = { type: 'trig', mand: true, label: 'Pay 500 LP', on: (g, ev, c)
 const cobraOf = (ev, c) => ev.type === 'move' && ev.snap && ev.snap.flags && ev.snap.flags.f20jar === c.u && ev.battle && ev.destroyed;
 
 E.addScripts({
-  'Change of Heart': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, opp(p)).length > 0 && freeM(g, p) >= 0,
-    target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Take control of which monster?', monsOf(g, opp(p)), 1, 1, 'bad'); },
+  'Change of Heart': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, opp(p)).some(x => !E.lib.ctrlLocked(g, x)) && freeM(g, p) >= 0,   // not on a face-up Mataza (its ruling)
+    target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Take control of which monster?', monsOf(g, opp(p)).filter(x => !E.lib.ctrlLocked(g, x)), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t && t.zone === 'm' && t.ctrl !== p) takeControl(g, p, t, true); } }] },
   'Chaosrider Gustaph': { effs: [cleanup, { type: 'ign', opt: true, label: 'Banish Spells for ATK',
     cond: (g, c, p) => g.p[p].gy.some(isSpell),

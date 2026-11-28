@@ -7,7 +7,7 @@ const { pick, tgt, yn, choose, move, destroy, ss, draw, damage, gain, pay, mill,
   equip, equippedTo, link, addCtr, ctr, negateAttack, endBattle, addRule, token, tokens, fusionSummon, canFusion, ritualSummon, canRitual,
   name, D, isMon, isST, isSpell, isTrap, onField, faceUp, attr, race, lv, baseAtk, monsOf, stOf, fieldOf, allField, fieldMons,
   freeM, freeST, nFreeM, allCards, shuffleDeck, log, PN, has, live, opp, oppFaceUp, stOnField, spellTrapAct, evSummoned,
-  fromFieldToGY, battleKill, isGemini } = L;
+  fromFieldToGY, battleKill, isGemini, negd, emit } = L;
 const atk = L.atk, def = L.def;
 
 /* ----- shared helpers ----- */
@@ -54,10 +54,16 @@ const eiCont = {
     if (a.type === 'attack' && a.c.ctrl !== src.ctrl && monsOf(g, src.ctrl).every(x => faceUp(x) && has(g, x, 'noAttackTarget')) && !has(g, a.c, 'directAttack')) return true;
     return false;
   } };
+/* "If there is no face-up Field Spell on the field, destroy this card" (2026-11-28 audit, pass2 edison-16):
+ - not inside the Damage Step: a Set one attacked with no Field Spell is destroyed by the battle, not by its effect, so its leave effect
+   activates (Aslla piscu ruling 7);
+ - a Field Spell replaced by its own controller leaves a gap (the old one is destroyed before the new one is placed: Aslla piscu ruling 3),
+   which still counts once the new one is there; replacing the opponent's leaves none (ruling 2: each keeps one face-up all along). */
+const eiGap = (g, ev) => noFieldSpell(g) || !!(ev && ev.type === 'move' && ev.from === 'fz' && ev.wasField && ev.snap && ev.snap.faceUp && ev.rule);
 const eiSelfDestroy = { type: 'trig', mand: true, label: 'No Field Spell: destroy this card',
-  on: (g, ev, c) => noFieldSpell(g),
-  cond: (g, c) => onField(c) && faceUp(c) && noFieldSpell(g) && !has(g, c, 'noEffectDestroy'),
-  res: function* (g, c, p) { if (onField(c) && faceUp(c) && noFieldSpell(g)) { c.flags.selfDestroy = true; destroy(g, [c], { by: p }); } } };
+  on: (g, ev, c) => noFieldSpell(g) && !g.inDS,
+  cond: (g, c, p, x) => onField(c) && faceUp(c) && !g.inDS && eiGap(g, x && x.ev) && !has(g, c, 'noEffectDestroy'),
+  res: function* (g, c, p, L2) { if (onField(c) && faceUp(c) && eiGap(g, L2 && L2.ev)) { c.flags.selfDestroy = true; destroy(g, [c], { by: p }); } } };
 
 /* Dark Fusion monsters: their materials, for Dark Calling only (their `mats` block other Fusion cards). */
 const DF = {
@@ -65,23 +71,12 @@ const DF = {
   'Evil HERO Malicious Fiend': [x => D(x).n === 'Evil HERO Malicious Edge', x => race(x) === 'Fiend' && lv(x) >= 6],
 };
 const dfRecipe = fx => DF[D(fx).n] || (D(fx).k === 'fusion' && /Special Summoned with "Dark Fusion"/i.test(D(fx).tx || '') ? L.fusionRecipe(fx) : null);
-function dfCombos(preds, pool, limit = 8) {
-  const out = [];
-  const rec = (i, used) => { if (out.length >= limit) return; if (i === preds.length) { out.push(used.slice()); return; } for (const c of pool) if (!used.includes(c) && isMon(c) && preds[i](c)) { used.push(c); rec(i + 1, used); used.pop(); } };
-  rec(0, []);
-  const seen = new Set(); return out.filter(m => { const k = m.map(c => c.u).sort().join(','); if (seen.has(k)) return false; seen.add(k); return true; });
-}
-const dcPool = (g, p) => [...g.p[p].hand, ...g.p[p].gy].filter(isMon);
-const dcTargets = (g, p) => g.p[p].extra.filter(fx => { const r = dfRecipe(fx); return r && dfCombos(r, dcPool(g, p), 1).length; });
+const dcPool = (g, p) => [...g.p[p].hand, ...g.p[p].gy].filter(x => isMon(x) && !L.banBlocked(g, x, x.zone, { by: p }));
+const dcSets = (g, p, fx, limit) => L.assignMats(dfRecipe(fx), dcPool(g, p), limit, fx);
+const dcTargets = (g, p) => g.p[p].extra.filter(fx => { const r = dfRecipe(fx); return r && dcSets(g, p, fx, 1).length; });
 
 /* Underground Arachnid's equipped monster */
 const eqMon = (g, c) => g.p[c.ctrl].st.find(x => x && isMon(x) && x.equipTo === c.u) || null;
-/* Would this monster be destroyed by this battle? (after damage calculation) */
-function losesBattle(g, c, a, t) {
-  if (c === a) return !!t && t.pos === 'atk' && atk(g, t) >= atk(g, c);
-  if (c === t) return c.pos === 'atk' ? atk(g, a) >= atk(g, c) : atk(g, a) > def(g, c);
-  return false;
-}
 /* Fortune Lady Level up */
 const flLevelUp = (opt) => ({ type: 'trig', mand: true, opt, label: 'Level up', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl && faceUp(c) && lv(c) < 12,   // at Level 12 nothing happens (max. 12)
   // a Level mod of its own effect (own: dropped for good once it is negated, like its own ATK gains; 2026-11-28 audit, E4c)
@@ -103,11 +98,12 @@ E.addScripts({
     res: function* (g, c, p) {
       const fs = dcTargets(g, p); if (!fs.length || freeM(g, p) < 0) return;
       const [fx] = yield* pick(g, p, 'Fusion Summon which monster with Dark Calling?', fs, 1, 1, 'good'); if (!fx) return;
-      const cs = dfCombos(dfRecipe(fx), dcPool(g, p)); let mats = cs[0];
+      const cs = dcSets(g, p, fx, 8); let mats = cs[0]; if (!mats) return;
       if (cs.length > 1) { const i = yield* choose(g, p, 'Banish which Fusion Materials?', cs.map(m => m.map(x => D(x).n + (x.zone === 'hand' ? ' (hand)' : ' (GY)')).join(' + '))); mats = cs[i]; }
       const sum = mats.reduce((s, x) => s + baseAtk(x), 0), grp = g.group;
-      for (const m of mats) move(g, m, 'ban', { reason: 'fusion', group: grp });
-      log(g, `${PN(g, p)} banished ${mats.map(x => D(x).n).join(' + ')}.`);
+      const moved = mats.filter(m => move(g, m, 'ban', { reason: 'fusion', group: grp, by: p }) && m.zone === 'ban');
+      log(g, `${PN(g, p)} banished ${moved.map(x => D(x).n).join(' + ')}.`);
+      if (moved.length < mats.length) return;   // Imperial Iron Wall chained: "Dark Calling resolves without effect" (site ruling A5)
       if (D(fx).n === 'Evil HERO Dark Gaia') { fx.flags.baseAtk = sum; fx.flags.ownBaseAtk = true; }
       fx.flags.darkFusion = true;
       ss(g, p, fx, 'atk', { how: 'fusion', group: grp });
@@ -122,15 +118,19 @@ E.addScripts({
     effs: [{ type: 'trig', when: true, label: 'Change their Defense monsters to Attack', on: (g, ev, c) => ev.type === 'attack' && ev.a === c,
       cond: (g, c, p) => monsOf(g, opp(p)).some(x => x.pos !== 'atk'),
       res: function* (g, c, p) { for (const x of monsOf(g, opp(p))) if (x.pos !== 'atk') { x.pos = 'atk'; log(g, `${name(x)} was changed to Attack Position.`); } } }] },
-  // PARTIAL: "each monster must attack this card, if able" is not forced (ENGINE: forced attacks); the opponent's other
-  // targets are removed, and their monsters change to Attack Position at their first attack declaration of the turn.
-  // Also not enforced: it can't be Special Summoned from the GY or banished.
   'Evil HERO Malicious Fiend': { mats: [() => false, () => false],
     // "each monster they control must attack this card, if able": noAttackTarget for its controller's other monsters, mustAttack for theirs
     cont: { grant: (g, src, c, flag) => g.tp !== src.ctrl && g.phase === 'battle' && ((flag === 'noAttackTarget' && c !== src && c.ctrl === src.ctrl) || (flag === 'mustAttack' && c.ctrl !== src.ctrl)) },
-    effs: [{ type: 'trig', mand: true, label: 'Their monsters change to Attack Position',
-      on: (g, ev, c) => ev.type === 'attack' && ev.p !== c.ctrl && c.flags.mfTurn !== g.turnNo,
-      res: function* (g, c, p) { c.flags.mfTurn = g.turnNo; for (const x of monsOf(g, opp(p))) if (x.pos !== 'atk') { x.pos = 'atk'; log(g, `${name(x)} was changed to Attack Position.`); } } }] },
+    // "During your opponent's Battle Phase, all monsters they control are changed to Attack Position": a continuous effect for the whole
+    // Battle Phase, from its start (rulings: it doesn't activate; monsters Special Summoned during it and ones changed to Defense at its end
+    // are changed too; face-down ones are flipped at once and their Flip effects form a chain). A no-chain step on any event then (pass2
+    // edison-16: it waited for the first attack declaration, so a Defense-only field never had to attack).
+    effs: [{ type: 'trig', mand: true, noChain: true, label: 'Their monsters change to Attack Position',
+      on: (g, ev, c) => g.phase === 'battle' && g.tp !== c.ctrl && onField(c) && faceUp(c) && !negd(g, c) && monsOf(g, opp(c.ctrl)).some(x => x.pos !== 'atk'),
+      res: function* (g, c, p) { if (!onField(c) || !faceUp(c) || negd(g, c) || g.phase !== 'battle' || g.tp === p) return;
+        const xs = monsOf(g, opp(p)).filter(x => x.pos !== 'atk'); if (!xs.length) return; const downs = xs.filter(x => x.pos === 'set');
+        for (const x of xs) { const from = x.pos; x.pos = 'atk'; g.seq++; log(g, `${name(x)} was changed to face-up Attack Position.`); if (from !== 'set') emit(g, { type: 'pos', c: x, p: x.ctrl, from, byEffect: true }); }
+        for (const x of downs) if (x.zone === 'm') emit(g, { type: 'flip', c: x, p: x.ctrl, byEffect: true }); } }] },
   // "At the end of the Battle Phase, if this card attacked or was attacked" (bpEnd, 2026-11-28 audit, edison-16)
   'Multiple Piece Golem': { mats: [x => D(x).n === 'Big Piece Golem', x => D(x).n === 'Medium Piece Golem'],
     effs: [
@@ -196,7 +196,8 @@ E.addScripts({
     { type: 'trig', when: true, tags: { destroy: 1 }, label: 'Destroy Spells/Traps',
       on: (g, ev, c) => evSummoned(ev, c, ['normal', 'tribute']),
       cond: (g, c, p) => { const n = monsOf(g, p).filter(x => faceUp(x) && isFL(x)).length; return n > 0 && stOf(g, opp(p)).length >= n; },
-      res: function* (g, c, p) { const n = Math.min(monsOf(g, p).filter(x => faceUp(x) && isFL(x)).length, stOf(g, opp(p)).length); if (!n) return; const ts = yield* pick(g, p, `Destroy ${n} Spell/Trap card(s)`, stOf(g, opp(p)), n, n, 'bad'); destroy(g, ts, { by: p }); } }] },
+      // counted at resolution (site ruling 1); with fewer Spells/Traps than Fortune Ladies, nothing is destroyed (EDOPro: ct > #g returns; pass2 edison-17)
+      res: function* (g, c, p) { const n = monsOf(g, p).filter(x => faceUp(x) && isFL(x)).length; if (!n || stOf(g, opp(p)).length < n) return; const ts = yield* pick(g, p, `Destroy ${n} Spell/Trap card(s)`, stOf(g, opp(p)), n, n, 'bad'); destroy(g, ts, { by: p }); } }] },
   'Fortune Lady Water': { self: flStats(300), effs: [flLevelUp(true),
     // "Draw 2 cards": mandatory (a draw past the Deck loses)
     { type: 'trig', mand: true, ds: true, label: 'Draw 2',
@@ -263,11 +264,13 @@ E.addScripts({
   'Man-Eater Bug': { effs: [{ type: 'trig', mand: true, faceDownOk: true, tags: { destroy: 1 }, on: (g, ev, c) => ev.type === 'flip' && ev.c === c,
     target: function* (g, c, p, L2) { const cands = fieldMons(g); if (cands.length) yield* tgt(g, p, L2, 'Destroy which monster?', cands, 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { destroy(g, live(L2), { by: p }); } }] },
-  // PARTIAL: it runs as a mandatory trigger (the Insect's controller then chooses to search), and two Insects destroyed
-  // at once give one search.
+  // PARTIAL: it runs as a mandatory trigger (the Insect's controller then chooses to search). Each Insect destroyed gives its own search,
+  // one chain link each (eff.each; site rulings 2 and 3), and a Set Insect flipped by the attack that destroys it gives none (site ruling:
+  // "It needs to be face-up when targeted for the attack"; pass2 edison-17).
   'Verdant Sanctuary': { effs: [{ type: 'act', res: function* () {} },
-    { type: 'trig', loc: 'st', mand: true, label: 'Add an Insect of the same Level',
-      on: (g, ev, c) => faceUp(c) && ev.type === 'move' && ev.wasField && ev.from === 'm' && ev.destroyed && ev.to === 'gy' && ev.snap && ev.snap.faceUp && ev.snap.race === 'Insect' && isMon(ev.c),   // a face-up Insect monster (not one equipped in the S/T Zone)
+    { type: 'trig', loc: 'st', mand: true, each: true, label: 'Add an Insect of the same Level',
+      on: (g, ev, c) => faceUp(c) && ev.type === 'move' && ev.wasField && ev.from === 'm' && ev.destroyed && ev.to === 'gy' && ev.snap && ev.snap.faceUp && ev.snap.race === 'Insect' && isMon(ev.c)   // a face-up Insect monster (not one equipped in the S/T Zone)
+        && !(ev.battle && g.battle && g.battle.flipped === ev.c),
       res: function* (g, c, p, L2) { const x = L2.ev.c, q = L2.ev.prevCtrl, n = lv(x);
         if (!g.p[q].deck.some(y => isInsect(y) && lv(y) === n)) return;
         if (yield* yn(g, q, `Verdant Sanctuary: add a Level ${n} Insect from your Deck?`)) yield* search(g, q, y => isInsect(y) && lv(y) === n, `Add a Level ${n} Insect`); } }] },
@@ -276,19 +279,18 @@ E.addScripts({
     cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Banish an Insect from your GY', g.p[p].gy.filter(isInsect), 1, 1, 'cost'); move(g, x, 'ban', { reason: 'cost' }); log(g, `${PN(g, p)} banished ${name(x)}.`); },
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Destroy which monster?', monsOf(g, opp(p)), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { destroy(g, live(L2), { by: p, src: c }); } }] },
-  // PARTIAL: the battle replacement is automatic (it always destroys the equipped monster instead).
+  // ③ "If this card would be destroyed by battle, you can destroy the equipped monster instead": an optional replacement (engine replaceAsk,
+  // asked in the Damage Step before the destruction, no chain link; pass2 edison-17)
   'Underground Arachnid': {
     cont: { forbid: (g, src, a) => a.type === 'activate' && a.p !== src.ctrl && a.eff && a.eff.type === 'act' && isST(a.c) && ((g.aw && g.aw.a === src) || (g.battle && g.battle.a === src)) },
-    self: { noBattleDestroy: (g, c) => !!eqMon(g, c) },
+    self: { replaceAsk: L.replaceOther((g, c) => [eqMon(g, c)], 'Destroy the equipped monster instead of %s?', 'Destroy which?', 'destroy', (g, c, o) => !!o.battle) },
     effs: [
       { type: 'ign', opt: true, label: 'Equip one of their monsters',
         cond: (g, c, p) => !eqMon(g, c) && freeST(g, p) >= 0 && oppFaceUp(g, p).length > 0,
         target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Equip which monster to Underground Arachnid?', oppFaceUp(g, p), 1, 1, 'bad'); },
         res: function* (g, c, p, L2) { const t = live(L2)[0]; if (!t || !faceUp(t) || t.zone !== 'm' || !onField(c) || eqMon(g, c) || freeST(g, p) < 0) return;
           move(g, t, 'st', { ctrl: p, pos: 'up', reason: 'equip' }); t.equipTo = c.u; t.flags.negated = true; log(g, `${D(t).n} was equipped to Underground Arachnid.`); } },
-      { type: 'trig', mand: true, tags: { destroy: 1 }, label: 'Destroy the equipped monster instead',
-        on: (g, ev, c) => ev.type === 'afterCalc' && (ev.a === c || ev.t === c) && !!eqMon(g, c) && losesBattle(g, c, ev.a, ev.t),
-        res: function* (g, c, p) { const m = eqMon(g, c); if (m) destroy(g, [m], { by: p }); } }] },
+      { type: 'trig', on: () => false, res: function* () {} }] },   // (kept so the effect indexes don't move; ③ is self.replaceAsk)
 
   /* ===== Koa'ki Meiru ===== */
   'Giant Rat': { effs: [{ type: 'trig', loc: 'gy', tags: { ss: 1 }, label: 'Special Summon an EARTH',

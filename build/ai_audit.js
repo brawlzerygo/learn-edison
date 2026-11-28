@@ -1,6 +1,6 @@
 /* AI audit (2026-11-27): watches the computer play and counts clear blunders per game.
  node build/ai_audit.js <edison|goat> <games> [levelA] [levelB] [--old A|B|AB|none] [--jobs N] [--log dir] [--seed S]
- Seat A plays levelA with the current js/ai.js; seat B plays levelB, with build/ai_old.js when --old B (the copy of ai.js
+ Seat A plays levelA with the current js/ai.js; seat B plays levelB, with build/ai_old.js (or the file in AI_OLD) when --old B (the copy of ai.js
  from before the 2026-11-27 fixes), so new Tournament can be measured against old Tournament. Seats and decks swap
  every game. Blunders are counted for every seat that plays at Tournament or Advanced, split by which AI made them.
  --log writes one text file per game with every decision of the audited seats (the options and the pick).
@@ -22,7 +22,7 @@ function loadAll() {
   for (const f of fs.readdirSync(path.join(root, 'js/cards')).filter(f => f.endsWith('.js')).sort()) files.push('js/cards/' + f);
   for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
   let OLDAI = null;
-  if (OLD !== 'none') { vm.runInContext(fs.readFileSync(path.join(root, 'build/ai_old.js'), 'utf8'), ctx, { filename: 'ai_old.js' }); OLDAI = ctx.window.EdisonAI; ctx.window.EdisonAI = null; }
+  if (OLD !== 'none') { vm.runInContext(fs.readFileSync(process.env.AI_OLD || path.join(root, 'build/ai_old.js'), 'utf8'), ctx, { filename: 'ai_old.js' }); OLDAI = ctx.window.EdisonAI; ctx.window.EdisonAI = null; }
   vm.runInContext(fs.readFileSync(path.join(root, 'js/ai.js'), 'utf8'), ctx, { filename: 'ai.js' });
   const E = ctx.window.EdisonEngine, AI = ctx.window.EdisonAI;
   let decks;

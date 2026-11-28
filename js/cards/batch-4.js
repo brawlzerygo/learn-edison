@@ -39,7 +39,7 @@ function nvNeg() { return false; }
  Both: summon procedures that banish from the GY can't be done (Chaos Sorcerer, BLS - Envoy, Dark Necrofear: archive and site rb).
  Gravekeeper's Chief: "Your GY is unaffected by Necrovalley". */
 const NV_ALSO = ['Question', 'Fiber Jar', 'Penguin Knight', 'Agido'];
-const NV_TGT_RE = /\b(?:target|select)s?\b[^.;:]{0,80}?\b(?:in|from) (?:your|either|any|their|your opponent's|the|each)?\s*(?:player's |players' )?(?:Graveyards?|GYs?)\b/i;
+const NV_TGT_RE = /\b(?:target|select)(?:s|ing)?\b[^.;:]{0,80}?\b(?:in|from) (?:your|either|any|their|your opponent's|the|each)?\s*(?:player's |players' )?(?:Graveyards?|GYs?)\b/i;
 const nvTargetsGY = (c, eff) => !!eff.target && /gy/.test(String(eff.target)) && NV_TGT_RE.test(D(c).ps || D(c).tx || '');
 // a card whose own text puts it out of Necrovalley's reach (Rite of Spirit: "unaffected by Necrovalley"; Gravekeeper's Stele: "can't be
 // negated by the effect of Necrovalley")
@@ -121,7 +121,7 @@ function synProc(level, tunerF, nonF) {
 const thirdTurn = (g, p) => g.turnNo + (g.tp === p ? 5 : 4);
 
 // Cards the engine scripts that banish (for Imperial Iron Wall) or banish from / target the GY (for Necrovalley).
-const SC = n => E.SCRIPTS[n];
+const SC = n => E.lib.scByName(n);   // the format's script (Goat overrides)
 const effIs = (a, n, i) => nm(a.c) === n && SC(n) && SC(n).effs && SC(n).effs[i] === a.eff;
 const BANISHERS = ['Dark Armed Dragon', 'Allure of Darkness', 'Bottomless Trap Hole', 'Dimensional Prison', 'Blackwing - Vayu the Emblem of Honor',
   'Miracle Fusion', 'Gold Sarcophagus', 'Cyber Valley', 'Nobleman of Extermination', 'Macro Cosmos', 'D.D. Crow', 'Nobleman of Crossout', 'Book of Life'];
@@ -211,7 +211,7 @@ E.addScripts({
     after: (g, c, p) => { E.lib.lockBP(g, p); },   // the Battle Phase lock is the activation's: it holds when only its effect is negated (Trap Stun, Royal Decree)
     res: function* (g, c, p) { const cs = g.p[p].deck.filter(x => isMon(x) && race(x) === 'Warrior' && lv(x) <= 2); const [x] = yield* pick(g, p, 'Special Summon a Level 2 or lower Warrior from your Deck', cs, 1, 1, 'good'); if (x) ss(g, p, x); shuffleDeck(g, p); log(g, `${PN(g, p)} can't conduct the Battle Phase this turn.`); } }] },
   'Ultimate Offering': { effs: [{ type: 'act', res: function* (g) { touch(g); } },
-    { type: 'quick', loc: 'st', label: 'Pay 500: extra Normal Summon/Set',
+    { type: 'quick', loc: 'st', label: 'Pay 500: extra Normal Summon/Set', sameChain: true,   // "you can chain this effect to itself" (site ruling 1; pass2 edison-12)
       cond: (g, c, p) => E.lib.canPay(g, p, 500) && !g.inDS && !g.chain.some(L => L.c === c && L.eff.type === 'act') &&
         ((g.tp === p && ['main1', 'main2'].includes(g.phase)) || (g.tp !== p && g.phase === 'battle')) &&
         g.p[p].hand.some(x => canNS(x) && nsOk(g, p, x)),
@@ -300,17 +300,23 @@ E.addScripts({
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Destroy up to 2 cards', allField(g), 1, 2, 'bad'); },
       res: function* (g, c, p, L) { const ts = live(L), was = new Map(ts.map(x => [x, x.ctrl])); const ds = destroy(g, ts, { by: p });
         for (const q of [p, opp(p)]) { const n = ds.filter(x => was.get(x) === q).length; if (n && g.p[q].deck.length >= n && (yield* yn(g, q, `Draw ${n} card${n > 1 ? 's' : ''} (Kuraz)?`))) draw(g, q, n); } } }] },
-  // ENGINE: the engine never collects triggers or Ignition effects from the Field Zone (emit and activatable skip P.fz), so both
-  // effects below are written for loc 'fz' but do not run yet. A summon by this card's own effect is marked byGarden.
+  // A summon by this card's own effect is marked byGarden.
   'Black Garden': { effs: [{ type: 'act', res: function* (g) { touch(g); } },
     { type: 'trig', loc: 'fz', mand: true,
       on: (g, ev, c) => ev.type === 'summon' && !ev.byGarden && !g.gardenSS && ev.how !== 'flip' && faceUp(c),   // ruling 13: a Gemini Summon counts
-      res: function* (g, c, p, L) { const cs = L.ev.cs.filter(onField); for (const m of cs) if (faceUp(m)) { const A = atk(g, m); addMod(g, m, { set: Math.floor(A / 2), which: 'atk' }); log(g, `${name(m)}'s ATK was halved.`); }
-        if (cs.length) { const to = opp(cs[0].ctrl); const t = token(g, to, { n: 'Rose Token', a: 'DARK', r: 'Plant', lv: 2, atk: 800, def: 800 }, 'atk'); if (t) { log(g, `${PN(g, p)} Special Summoned a Rose Token to ${PN(g, to)}'s field.`); emit(g, { type: 'summon', cs: [t], how: 'special', p, byEffect: true, byGarden: true }); } } } },
+      // both players' monsters of one summon (Shallow Grave: ev.all) give each summoning player's opponent a Rose Token (archive, ruling 23);
+      // Garden's controller summons it (a Scapegoat lock stops it: ruling 11), owned by the player who summoned (ruling 24) (pass2 edison-13)
+      res: function* (g, c, p, L) { const cs = (L.ev.all || L.ev.cs).filter(onField); for (const m of cs) if (faceUp(m)) { const A = atk(g, m); addMod(g, m, { set: Math.floor(A / 2), which: 'atk' }); log(g, `${name(m)}'s ATK was halved.`); }
+        const ts = [];
+        for (const sp of [...new Set(cs.map(m => m.ctrl))]) { const to = opp(sp); const t = token(g, p, { n: 'Rose Token', a: 'DARK', r: 'Plant', lv: 2, atk: 800, def: 800 }, 'atk', { field: to, owner: sp }); if (t) { ts.push(t); log(g, `${PN(g, p)} Special Summoned a Rose Token to ${PN(g, to)}'s field.`); } }
+        if (ts.length) emit(g, { type: 'summon', cs: ts, how: 'special', p, byEffect: true, byGarden: true }); } },
     { type: 'ign', loc: 'fz', tags: { ss: 1, destroy: 1 }, label: 'Destroy Plants: revive a monster',
-      cond: (g, c, p) => { const s = fieldMons(g).filter(x => faceUp(x) && race(x) === 'Plant').reduce((a, x) => a + atk(g, x), 0); return g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && baseAtk(x) === s); },
+      // not while Garden can't be destroyed (ruling 15: Field Barrier)
+      cond: (g, c, p) => { if (has(g, c, 'noEffectDestroy')) return false; const s = fieldMons(g).filter(x => faceUp(x) && race(x) === 'Plant').reduce((a, x) => a + atk(g, x), 0); return g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && baseAtk(x) === s); },
       target: function* (g, c, p, L) { const s = fieldMons(g).filter(x => faceUp(x) && race(x) === 'Plant').reduce((a, x) => a + atk(g, x), 0); yield* tgt(g, p, L, 'Special Summon which monster from your GY?', g.p[p].gy.filter(x => isMon(x) && baseAtk(x) === s), 1, 1, 'good'); },
-      res: function* (g, c, p, L) { const t = L.t[0]; const pl = fieldMons(g).filter(x => faceUp(x) && race(x) === 'Plant'); const ds = destroy(g, [c, ...pl], { by: p }); /* face-up Plants only */ if (ds.length === pl.length + 1 && t && t.zone === 'gy' && !nvNeg(g, c)) { g.gardenSS = true; try { ss(g, p, t); } finally { g.gardenSS = false; } } } }] },
+      // the Plants' ATK as they are destroyed must still equal the target's (ruling 7: changed in the chain, nothing is summoned, but Garden
+      // and the Plants are still destroyed)
+      res: function* (g, c, p, L) { const t = L.t[0]; const pl = fieldMons(g).filter(x => faceUp(x) && race(x) === 'Plant'); const sum = pl.reduce((a, x) => a + atk(g, x), 0); const ds = destroy(g, [c, ...pl], { by: p }); /* face-up Plants only */ if (ds.length === pl.length + 1 && t && t.zone === 'gy' && baseAtk(t) === sum && !nvNeg(g, c)) { g.gardenSS = true; try { ss(g, p, t); } finally { g.gardenSS = false; } } } }] },
   // ENGINE: Field Zone Ignition effects are not offered by activatable() (see Black Garden), so this effect doesn't run yet.
   'Mausoleum of the Emperor': { effs: [{ type: 'act', res: function* (g) { touch(g); } },
     { type: 'ign', loc: 'fz', anyPlayer: true, label: 'Pay LP: summon without Tributes',
@@ -368,7 +374,8 @@ E.addScripts({
     res: function* (g, c, p) { if (c.zone !== 'gy') return; yield* search(g, p, x => nm(x) === 'Volcanic Shell', 'Add Volcanic Shell'); } }] },
   'Blaze Accelerator': { effs: [{ type: 'act', res: function* (g) { touch(g); } },
     { type: 'ign', loc: 'st', tags: { destroy: 1 }, label: 'Send a Pyro: destroy a monster',
-      cond: (g, c, p) => monsOf(g, opp(p)).length > 0 && g.p[p].hand.some(x => isMon(x) && race(x) === 'Pyro' && baseAtk(x) <= 500) && !g.chain.some(L => L.c === c),
+      // "You can't attack during the turn you activate this effect": not after an attack this turn (EDOPro's cost; pass2 edison-13)
+      cond: (g, c, p) => monsOf(g, opp(p)).length > 0 && g.p[p].hand.some(x => isMon(x) && race(x) === 'Pyro' && baseAtk(x) <= 500) && !g.chain.some(L => L.c === c) && !(g.atkTurn && g.atkTurn[p] === g.turnNo),
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Destroy which monster?', monsOf(g, opp(p)), 1, 1, 'bad'); addRule(g, (g2, a) => a.type === 'attack' && a.c.ctrl === p, { end: g.turnNo }); },
       res: function* (g, c, p, L) { const cs = g.p[p].hand.filter(x => isMon(x) && race(x) === 'Pyro' && baseAtk(x) <= 500); if (!cs.length) return; const [x] = yield* pick(g, p, 'Send which Pyro with 500 or less ATK to the GY?', cs, 1, 1, 'cost'); move(g, x, 'gy', { reason: 'effect' }); log(g, `${PN(g, p)} sent ${D(x).n} to the GY.`); destroy(g, live(L), { by: p, src: c }); } }] },
   'Destiny HERO - Plasma': {
@@ -408,14 +415,14 @@ E.addScripts({
     cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && race(x) === 'Psychic' && lv(x) <= 2),
     target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Special Summon which Level 2 or lower Psychics?', g.p[p].gy.filter(x => isMon(x) && race(x) === 'Psychic' && lv(x) <= 2), 1, nFreeM(g, p), 'good'); },
     res: function* (g, c, p, L) { if (nvNeg(g, c)) return; let s = 0; for (const t of L.t) if (t.zone === 'gy' && ss(g, p, t)) s += lv(t); if (s) damage(g, p, s * 300, { src: c, srcP: p }); } }] },
-  // The name is any card name in the pool (E.lib.declareName, 2026-11-28 audit). PARTIAL: using a declared card as Synchro or Fusion Material isn't blocked.
+  // The name is any card name in the pool (E.lib.declareName, 2026-11-28 audit); Fusion/Synchro Material blocked through the engine's 'material' forbid (E4e).
   'Prohibition': { effs: [{ type: 'act',
     target: function* (g, c, p, L) { const n = yield* E.lib.declareName(g, p, 'Declare a card name'); if (!n) return; L.data.n = n; log(g, `${PN(g, p)} declared ${L.data.n}.`); },
     // site rulings: copies already on the field when it resolves aren't affected (1); Special Summons from the Deck, GY or banished are
     // fine, only the hand and Extra Deck are blocked (4); no Flip Summon (11) (E4)
     res: function* (g, c, p, L) { if (onField(c) && L.data.n) { c.flags.prohibit = L.data.n; for (const x of allField(g)) if (D(x).n === L.data.n) x.flags.prohibitOk = c.u; touch(g); } } }],
     cont: { forbid: (g, src, a) => { const n = src.flags.prohibit; if (!n || !a.c || D(a.c).n !== n) return false; if (a.c.flags && a.c.flags.prohibitOk === src.u && onField(a.c)) return false;
-        if (a.type === 'activate' && a.c.zone === 'st') return false; if (a.type === 'ss') return ['hand', 'extra'].includes(a.c.zone); return ['activate', 'ns', 'set', 'setST', 'attack', 'pos', 'flip'].includes(a.type); },
+        if (a.type === 'activate' && a.c.zone === 'st') return false; if (a.type === 'ss') return ['hand', 'extra'].includes(a.c.zone); return ['activate', 'ns', 'set', 'setST', 'attack', 'pos', 'flip', 'material'].includes(a.type); },   // 'material': no Fusion/Synchro Material (site list, ruling 10)
       negates: (g, src, c) => !!src.flags.prohibit && D(c).n === src.flags.prohibit && c.zone === 'm' && c.flags.prohibitOk !== src.u } },
 
   /* ----- Alien ----- */

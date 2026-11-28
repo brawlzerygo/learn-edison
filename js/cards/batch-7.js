@@ -233,17 +233,21 @@ E.addScripts({
       cond: (g, c, p) => freeM(g, p) >= 0 && monsOf(g, p).some(x => faceUp(x) && lv(x) >= 5),
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Lower the Level of which monster?', monsOf(g, p).filter(x => faceUp(x) && lv(x) >= 5), 1, 1, 'good'); },
       res: function* (g, c, p, L) { const t = live(L)[0]; if (!t || !faceUp(t) || lv(t) <= 1) return; E.lib.lvAdd(g, t, -1); log(g, `${name(t)} is now Level ${lv(t)}.`); if (c.zone === 'gy') ss(g, p, c); } }] },
-  // PARTIAL: only offered after your Normal Summon; placing a counter instead of paying LP is not automated. 2026-11-28 audit, E4b: the
-  // counter is placed when the extra summon happens ("if successful"), and the extra summon is once per turn per player (site ruling 8).
+  // Every effect is continuous-like and starts no chain (rulings 1, 2, 10, 16). 2026-11-28 audit, E4e: the extra Normal Summon is the engine's
+  // cont.extraNS (a Psychic Normal or Tribute Summon, never a Set, before or after the standard one, once per turn per player even with a
+  // second Lab: rulings 4 to 8), its counter placed when that summon succeeds; the counter in place of an LP cost is cont.lpInstead (asked
+  // as a face-up Psychic monster you control activates an effect that pays LP; rulings 11 to 15).
   'Brain Research Lab': {
     // negated: all its Psychic Counters are removed (site ruling, Spell Canceller; pass2 edison-19)
     self: { onNegated: (g, c) => { if (c.flags.psy) { c.flags.psy = 0; g.seq++; log(g, 'Brain Research Lab\'s Psychic Counters were removed.'); } } },
+    cont: {
+      extraNS: { ok: (g, src, p, c) => src.ctrl === p && faceUp(src) && !negd(g, src) && race(c) === 'Psychic' && !(g.brlUsed && g.brlUsed[p] === g.turnNo),
+        use: (g, src, p) => { (g.brlUsed = g.brlUsed || {})[p] = g.turnNo; g.brlPend = { p, u: src.u, turn: g.turnNo }; log(g, `${PN(g, p)} used Brain Research Lab's extra Normal Summon.`); } },
+      lpInstead: { ok: (g, src, p, c) => src.ctrl === p && src.zone === 'fz' && faceUp(src) && !negd(g, src) && isMon(c) && onField(c) && faceUp(c) && c.ctrl === p && race(c) === 'Psychic',
+        text: (g, src, c) => `Place 1 Psychic Counter on Brain Research Lab instead of paying LP for ${name(c)}'s effect?`,
+        place: (g, src) => { src.flags.psy = (src.flags.psy || 0) + 1; g.seq++; log(g, `Brain Research Lab has ${src.flags.psy} Psychic Counter(s) (placed instead of paying LP).`); } } },
     effs: [{ type: 'act', res: function* () {} },
-      { type: 'ign', loc: 'fz', opt: true, label: 'Extra Normal Summon of a Psychic',
-        cond: (g, c, p) => g.ns[p] >= 1 && !(g.brlUsed && g.brlUsed[p] === g.turnNo) && g.p[p].hand.some(x => isMon(x) && race(x) === 'Psychic'),
-        res: function* (g, c, p) { if (!onField(c)) return; g.ns[p] = 0; (g.brlUsed = g.brlUsed || {})[p] = g.turnNo; g.brlPend = { p, u: c.u, turn: g.turnNo }; const t = g.turnNo;
-          addRule(g, (g2, a) => (a.type === 'ns' && a.p === p && race(a.c) !== 'Psychic') || (a.type === 'set' && a.p === p), { end: t });
-          log(g, `${PN(g, p)} can Normal Summon a Psychic monster once more this turn.`); } },
+      { type: 'ign', loc: 'fz', cond: () => false, res: function* () {} },   // (kept so the effect indexes don't move; the extra summon is cont.extraNS)
       { type: 'trig', loc: 'fz', res: function* () {}, on: (g, ev, c) => { const b = g.brlPend; if (b && b.u === c.u && b.turn === g.turnNo && ev.type === 'summon' && ev.p === b.p && ['normal', 'tribute'].includes(ev.how) && faceUp(c)) { g.brlPend = null; c.flags.psy = (c.flags.psy || 0) + 1; g.seq++; log(g, `Brain Research Lab has ${c.flags.psy} Psychic Counter(s).`); } return false; } },
       { type: 'trig', loc: 'any', mand: true, noChain: true, on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.snap && ev.snap.flags && ev.snap.flags.psy > 0,   // site ruling 1: none of its effects start a chain
         res: function* (g, c, p, L) { damage(g, L.ev.prevCtrl, 1000 * L.ev.snap.flags.psy, { src: c, srcP: L.ev.prevCtrl }); } }] },
@@ -276,7 +280,7 @@ E.addScripts({
           res: function* (g, c, p) { const e = relEq(g, c); if (e) destroy(g, [e], { by: p }); } },
         { type: 'trig', mand: true, on: (g, ev, c) => ev.type === 'damage' && ev.battle && ev.p === c.ctrl && g.battle && (g.battle.a === c || g.battle.t === c) && !!relEq(g, c),
           res: function* (g, c, p, L) { damage(g, opp(p), L.ev.n, { src: c, srcP: p }); } }] },
-  'Djinn Releaser of Rituals': { // PARTIAL: banishing it from the GY works with Black Illusion Ritual only (the engine's ritualSummon() uses hand and field)
+  'Djinn Releaser of Rituals': { // banished from the GY for any Ritual Summon (engine ritualCombos, RITGY_RE) and for Black Illusion Ritual (birPool)
     effs: [{ type: 'trig', loc: 'any', on: (g, ev, c) => {
       if (ev.type === 'move' && ev.c === c && ev.reason === 'ritual') { c.flags.ritGrp = ev.group; c.flags.ritBy = ev.by != null ? ev.by : g.tp; }
       else if (ev.type === 'summon' && ev.how === 'ritual' && c.flags.ritGrp === ev.group && ev.cs[0]) {

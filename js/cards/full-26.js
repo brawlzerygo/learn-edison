@@ -48,7 +48,7 @@ function matSets(preds, pool, limit = 12) {
   const seen = new Set(); return out.filter(m => { const k = m.map(c => c.u).sort().join(','); if (seen.has(k)) return false; seen.add(k); return true; });
 }
 function polyOptions(g, p, self) {
-  const pool = [...g.p[p].hand.filter(x => x !== self && isMon(x)), ...monsOf(g, p)];
+  const pool = [...g.p[p].hand.filter(x => x !== self && isMon(x)), ...monsOf(g, p)].filter(x => !L.matBlocked(g, x, 'fusion'));
   const out = [];
   for (const fx of g.p[p].extra) {
     if (D(fx).k !== 'fusion' || forbid(g, { type: 'ss', c: fx, p, how: 'fusion' })) continue;
@@ -157,6 +157,7 @@ E.addScripts({
       const [fx] = yield* pick(g, p, 'Fusion Summon which monster?', opts.map(o => o.fx), 1, 1, 'good'); if (!fx) return;
       const sets = opts.find(o => o.fx === fx).sets; let mats = sets[0];
       if (sets.length > 1) { const i = yield* choose(g, p, 'Use which Fusion Materials?', sets.map(s => s.map(matLabel).join(' + '))); mats = sets[i]; }
+      mats = yield* L.moreMats(g, p, fx, mats, [...g.p[p].hand.filter(x => x !== c && isMon(x)), ...monsOf(g, p)]);   // "1 or more" (Chimeratech Overdragon)
       const pi = yield* choose(g, p, `${D(fx).n}: which position?`, ['Attack Position', 'Defense Position']);
       const grp = g.group; for (const m of mats) move(g, m, 'gy', { reason: 'fusion', by: p, group: grp });
       log(g, `${PN(g, p)} sent ${mats.map(m => D(m).n).join(' + ')} to the GY as Fusion Material.`);
@@ -381,7 +382,7 @@ E.addScripts({
   'Roaring Ocean Snake': { effs: [] },
   // Mandatory, even with no cards in the opponent's hand (ruling).
   "Robbin' Goblin": { effs: [actNoop,
-    { type: 'trig', loc: 'st', mand: true, label: 'Random discard', on: (g, ev, c) => ev.type === 'damage' && ev.battle && ev.p !== c.ctrl && ev.src && ev.src.ctrl === c.ctrl && onField(ev.src),
+    { type: 'trig', loc: 'st', mand: true, label: 'Random discard', on: (g, ev, c) => ev.type === 'damage' && ev.battle && !ev.redirected && ev.p !== c.ctrl && ev.src && ev.src.ctrl === c.ctrl && onField(ev.src),   // not damage Amazoness Swords Woman redirected (Netrep)
       res: function* (g, c, p) { const h = g.p[opp(p)].hand; if (!h.length) return; const x = h[Math.floor(g.rnd() * h.length)]; move(g, x, 'gy', { reason: 'discard', by: p }); log(g, `${PN(g, opp(p))} discarded ${name(x)} at random.`); } }] },
   // Mandatory: shuffled back even when discarded as a cost (ruling).
   'Roc from the Valley of Haze': { effs: [{ type: 'trig', loc: 'gy', mand: true, label: 'Shuffle into the Deck',

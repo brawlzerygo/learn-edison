@@ -1,0 +1,477 @@
+{
+ "version": "draft-1, 2026-11-28",
+ "groups": [
+  {
+   "id": "advantage",
+   "name": "Advantage and consistency"
+  },
+  {
+   "id": "offense",
+   "name": "Offense and field presence"
+  },
+  {
+   "id": "removal",
+   "name": "Removal and disruption"
+  },
+  {
+   "id": "defense",
+   "name": "Defense and protection"
+  },
+  {
+   "id": "mechanic",
+   "name": "How the card works"
+  }
+ ],
+ "roles": [
+  {
+   "id": "searcher",
+   "group": "advantage",
+   "name": "Searcher",
+   "def": "Adds a specific card from your Deck to your hand, without drawing it, so you see your best cards more often. Players also call this tutoring.",
+   "ai": "Play it early, when the card it fetches has a use this turn or next. Pick the target by what the hand is missing (an answer, a starter, a boss).",
+   "examples": [
+    "Sangan",
+    "Reinforcement of the Army",
+    "Elemental HERO Stratos",
+    "Black Whirlwind"
+   ]
+  },
+  {
+   "id": "draw",
+   "group": "advantage",
+   "name": "Draw",
+   "def": "Puts more cards in your hand than it costs you to play it.",
+   "ai": "Play it as soon as it is safe, usually first in Main Phase 1, so the cards drawn can be used this turn. Choose discards (Graceful Charity) that feed the Graveyard plan.",
+   "examples": [
+    "Pot of Greed",
+    "Graceful Charity",
+    "Destiny Draw",
+    "Allure of Darkness"
+   ]
+  },
+  {
+   "id": "hand_disruption",
+   "group": "advantage",
+   "name": "Hand disruption",
+   "def": "Takes cards out of your opponent's hand, or lets you look at it, so they have fewer answers.",
+   "ai": "Use it before your big play to strip a hand trap or a Quick answer, or when the opponent's hand is small and every card counts. Remember what it saw.",
+   "examples": [
+    "Delinquent Duo",
+    "Confiscation",
+    "The Forceful Sentry",
+    "Mind Crush"
+   ]
+  },
+  {
+   "id": "floater",
+   "group": "advantage",
+   "name": "Floater",
+   "def": "A monster that replaces itself when it leaves the field, usually by Special Summoning another monster, so losing it costs you nothing. Players say it \"floats\" into the next one. Cards that replace themselves with a card in hand (Sangan) are counted here too.",
+   "ai": "Happy to trade it away: attack with it into a bigger monster, use it as a blocker or Tribute. Count its replacement when scoring a board where it dies.",
+   "examples": [
+    "Sangan",
+    "Dandylion",
+    "Elemental HERO Absolute Zero",
+    "Card Trooper"
+   ]
+  },
+  {
+   "id": "recruiter",
+   "group": "advantage",
+   "name": "Recruiter",
+   "def": "Special Summons a monster straight from your Deck to the field. Players say the card \"recruits\" that monster. Searching and recruiting both pull a chosen card out of the Deck; the difference is where it goes (hand or field).",
+   "ai": "Pick the monster it brings out for the plan (a Tuner, Tribute fodder, Chaos fuel, a Flip monster face-down). Count the extra body when planning Synchro, Tribute or Fusion plays.",
+   "examples": [
+    "Mystic Tomato",
+    "Lonefire Blossom",
+    "Reasoning",
+    "Rescue Cat"
+   ]
+  },
+  {
+   "id": "battle_recruiter",
+   "group": "advantage",
+   "parent": "recruiter",
+   "name": "Battle recruiter",
+   "def": "A kind of recruiter: when it's destroyed in battle, it Special Summons a small monster from your Deck. Losing it costs you nothing, and it thins the Deck.",
+   "ai": "Attack Position is fine; let it be attacked, or attack into a bigger monster on purpose. Every battle recruiter is also a floater.",
+   "examples": [
+    "Mystic Tomato",
+    "Giant Rat",
+    "Shining Angel",
+    "Pyramid Turtle"
+   ]
+  },
+  {
+   "id": "mill",
+   "group": "advantage",
+   "name": "Mill / Foolish",
+   "def": "Sends cards from your own Deck to your Graveyard, to fuel cards that work from there. A mill sends cards off the top of the Deck, so you don't choose them; a foolish (named after Foolish Burial) sends a card you pick.",
+   "ai": "Pick the card the Graveyard plan wants (a LIGHT or DARK for Chaos, a Plaguespreader for Synchros, Necro Gardna for defense). Value it higher when the deck has Graveyard payoffs.",
+   "examples": [
+    "Armageddon Knight",
+    "Dark Grepher",
+    "Foolish Burial",
+    "Card Trooper",
+    "Magical Merchant",
+    "Ryko, Lightsworn Hunter"
+   ]
+  },
+  {
+   "id": "recursion",
+   "group": "advantage",
+   "name": "Recursion",
+   "def": "Gets a used card back from the Graveyard, to your hand or into your Deck, so it can be used again. Players also say recycle or recover.",
+   "ai": "Fetch the best card in the Graveyard for this moment (often a draw Spell or a removal Spell). A Flip recursion monster goes face-down.",
+   "examples": [
+    "Magician of Faith",
+    "Sinister Serpent",
+    "Mask of Darkness",
+    "Pot of Avarice"
+   ]
+  },
+  {
+   "id": "revival",
+   "group": "advantage",
+   "name": "Revival",
+   "def": "Special Summons a monster from a Graveyard, yours or your opponent's. Players say they revive it.",
+   "ai": "Bring back the strongest monster in either Graveyard, or the one that sets up a Synchro, Tribute or Chaos summon. Hold it if neither Graveyard has a target worth a card.",
+   "examples": [
+    "Monster Reborn",
+    "Premature Burial",
+    "Call of the Haunted",
+    "Treeborn Frog"
+   ]
+  },
+  {
+   "id": "extender",
+   "group": "offense",
+   "name": "Extender",
+   "def": "Puts a monster on the field without using your Normal Summon, so you can make a bigger turn.",
+   "ai": "Use the free Summon first when it costs nothing (Cyber Dragon when the opponent has a monster), then the Normal Summon. Count it as extra Synchro or Tribute material.",
+   "examples": [
+    "Cyber Dragon",
+    "Blackwing - Gale the Whirlwind",
+    "Blackwing - Bora the Spear",
+    "Gorz the Emissary of Darkness"
+   ]
+  },
+  {
+   "id": "beatstick",
+   "group": "offense",
+   "name": "Beatstick",
+   "def": "A monster played mainly for its high ATK: it wins fights and pushes Life Point damage.",
+   "ai": "Summon it in Attack Position and attack monsters it beats. Don't attack into a face-down DEF it can't clear when a miss leaves it open.",
+   "examples": [
+    "Kycoo the Ghost Destroyer",
+    "Cyber Dragon",
+    "Blackwing - Shura the Blue Flame",
+    "Breaker the Magical Warrior"
+   ]
+  },
+  {
+   "id": "boss",
+   "group": "offense",
+   "name": "Boss monster",
+   "def": "A big payoff card that takes setup but can win the game on its own once it lands.",
+   "ai": "Save removal and Tributes to land it; protect it once it's out. Removal against it is worth more than against anything else.",
+   "examples": [
+    "Black Luster Soldier - Envoy of the Beginning",
+    "Chaos Sorcerer",
+    "Judgment Dragon",
+    "Dark Armed Dragon",
+    "Stardust Dragon"
+   ]
+  },
+  {
+   "id": "fodder",
+   "group": "offense",
+   "name": "Fodder",
+   "def": "A cheap body meant to be used up: Tributed, used as Synchro material or discarded for a cost.",
+   "ai": "First choice for Tributes, Synchro material and discard costs. Never worth a removal card.",
+   "examples": [
+    "Scapegoat",
+    "Treeborn Frog",
+    "Sinister Serpent",
+    "Dandylion"
+   ]
+  },
+  {
+   "id": "spot_monster",
+   "group": "removal",
+   "name": "Monster removal",
+   "def": "Gets rid of one monster: destroys it, banishes it, bounces it or sends it to the Graveyard.",
+   "ai": "Hold it for a real threat (a boss, a lock piece, a monster it can't beat in battle). Don't spend it on a monster a beatstick already beats.",
+   "examples": [
+    "Smashing Ground",
+    "Caius the Shadow Monarch",
+    "Snipe Hunter",
+    "Sakuretsu Armor",
+    "Ring of Destruction"
+   ]
+  },
+  {
+   "id": "spot_backrow",
+   "group": "removal",
+   "name": "Spell/Trap removal",
+   "def": "Gets rid of one Spell or Trap, usually a face-down one before it can be used.",
+   "ai": "Use it on the opponent's End Phase or right before attacking, on the card most likely to stop the play. Chain it to a Trap that's being activated so it's wasted.",
+   "examples": [
+    "Mystical Space Typhoon",
+    "Breaker the Magical Warrior",
+    "Dust Tornado",
+    "Twister"
+   ]
+  },
+  {
+   "id": "steal",
+   "group": "removal",
+   "name": "Steal",
+   "def": "Takes control of the opponent's monster, usually for a turn.",
+   "ai": "Take the biggest monster, attack with it, then use it up (Tribute, Synchro material, Chaos cost) so it never goes back.",
+   "examples": [
+    "Brain Control",
+    "Change of Heart",
+    "Snatch Steal",
+    "Mind Control"
+   ]
+  },
+  {
+   "id": "mass_removal",
+   "group": "removal",
+   "name": "Mass removal",
+   "def": "Clears several cards at once, punishing a player who puts too much on the field.",
+   "ai": "Wait until it hits two or more of the opponent's cards for one of yours. Don't overextend into it when the opponent may hold it.",
+   "examples": [
+    "Heavy Storm",
+    "Mirror Force",
+    "Torrential Tribute",
+    "Black Rose Dragon",
+    "Dark Armed Dragon"
+   ]
+  },
+  {
+   "id": "negation",
+   "group": "removal",
+   "name": "Negation",
+   "def": "Stops a card or a Summon as it happens.",
+   "ai": "Save it for the play that matters most (a boss Summon, a mass-removal card, a Pot of Greed in a tight game). Pay attention to its cost (Solemn's half LP).",
+   "examples": [
+    "Solemn Judgment",
+    "Magic Jammer",
+    "Seven Tools of the Bandit",
+    "Stardust Dragon",
+    "Trap Stun"
+   ]
+  },
+  {
+   "id": "hand_trap",
+   "group": "removal",
+   "name": "Hand trap",
+   "def": "Used straight from the hand, often on the opponent's turn, to stop an attack or a play.",
+   "ai": "Keep it in hand rather than Summoning it; count it as a hidden answer. Know its trigger (a direct attack, damage taken, a Graveyard effect).",
+   "examples": [
+    "Kuriboh",
+    "Gorz the Emissary of Darkness",
+    "Honest",
+    "Blackwing - Kalut the Moon Shadow",
+    "D.D. Crow"
+   ]
+  },
+  {
+   "id": "floodgate",
+   "group": "removal",
+   "name": "Floodgate",
+   "def": "A card that stays on the field and stops something for one or both players, like Special Summons, Graveyard effects or monster effects.",
+   "ai": "Play it when it hurts the opponent's deck more than yours; remove the opponent's first when it blocks your plan. Check your own plays against it before you Set it.",
+   "examples": [
+    "Royal Oppression",
+    "Necrovalley",
+    "Skill Drain",
+    "Gravity Bind",
+    "Jinzo"
+   ]
+  },
+  {
+   "id": "book",
+   "group": "removal",
+   "name": "Book / Blanket",
+   "def": "Flips a monster face-down; \"book\" is named after Book of Moon, and players also say \"blanket\". It stops an attack, shuts off a monster's effect for a turn or breaks up a Synchro or Tribute play, without removing the monster.",
+   "ai": "Use it at the key moment: on a boss before it attacks, in response to a Synchro or Tribute Summon, or on a face-up monster that blocks lethal. Don't treat it as removal: the monster flips back up.",
+   "examples": [
+    "Book of Moon",
+    "Tsukuyomi",
+    "Swords of Concealing Light"
+   ]
+  },
+  {
+   "id": "position_change",
+   "group": "removal",
+   "name": "Position change",
+   "def": "Switches a monster between Attack and Defense Position, without flipping it face-down. A low-DEF monster put in Defense can be run over, and an attacker put in Defense can't attack. Players have no special word for this, so the name just describes it.",
+   "ai": "Switch the opponent's biggest attacker to Defense before it attacks, or switch a monster to Attack Position so yours can run it over for damage.",
+   "examples": [
+    "Enemy Controller",
+    "Bite Shoes",
+    "Zero Gravity"
+   ]
+  },
+  {
+   "id": "buff",
+   "group": "offense",
+   "name": "Buff / Debuff",
+   "def": "Raises a monster's ATK or DEF (a buff, or boost) or lowers it (a debuff), for a turn or for as long as it stays, usually to win a battle.",
+   "ai": "Use it to swing a battle you'd otherwise lose, or to reach lethal. A temporary one is best held until the opponent commits to a battle; an Equip Spell goes on the monster that will attack this turn.",
+   "examples": [
+    "Shrink",
+    "Blackwing - Gale the Whirlwind",
+    "Blackwing - Kalut the Moon Shadow",
+    "Limiter Removal",
+    "Megamorph"
+   ]
+  },
+  {
+   "id": "burn",
+   "group": "removal",
+   "name": "Burn",
+   "def": "Deals damage to the opponent's Life Points without battle.",
+   "ai": "Count it toward lethal. Late in the game, burn that finishes the duel beats anything else.",
+   "examples": [
+    "Ring of Destruction",
+    "Lava Golem",
+    "Des Koala",
+    "Magic Cylinder"
+   ]
+  },
+  {
+   "id": "wall",
+   "group": "defense",
+   "name": "Stall / wall",
+   "def": "Keeps you alive while you set up: a high DEF, a monster that can't be beaten in battle, tokens that block, or an attack-stopping card.",
+   "ai": "Set it or put it in Defense Position. Never attack with it. Use attack stoppers on the opponent's biggest attack, not the first one.",
+   "examples": [
+    "Scapegoat",
+    "Spirit Reaper",
+    "Marshmallon",
+    "Thousand-Eyes Restrict",
+    "Waboku"
+   ]
+  },
+  {
+   "id": "protection",
+   "group": "defense",
+   "name": "Protection",
+   "def": "Keeps your own cards safe from removal or battle.",
+   "ai": "Keep it up behind a boss; play the threat first and protect it when it's targeted.",
+   "examples": [
+    "Stardust Dragon",
+    "Starlight Road",
+    "My Body as a Shield",
+    "Imperial Custom"
+   ]
+  },
+  {
+   "id": "flip",
+   "group": "mechanic",
+   "name": "Flip monster",
+   "def": "Its effect happens when it's flipped face-up, so it's played face-down.",
+   "ai": "Set it, never Summon it face-up for ATK (low-ATK ones like Magician of Faith). Flip it with a Flip Summon when the effect is useful now.",
+   "examples": [
+    "Magician of Faith",
+    "Old Vindictive Magician",
+    "Morphing Jar",
+    "Cyber Jar",
+    "Night Assailant"
+   ]
+  },
+  {
+   "id": "gy_effect",
+   "group": "mechanic",
+   "name": "Graveyard effect",
+   "def": "Does something when it goes to the Graveyard, or from inside it.",
+   "ai": "Don't fear losing it: trading it, discarding it or milling it is part of the plan. Keep Graveyard-banishing cards in mind (Macro Cosmos, D.D. Crow).",
+   "examples": [
+    "Sangan",
+    "Sinister Serpent",
+    "Plaguespreader Zombie",
+    "Necro Gardna",
+    "Treeborn Frog"
+   ]
+  },
+  {
+   "id": "tuner",
+   "group": "mechanic",
+   "name": "Tuner",
+   "def": "The monster you need for a Synchro Summon (Edison only). Its Level adds to the non-Tuners to reach the Synchro's Level.",
+   "ai": "Keep a Tuner alive for the Synchro you want; count Tuner plus non-Tuner Levels on the field and in reach before choosing summons.",
+   "examples": [
+    "Blackwing - Blizzard the Far North",
+    "Plaguespreader Zombie",
+    "Krebons",
+    "Junk Synchron"
+   ]
+  },
+  {
+   "id": "summon_enabler",
+   "group": "mechanic",
+   "name": "Fusion/Ritual enabler",
+   "def": "A card that lets you summon a Fusion or Ritual monster, often by sending other cards away.",
+   "ai": "Count the materials it needs before playing it; Metamorphosis wants a Level 1 or 2 (a Scapegoat token) for Thousand-Eyes Restrict in Goat.",
+   "examples": [
+    "Metamorphosis",
+    "Polymerization",
+    "Miracle Fusion",
+    "Instant Fusion"
+   ]
+  },
+  {
+   "id": "extra_deck",
+   "group": "mechanic",
+   "name": "Extra Deck monster",
+   "def": "A Fusion or Synchro monster summoned from the Extra Deck when its conditions are met.",
+   "ai": "Pick the one whose effect fits the board (removal, protection, a bigger body).",
+   "examples": [
+    "Stardust Dragon",
+    "Brionac, Dragon of the Ice Barrier",
+    "Thousand-Eyes Restrict",
+    "Chimeratech Fortress Dragon"
+   ]
+  },
+  {
+   "id": "support",
+   "group": "mechanic",
+   "name": "Support",
+   "def": "Helps one kind of card or one deck: it boosts, protects or fetches a named group (an archetype, a Type or an Attribute), or it powers up a monster as an Equip or Field Spell.",
+   "ai": "Value it by the cards it helps: high when the deck and board have them, near zero otherwise. Play Equip and Field Spells when they swing a battle or a lock this turn.",
+   "examples": [
+    "A Legendary Ocean",
+    "Machina Armored Unit",
+    "Zombie World",
+    "Necrovalley"
+   ]
+  }
+ ],
+ "engines": {
+  "def": "An engine is a small set of cards that work together and get added to many decks for what they do as a group. A card can belong to one; it is tagged on the card in addition to its roles.",
+  "list": {
+   "Chaos": "Goat (and Edison Chaos decks): LIGHT and DARK monsters in the Graveyard, used by Black Luster Soldier - Envoy of the Beginning and Chaos Sorcerer.",
+   "Destiny HERO": "Edison: Destiny HERO - Malicious, Disk Commander, Diamond Dude and Destiny Draw, for draws and quick DARK bodies.",
+   "Frog": "Edison: Swap Frog, Treeborn Frog, Substitoad, Dupe Frog and Ronintoadin, for endless Tribute fodder (Monarchs) and searching.",
+   "Lightsworn": "Edison: Lightsworn monsters, Solar Recharge and Charge of the Light Brigade, milling the Deck for Judgment Dragon and Necro Gardna.",
+   "Plant": "Edison: Lonefire Blossom, Dandylion, Spore, Glow-Up Bulb and friends, tokens and Tuners for Synchros.",
+   "Monarch": "Edison and Goat: Tribute monsters that remove a card when Tribute Summoned, with Treeborn Frog or Scapegoat-style fodder.",
+   "Blackwing": "Edison: Blackwing monsters that Special Summon each other and Synchro.",
+   "Gladiator Beast": "Edison: Gladiator Beasts that tag out after battle into others from the Deck.",
+   "Zombie": "Edison: Zombie Master, Goblin Zombie, Plaguespreader Zombie, Mezuki and Il Blud.",
+   "Dark World": "Edison: Dark World monsters with discard effects and their discard Spells.",
+   "Machina": "Edison: Machina Gearframe, Machina Fortress and Gadgets.",
+   "Gadget": "Goat and Edison: Green, Red and Yellow Gadget searching each other."
+  }
+ },
+ "format_notes": [
+  "Goat is slower and grinds for card advantage: floaters, recursion and draw are worth more, Scapegoat is a staple wall and Metamorphosis fodder, and the Chaos engine (LIGHT and DARK monsters in the Graveyard) shapes how the computer values milling and trades. No Synchros, so Tuner never applies.",
+  "Edison has Synchros: Tuners, extenders and fodder are worth more because two bodies on the field can become a Synchro. Hand traps (Gorz, Honest, Kalut, D.D. Crow) are common, so the computer must assume the opponent's hand can answer an attack.",
+  "Several cards change role by format. Sinister Serpent is a recursion card in Goat (discard fodder that comes back) and absent in Edison; Scapegoat is a wall in Goat and Synchro fodder in Edison; Dark Armed Dragon (Edison) is a boss and mass removal; Book of Moon is a tempo trick in both but also stops a Synchro play in Edison."
+ ],
+ "terms_note": "These role names are players' terms, not Konami's: no rulebook defines them. They follow how players use them (checked against Yugipedia's list of unofficial terms and its searcher list, 28 Nov 2026). Where usage varies, the definition says which meaning we use."
+}

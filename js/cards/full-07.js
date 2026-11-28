@@ -31,7 +31,7 @@ const canSS = (g, p, x) => !forbid(g, { type: 'ss', c: x, p, how: 'special' });
 
 /* Contact Fusions (the Neos Fusions): shuffle the named face-up monsters you control into the Deck. */
 function contactSets(g, p, preds) {
-  const pool = monsOf(g, p).filter(faceUp), out = [];
+  const pool = monsOf(g, p).filter(x => faceUp(x) && !L.matBlocked(g, x, 'fusion')), out = [];   // Prohibition
   const rec = (i, used) => { if (out.length > 6) return; if (i === preds.length) { out.push(used.slice()); return; } for (const x of pool) if (!used.includes(x) && preds[i](x)) { used.push(x); rec(i + 1, used); used.pop(); } };
   rec(0, []);
   const seen = new Set(); return out.filter(m => { const k = m.map(x => x.u).sort().join(','); if (seen.has(k)) return false; seen.add(k); return true; });
@@ -184,7 +184,7 @@ const S = {
     res: function* (g, c, p, L2) { if (!L2.data.mode) { damage(g, opp(p), 800, { src: c, srcP: p }); return; } const t = live(L2)[0]; if (t && faceUp(t) && def(g, t) <= 800) destroy(g, [t], { by: p, src: c }); } }] },
   // Doesn't target; materials are picked and banished on resolution.
   "Dragon's Mirror": { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => (freeM(g, p) >= 0 || monsOf(g, p).length > 0) && canFusion(g, p, { from: ['m', 'gy'], filter: fx => race(fx) === 'Dragon' }),
+    cond: (g, c, p) => (freeM(g, p) >= 0 || monsOf(g, p).length > 0) && canFusion(g, p, { from: ['m', 'gy'], banish: true, filter: fx => race(fx) === 'Dragon' }),
     res: function* (g, c, p) { yield* fusionSummon(g, p, { from: ['m', 'gy'], banish: true, filter: fx => race(fx) === 'Dragon' }); } }] },
   "Dragon's Rage": { cont: { grant: (g, src, c, flag) => flag === 'piercing' && c.ctrl === src.ctrl && faceUp(c) && isDragon(g, c) },
     effs: [{ type: 'act', res: function* () {} }] },

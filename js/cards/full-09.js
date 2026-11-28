@@ -65,10 +65,10 @@ const makesDiscard = c => { let t = txt(c).replace(/[^.:;]*;/g, ' ').replace(/by
 function stActsThisTurn(g, p) {
   let n = 0;
   for (const z of ['hand', 'deck', 'gy', 'ban', 'st']) for (const x of (g.p[p][z] || [])) {
-    if (!x || !isST(x)) continue; const sc = E.SCRIPTS[D(x).n]; if (!sc || !sc.effs) continue;
+    if (!x || !isST(x)) continue; const sc = E.lib.SC(x); if (!sc || !sc.effs) continue;
     if (sc.effs.some((e, i) => e.type === 'act' && x.used && x.used[i] === g.turnNo)) n++;
   }
-  if (g.p[p].fz) { const x = g.p[p].fz; const sc = E.SCRIPTS[D(x).n]; if (sc && sc.effs && sc.effs.some((e, i) => e.type === 'act' && x.used && x.used[i] === g.turnNo)) n++; }
+  if (g.p[p].fz) { const x = g.p[p].fz; const sc = E.lib.SC(x); if (sc && sc.effs && sc.effs.some((e, i) => e.type === 'act' && x.used && x.used[i] === g.turnNo)) n++; }
   return n;
 }
 

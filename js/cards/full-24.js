@@ -308,7 +308,7 @@ E.addScripts({
     effs: [{ type: 'trig', loc: 'any', res: noop, on: (g, ev, c) => {
       if (c.zone !== 'm' || !faceUp(c)) { c.f24mz = null; return false; }
       if (c.f24mz == null || negd(g, c)) { c.f24mz = c.ctrl; return false; }
-      if (c.ctrl !== c.f24mz && freeM(g, c.f24mz) >= 0) { const back = c.f24mz; takeControl(g, back, c, false); log(g, `Control of ${name(c)} can't switch: it went back to ${PN(g, back)}.`); }
+      if (c.ctrl !== c.f24mz && freeM(g, c.f24mz) >= 0) { const back = c.f24mz; if (takeControl(g, back, c, false)) log(g, `Control of ${name(c)} can't switch: it went back to ${PN(g, back)}.`); else c.f24mz = c.ctrl; }   // log only a real return (pass2 goat-07)
       return false; } }] },
   'Mazera DeVille': {
     proc: { label: 'Special Summon (Tribute Warrior of Zera, Pandemonium)',

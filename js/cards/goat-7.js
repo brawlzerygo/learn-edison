@@ -47,7 +47,8 @@ E.addScripts({
     { type: 'trig', loc: 'any', on: (g, ev, c) => { const s = lwState(g, c);
       if (s && s.t === g.turnNo && !s.hit && ev.type === 'move' && ev.wasField && ev.to === 'gy' && ev.snap && ev.snap.mon && ev.prevCtrl === s.p && ev.c.owner === s.p) s.hit = true;
       return false; }, res: function* () {} },
-    { type: 'trig', loc: 'gy', mand: true, tags: { ss: 1 }, label: 'Special Summon a monster with 1500 or less ATK',
+    // "you can": optional, so its controller orders it with other optional triggers (Netrep: Sangan; pass2 goat-06)
+    { type: 'trig', loc: 'gy', tags: { ss: 1 }, label: 'Special Summon a monster with 1500 or less ATK',
       on: (g, ev, c) => { const s = lwState(g, c); if (!s || s.t !== g.turnNo || !s.hit || s.fired) return false; s.fired = true; return true; },
       res: function* (g, c, p) { const s = lwState(g, c); const q = s ? s.p : p; if (s) delete g.lw7[c.u];
         const cs = freeM(g, q) >= 0 ? g.p[q].deck.filter(x => lwFrom(x) && L.canSS(g, q, x)) : [];

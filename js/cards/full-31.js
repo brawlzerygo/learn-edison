@@ -78,8 +78,8 @@ const eiSelfDestroy = { type: 'trig', mand: true, label: EI_SELF_LABEL,
   res: function* (g, c, p) { if (onField(c) && faceUp(c) && noFieldSpell(g)) { c.flags.selfDestroy = true; destroy(g, [c], { by: p }); } } };
 
 /* Djinn "of Rituals": noticed when the Djinn is used as a Ritual Tribute (move reason 'ritual') and the Ritual Monster arrives
- in the same group (as batch-7.js). ENGINE: ritualSummon() takes Tributes from the hand and field only, so banishing a Djinn
- from the GY as a Tribute isn't offered; a Djinn Tributed from the hand or field gives the same effect. */
+ in the same group (as batch-7.js). ritualSummon() also offers a Djinn in the GY, banished as 1 of the monsters (engine RITGY_RE,
+ 2026-11-28 audit, E4e); a Djinn Tributed from the hand or field gives the same effect. */
 const djinnTrack = apply => ({ type: 'trig', loc: 'any', res: noop, on: (g, ev, c) => {
   if (ev.type === 'move' && ev.c === c && ev.reason === 'ritual') c.f31rit = ev.group;
   else if (ev.type === 'summon' && ev.how === 'ritual' && c.f31rit != null && c.f31rit === ev.group && ev.cs[0]) { c.f31rit = null; apply(g, c, ev.cs[0]); g.seq++; }

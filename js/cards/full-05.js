@@ -112,7 +112,7 @@ E.addScripts({
     { type: 'quick', label: 'Pay 1000: negate the Normal Spell',
       cond: (g, c, p, x) => { const t = x.top; return !!(t && t.cardAct && isNormalSpell(t.c) && !t.negated) && E.lib.canPay(g, p, 1000); },
       cost: function* (g, c, p, L2) { pay(g, p, 1000); L2.data.L = g.chain[g.chain.length - 1]; },
-      res: function* (g, c, p, L2) { negLink(g, L2.data.L, p, false); } },
+      res: function* (g, c, p, L2) { const T = L2.data.L; if (!T || T.negated) return; T.negBy = p; E.lib.negate(g, T, false, { effect: true }); } },   // a lasting negation for a card that stays (Swords of Revealing Light: archive)
     { type: 'trig', loc: 'any', res: function* () {},
       on: (g, ev, c) => { if (killedHere(ev, c) && isEffectMon(ev.c) && (!onField(c) || !negd(g, c))) negKill(g, ev.c); return false; } }] },
   'Dark Blade the Dragon Knight': {

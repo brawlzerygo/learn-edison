@@ -173,6 +173,7 @@ E.addScripts({
   'House of Adhesive Tape': { effs: [{ type: 'act', tags: { destroy: 1 },
     cond: (g, c, p) => !!g.sw && E.lib.swOf(g, 1 - p).length > 0 && ['normal', 'tribute', 'flip'].includes(g.sw.how) && g.sw.cs.some(x => onField(x) && faceUp(x) && stat(g, x, 'def') <= 500),
     target: function* (g, c, p, L2) { L2.data.cs = g.sw.cs.slice(); },
+    destroys: (g, c, p, L2) => (L2.data.cs || []).filter(x => onField(x) && faceUp(x) && stat(g, x, 'def') <= 500),   // for My Body as a Shield (pass2 goat-08)
     res: function* (g, c, p, L2) { destroy(g, L2.data.cs.filter(x => onField(x) && faceUp(x) && stat(g, x, 'def') <= 500), { by: p, src: c }); } }] },
   'Huge Revolution': { effs: [{ type: 'act', tags: { destroy: 1 },
     cond: (g, c, p) => g.tp === p && ['main1', 'main2'].includes(g.phase) && ['People Running About', 'Oppressed People', 'United Resistance'].every(n => monsOf(g, p).some(x => faceUp(x) && named(x, n))),
@@ -401,7 +402,7 @@ E.addScripts({
     res: function* (g, c, p) { if (!callCoin(g, p)) return; const ms = monsOf(g, opp(p)); if (!ms.length) return;
       const [x] = yield* pick(g, p, 'Destroy which monster?', ms, 1, 1, 'bad'); if (x) destroy(g, [x], { by: p, src: c }); } }] },
   'Kuriboh': { cont: { loc: 'gy', dmg: (g, src, p, n, o) => o.battle && p === src.owner && g.battle && g.battle.kuriboh && g.battle.kuriboh.includes(p) ? 0 : n },
-    effs: [{ type: 'quick', loc: 'hand', ds: true, label: 'Discard: no battle damage',
+    effs: [{ type: 'quick', loc: 'hand', ds: true, dcalc: true, label: 'Discard: no battle damage',   // during damage calculation (Doomcaliber ruling 5)
       cond: (g, c, p) => g.inDS && !!g.battle && g.battle.a.ctrl !== p && !(g.battle.kuriboh && g.battle.kuriboh.includes(p)),
       cost: function* (g, c, p, L2) { L2.data.b = g.battle; move(g, c, 'gy', { reason: 'discard' }); log(g, `${PN(g, p)} discarded Kuriboh.`); },
       res: function* (g, c, p, L2) { const b = L2.data.b; if (b && g.battle === b) { (b.kuriboh || (b.kuriboh = [])).push(p); log(g, `${PN(g, p)} will take no battle damage from this battle.`); } } }] },

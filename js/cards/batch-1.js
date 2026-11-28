@@ -169,10 +169,10 @@ const S = {
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Destroy which face-up monster?', fieldMons(g).filter(x => faceUp(x) && !(x === c && c.flags.battleDoomed)), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { destroy(g, live(L2).filter(faceUp), { by: p }); } }] },
   'Super Polymerization': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => g.p[p].hand.some(x => x !== c) && g.p[p].extra.some(fx => D(fx).k === 'fusion' && fusionRecipe(fx) && assign(fusionRecipe(fx), fieldMons(g)) && !L.forbid(g, { type: 'ss', c: fx, p, how: 'fusion' })),
+    cond: (g, c, p) => g.p[p].hand.some(x => x !== c) && g.p[p].extra.some(fx => D(fx).k === 'fusion' && fusionRecipe(fx) && assign(fusionRecipe(fx), fieldMons(g).filter(x => !L.matBlocked(g, x, 'fusion'))) && !L.forbid(g, { type: 'ss', c: fx, p, how: 'fusion' })),
     cost: function* (g, c, p) { yield* discardN(g, p, 1, x => x !== c); },
     after: (g, c, p, L2) => { addRule(g, (g2, a) => a.type === 'activate' && g.chain.includes(L2), { end: g.turnNo }); },
-    res: function* (g, c, p) { const pool = fieldMons(g);
+    res: function* (g, c, p) { const pool = fieldMons(g).filter(x => !L.matBlocked(g, x, 'fusion'));   // Prohibition
       const fs = g.p[p].extra.filter(fx => D(fx).k === 'fusion' && fusionRecipe(fx) && assign(fusionRecipe(fx), pool)); if (!fs.length) return;
       const [fx] = yield* pick(g, p, 'Fusion Summon which monster?', fs, 1, 1, 'good'); if (!fx) return;
       const cs = allAssign(fusionRecipe(fx), pool); let mats = cs[0];
@@ -220,8 +220,8 @@ const S = {
     res: function* (g, c, p, L2) { const { a, b } = L2.data; if (a && a.zone === 'gy' && isZombie(a)) ss(g, p, a); if (b && b.zone === 'gy') { move(g, b, 'ban', { reason: 'effect', by: p }); if (b.zone === 'ban') log(g, `${name(b)} was banished.`); } } }] },
   'Foolish Burial': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].deck.some(isMon),
     res: function* (g, c, p) { yield* search(g, p, isMon, 'Send a monster from your Deck to the GY', 'gy'); } }] },
-  'Mind Control': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, opp(p)).length > 0 && freeM(g, p) >= 0,
-    target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Take control of which monster?', monsOf(g, opp(p)), 1, 1, 'bad'); },
+  'Mind Control': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, opp(p)).some(x => !E.lib.ctrlLocked(g, x)) && freeM(g, p) >= 0,
+    target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Take control of which monster?', monsOf(g, opp(p)).filter(x => !E.lib.ctrlLocked(g, x)), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (!t || t.ctrl === p) return; if (!takeControl(g, p, t, true)) return;
       t.flags.noTribute = true; t.flags.b1mc = g.turnNo; const u = t.u; addRule(g, (g2, a) => a.type === 'attack' && a.c.u === u, { end: g.turnNo }); } }, HOOK] },
   'Phoenix Wing Wind Blast': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].hand.length > 0 && fieldOf(g, opp(p)).some(x => pwwbOk(g, x)),

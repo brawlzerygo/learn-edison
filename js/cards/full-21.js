@@ -355,6 +355,8 @@ E.addScripts({
   'Eatgaboon': { effs: [{ type: 'act', tags: { destroy: 1 },
     cond: (g, c, p) => !!g.sw && E.lib.swOf(g, 1 - p).length > 0 && ['normal', 'tribute', 'flip', 'gemini'].includes(g.sw.how) && g.sw.cs.some(x => onField(x) && faceUp(x) && atk(g, x) <= 500),
     target: function* (g, c, p, L2) { L2.data.cs = g.sw.cs.slice(); },
+    // what it would destroy, for My Body as a Shield and the like (engine wouldDestroy can't read "the monster is destroyed"; pass2 goat-08)
+    destroys: (g, c, p, L2) => (L2.data.cs || []).filter(x => onField(x) && faceUp(x) && atk(g, x) <= 500),
     res: function* (g, c, p, L2) { destroy(g, L2.data.cs.filter(x => onField(x) && faceUp(x) && atk(g, x) <= 500), { by: p, src: c }); } }] },
   // A Trap Monster (L.trapMonster, 2026-11-28 audit): EARTH Reptile Level 4, 1600/1800, its S/T Zone kept.
   'Embodiment of Apophis': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => mainPhase(g) && freeM(g, p) >= 0,

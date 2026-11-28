@@ -100,7 +100,7 @@ function* ssFrom(g, p, filter, text, zones) {
 let GLASS_DEPTH = 0;
 function eqSum(g, m, which) {
   if (GLASS_DEPTH) return 0; GLASS_DEPTH++;
-  try { let s = 0; for (const e of allField(g)) { if (e.zone !== 'st' || e.equipTo !== m.u || !faceUp(e)) continue; const sc = E.SCRIPTS[D(e).n];
+  try { let s = 0; for (const e of allField(g)) { if (e.zone !== 'st' || e.equipTo !== m.u || !faceUp(e)) continue; const sc = E.lib.SC(e);
     if (sc && sc.cont && sc.cont[which]) s += sc.cont[which](g, e, m) || 0; } return s; }
   finally { GLASS_DEPTH--; }
 }

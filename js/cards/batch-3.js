@@ -50,7 +50,7 @@ function tagOut(self, n = 1, except = self) {
 // fd: face-down monsters you control count too (Gladiator Beast Gyzarus/Heraklinos/Gaiodiaz site rulings: "Face-up & face-down Fusion
 // Material Monsters you control may be used"); the Neos Fusions keep face-up only (no ruling says otherwise).
 function contactSets(g, p, preds, fd) {
-  const pool = fd ? monsOf(g, p) : monsOf(g, p).filter(faceUp), out = [];
+  const pool = (fd ? monsOf(g, p) : monsOf(g, p).filter(faceUp)).filter(x => !L.matBlocked(g, x, 'fusion')), out = [];   // Prohibition
   const rec = (i, used) => { if (out.length > 6) return; if (i === preds.length) { out.push(used.slice()); return; } for (const x of pool) if (!used.includes(x) && preds[i](x)) { used.push(x); rec(i + 1, used); used.pop(); } };
   rec(0, []);
   const seen = new Set(); return out.filter(m => { const k = m.map(x => x.u).sort().join(','); if (seen.has(k)) return false; seen.add(k); return true; });
@@ -419,14 +419,15 @@ E.addScripts({
       { type: 'trig', on: (g, ev, c) => { if (evSummoned(ev, c, ['tribute']) && ev.tribs) for (const t of ev.tribs) { const n = nm(t); if (n === 'Green Gadget') c.flags.green = true; if (n === 'Red Gadget') c.flags.red = true; if (n === 'Yellow Gadget') c.flags.yellow = true; } return false; }, res: function* () {} },
       { type: 'trig', mand: true, on: (g, ev, c) => c.flags.red && ev.type === 'damage' && ev.battle && ev.src === c && ev.p !== c.ctrl, res: function* (g, c, p) { damage(g, opp(p), 400, { src: c, srcP: p }); } },
       { type: 'trig', mand: true, on: (g, ev, c) => c.flags.yellow && battleKill(ev, c) && ev.prevCtrl !== c.ctrl, res: function* (g, c, p) { damage(g, opp(p), 600, { src: c, srcP: p }); } }] },
-  // "Cannot be Special Summoned": the engine's summoning-condition check (forbid, 2026-11-27) applies its text everywhere. PARTIAL: negation of a
-  // destroyed monster's GY Trigger Effects needs the engine (ENGINE: negating triggers in the GY). Flip effects are negated.
+  // "Cannot be Special Summoned": the engine's summoning-condition check (forbid, 2026-11-27) applies its text everywhere. "Negate the effects
+  // of a monster destroyed by battle with this card": a negation of the monster doomed in its battle that lasts for its visit to the GY
+  // (engine cont.negVisit, like Blade Knight), so its GY triggers activate and resolve negated (archive: "Effects that activate in Substep 7
+  // ... are negated (ex: Mystic Tomato)"; Doomcaliber Knight can answer them; pass2 edison-12); Flip effects in the battle are negated too.
   'Ancient Gear Beast': {
-    cont: { forbid: (g, src, a) => atkLock.forbid(g, src, a) || (a.type === 'activate' && a.c.zone === 'gy' && (g._agbNeg || []).includes(a.c.u)) },
+    cont: { forbid: (g, src, a) => atkLock.forbid(g, src, a),
+      negVisit: true, negates: (g, src, c) => c !== src && !!c.flags.battleDoomed && !!g.battle && ((g.battle.a === src && g.battle.t === c) || (g.battle.t === src && g.battle.a === c)) },
     effs: [{ type: 'trig', on: (g, ev, c) => {
         if (ev.type === 'afterCalc' && ev.t && (ev.a === c || ev.t === c)) { const o = ev.a === c ? ev.t : ev.a; if (o && o.flags.battleDoomed) o.flags.negated = true; }   // attacking or attacked (edison-12)
-        if (battleKill(ev, c)) (g._agbNeg = g._agbNeg || []).push(ev.c.u);
-        if (ev.type === 'move' && ev.from === 'gy' && g._agbNeg) g._agbNeg = g._agbNeg.filter(u => u !== ev.c.u);
         return false; }, res: function* () {} }] },
   'Terraforming': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].deck.some(x => isSpell(x) && D(x).sub === 'Field'),
     res: function* (g, c, p) { yield* search(g, p, x => isSpell(x) && D(x).sub === 'Field', 'Add a Field Spell'); } }] },

@@ -24,8 +24,11 @@ const burnText = c => { const t = (D(c).tx || '').replace(/[^.]*battle damage[^.
 
 // Barrel Behind the Door: the link's damage is certain and hits this player (rulings: not Barrel itself, not coin/dice effects like Time
 // Wizard or Dice Jar, only damage to YOUR LP; 2026-11-28 audit, E4b, goat-04)
+const barrelEff = x => { const d = D(x); if (d.k === 'effect' || d.k === 'trap') return true; return ['fusion', 'synchro'].includes(d.k) && (d.tx || '').split(/\r?\n/).filter(v => v.trim()).length > 1; };   // an Effect Monster (as full-19 isEffMon)
 const barrelOk = (t, p) => { const tx = String(D(t.c).ps || D(t.c).tx || ''); if (D(t.c).n === 'Barrel Behind the Door' || /\bcoin\b|\bdie\b|\bdice\b/i.test(tx)) return false;
-  if (/damage to (?:both|each)|(?:both|each) players? (?:take|takes)/i.test(tx)) return true; return t.p !== p ? /opponent/i.test(tx) : /damage to you\b|you take|inflict[^.]*damage to (?:you|its controller)|take[^.]*damage/i.test(tx); };
+  // damage counted "for each Effect Monster" that may come to 0 (Ceasefire with only face-down monsters or face-up Normal Monsters: archive)
+  if (/for each Effect Monster/i.test(tx) && t.c.g && !L.fieldMons(t.c.g).some(x => L.faceUp(x) && barrelEff(x))) return false;
+  if (/damage to (?:both|each)|(?:both|each) players? (?:take|takes)/i.test(tx)) return true; return t.p !== p ? /opponent/i.test(tx) : /damage to you\b|\byou take\b|\bcontroller takes\b|inflict[^.]*damage to (?:you\b|its controller)/i.test(tx); };   // "you" as a word: not "your opponent" (pass2 goat-07)
 E.addScripts({
   // No shared script. "Negate the effects of Flip Effect Monsters. Negate any Trap effects that target this card on the field,
   // and if you do, destroy that Trap Card."

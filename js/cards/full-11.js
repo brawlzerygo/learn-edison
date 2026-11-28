@@ -257,7 +257,7 @@ E.addScripts({
     res: function* (g, c, p) { damage(g, opp(p), 200 * g.p[p].gy.filter(isSpell).length, { src: c, srcP: p }); } }] },
   'Magical Hats': { effs: [
     { type: 'act', tags: { ss: 1 },
-      cond: (g, c, p) => g.tp !== p && g.phase === 'battle' && !g.inDS && monsOf(g, p).length > 0 && nFreeM(g, p) >= 2 && g.p[p].deck.filter(isST).length >= 2,
+      cond: (g, c, p) => g.tp !== p && g.phase === 'battle' && !g.inDS && monsOf(g, p).length > 0 && nFreeM(g, p) >= 2 && g.p[p].deck.filter(x => isST(x) && !E.lib.forbid(g, { type: 'ss', c: x, p, how: 'special', inCond: true })).length >= 2,   // the Spells/Traps are Special Summoned as monsters: summon locks apply (a Barrier Statue; pool review edison-h03)
       res: function* (g, c, p) {
         if (!monsOf(g, p).length || nFreeM(g, p) < 2) return;
         const [m] = yield* pick(g, p, 'Choose 1 monster you control', monsOf(g, p), 1, 1, 'good');

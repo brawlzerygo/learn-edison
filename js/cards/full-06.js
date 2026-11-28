@@ -465,7 +465,7 @@ E.addScripts({
 
 /* ----- helpers that need the scripts ----- */
 // PARTIAL (Double Spell): the shared script is used, also in Goat, where a goat-only script of the copied Spell isn't reachable.
-function scriptOf(c) { return E.SCRIPTS[D(c).n] || null; }
+function scriptOf(c) { return E.lib.SC(c); }
 function dsOk(g, c, p, x) {
   if (!isSpell(x) || named(x, 'Double Spell')) return false; const effs = (scriptOf(x) || {}).effs || []; const eff = effs.find(e => e.type === 'act'); if (!eff) return false;
   const sub = D(x).sub; const freeNeed = c.zone === 'hand' ? 2 : 1;

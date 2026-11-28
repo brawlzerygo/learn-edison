@@ -157,6 +157,7 @@ T('Last Will first, then a Tribute: summon from the Deck (2005 state, E2)', () =
   const g = duel({ board: [{ hand: ['Last Will'], m: ['Cannon Soldier', 'Giant Soldier of Stone'] }, {}] });
   act(g, 0, 'Last Will'); passAll(g);
   act(g, 0, 'Cannon Soldier'); choose(g, 'Giant Soldier');
+  if (g.prompt.type === 'yesno') E.act(g, ['y']);   // optional ("you can": pass2 goat-06)
   if (g.prompt.type === 'pick') E.act(g, [g.prompt.opts[0].key]); choose(g, 'Attack Position'); passAll(g);
   ok(g.p[0].m.filter(Boolean).length === 2, 'a 1500-or-less monster came from the Deck');
 });

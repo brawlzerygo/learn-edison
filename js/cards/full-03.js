@@ -297,6 +297,7 @@ E.addScripts({
     cond: (g, c, p) => E.lib.tribPool(g, p, { known: true }).some(x => race(x) === 'Dragon'),
     cost: function* (g, c, p, L2) { const [x] = yield* pick(g, p, 'Tribute 1 Dragon monster', E.lib.tribPool(g, p, { known: true }).filter(x => race(x) === 'Dragon'), 1, 1, 'cost'); if (!x) return;
       L2.data.n = faceUp(x) ? atk(g, x) : baseAtk(x); move(g, x, 'gy', { reason: 'cost', by: p }); log(g, `${PN(g, p)} Tributed ${D(x).n} (${L2.data.n} ATK).`); },
+    destroys: (g, c, p, L2) => fieldMons(g).filter(x => faceUp(x) && def(g, x) <= (L2.data.n || 0)),   // for My Body as a Shield (pass2 goat-08)
     res: function* (g, c, p, L2) { const n = L2.data.n || 0; destroy(g, fieldMons(g).filter(x => faceUp(x) && def(g, x) <= n), { by: p, src: c }); } }] },
   'Burst Return': { effs: [{ type: 'act',
     cond: (g, c, p) => monsOf(g, p).some(x => faceUp(x) && named(x, 'Elemental HERO Burstinatrix')) && fieldMons(g).some(x => faceUp(x) && isEHERO(x) && !named(x, 'Elemental HERO Burstinatrix')),
@@ -469,7 +470,7 @@ E.addScripts({
         addRule(g, (g2, a) => a.type === 'attack' && a.c.ctrl === p, { end: g.turnNo }); g.chainMaterial = { p, turn: g.turnNo };
         log(g, `${PN(g, p)} can't attack this turn and may banish Fusion Materials from the field, hand, Deck or GY.`);
         const poly = g.p[p].hand.find(x => named(x, 'Polymerization')); const from = ['m', 'hand', 'deck', 'gy'];
-        if (!poly || !(freeM(g, p) >= 0 || monsOf(g, p).length) || !canFusion(g, p, { from })) return;
+        if (!poly || !(freeM(g, p) >= 0 || monsOf(g, p).length) || !canFusion(g, p, { from, banish: true })) return;
         if (!(yield* yn(g, p, 'Use a Polymerization from your hand to Fusion Summon with Chain Material now?'))) return;
         move(g, poly, 'gy', { reason: 'effect' }); log(g, `${PN(g, p)} used Polymerization.`);
         const fx = yield* fusionSummon(g, p, { from, banish: true }); shuffleDeck(g, p); if (fx) fx.flags.chainMat = g.turnNo; } },

@@ -87,7 +87,7 @@ const holidayOff = which => (g, src, m) => {
   const hs = allField(g).filter(x => faceUp(x) && named(x, "The Emperor's Holiday")).sort((a, b) => a.u - b.u);
   if (hs[0] !== src) return 0;
   let v = 0; EH++;
-  try { for (const x of allField(g)) { if (x.zone !== 'st' || !faceUp(x) || !x.equipTo) continue; const sc = E.SCRIPTS[D(x).n];
+  try { for (const x of allField(g)) { if (x.zone !== 'st' || !faceUp(x) || !x.equipTo) continue; const sc = E.lib.SC(x);
     if (sc && sc.cont && !sc.cont.loc && sc.cont[which]) v -= sc.cont[which](g, x, m) || 0; } } finally { EH--; }
   return v;
 };

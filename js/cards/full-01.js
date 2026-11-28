@@ -73,7 +73,7 @@ function tagOut(self, n = 1, except = self, gbOnly = false) {
 // fd: face-down monsters you control count too (Gladiator Beast Gyzarus/Heraklinos/Gaiodiaz site rulings: "Face-up & face-down Fusion
 // Material Monsters you control may be used"); the Neos Fusions keep face-up only (no ruling says otherwise).
 function contactSets(g, p, preds, fd) {
-  const pool = fd ? monsOf(g, p) : monsOf(g, p).filter(faceUp), out = [];
+  const pool = (fd ? monsOf(g, p) : monsOf(g, p).filter(faceUp)).filter(x => !L.matBlocked(g, x, 'fusion')), out = [];   // Prohibition
   const rec = (i, used) => { if (out.length > 6) return; if (i === preds.length) { out.push(used.slice()); return; } for (const x of pool) if (!used.includes(x) && preds[i](x)) { used.push(x); rec(i + 1, used); used.pop(); } };
   rec(0, []);
   const seen = new Set(); return out.filter(m => { const k = m.map(x => x.u).sort().join(','); if (seen.has(k)) return false; seen.add(k); return true; });
@@ -297,18 +297,19 @@ E.addScripts({
         for (const [x, v] of [[a, B], [b, A]]) { g._amzSw.push({ u: x.u, old: x.flags.baseAtk, k, turn: g.turnNo }); x.flags.baseAtk = v; x.flags.amzSw = k; }
         log(g, `${name(a)} and ${name(b)} switched original ATK (${B} and ${A}).`); } },
     { type: 'trig', loc: 'any', on: (g, ev) => { if (ev.type === 'phase' && ev.ph === 'end' && g._amzSw && g._amzSw.length) { for (const s of g._amzSw) { const x = fieldMons(g).find(m => m.u === s.u); if (x && x.flags.amzSw === s.k) { if (s.old == null) delete x.flags.baseAtk; else x.flags.baseAtk = s.old; delete x.flags.amzSw; } } g._amzSw = []; } return false; }, res: function* () {} }] },
+  // damage it sends on is marked: it isn't sent back again (two Amazoness Swords Women: the controller of the higher-ATK one takes it, Netrep;
+  // pool review goat-h01: the redirect looped forever), and it doesn't trigger Robbin' Goblin (Netrep)
   'Amazoness Swords Woman': { effs: [], cont: { dmg: (g, src, p, n, o) => {
-    if (!(o && o.battle && p === src.ctrl && faceUp(src) && g.battle && (g.battle.a === src || g.battle.t === src))) return n;
+    if (!(o && o.battle && !o.redirected && p === src.ctrl && faceUp(src) && g.battle && (g.battle.a === src || g.battle.t === src))) return n;
     const q = opp(p), other = g.battle.a === src ? g.battle.t : g.battle.a;
     if (g.p[q].noBattleDamage === g.turnNo || (other && other.ctrl === q && faceUp(other) && has(g, other, 'noBattleDamage'))) return 0;
-    damage(g, q, n, { battle: true, src, srcP: p }); return 0; } } },
-  // PARTIAL: a second face-up Tiger is destroyed by the rule; with a control change the one that arrived later may not be the one destroyed.
+    return { redirect: q }; } } },
+  // "You can only control 1 face-up Amazoness Tiger": the engine's uniqueness rule (uniqBlocked, uniqSweep: a second one flipped by an attack
+  // goes after damage calculation, its ruling; pool review goat-h01), so no rule of its own
   'Amazoness Tiger': { self: { atk: (g, c) => 400 * monsOf(g, c.ctrl).filter(x => faceUp(x) && isAmz(x)).length },
-    cont: { forbid: (g, src, a) => (a.type === 'ns' || a.type === 'ss') && a.c !== src && a.p === src.ctrl && nm(a.c) === 'Amazoness Tiger',
+    cont: {
       grant: (g, src, c, flag) => flag === 'noAttackTarget' && c !== src && c.ctrl === src.ctrl && faceUp(c) && isAmz(c) },
-    effs: [{ type: 'trig', mand: true, label: 'Only 1 Amazoness Tiger',
-      on: (g, ev, c) => { if (c.flags.tigerSeq == null) c.flags.tigerSeq = ev.seq; return monsOf(g, c.ctrl).some(x => x !== c && faceUp(x) && nm(x) === 'Amazoness Tiger' && (x.flags.tigerSeq == null || x.flags.tigerSeq > c.flags.tigerSeq)); },
-      res: function* (g, c) { const xs = monsOf(g, c.ctrl).filter(x => x !== c && faceUp(x) && nm(x) === 'Amazoness Tiger' && (x.flags.tigerSeq == null || x.flags.tigerSeq > c.flags.tigerSeq)); destroy(g, xs, { rule: true }); } }] },
+    effs: [{ type: 'trig', on: () => false, res: function* () {} }] },   // (kept so the effect indexes don't move)
 
   /* ===== Ancient Gear ===== */
   'Ancient Crimson Ape': { effs: [{ type: 'trig', mand: true, label: 'Gain 1000 LP',

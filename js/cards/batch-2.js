@@ -277,10 +277,12 @@ E.addScripts({
       res: function* (g, c, p) { const x = yield* ssFromDeck(g, p, x => lv(x) === 4, 'Special Summon a Level 4 monster from your Deck'); if (x) addRule(g, (g2, a) => a.type === 'attack' && a.c === x, { end: g.turnNo }); } }] },
   'Rescue Cat': { effs: [
     { type: 'ign', tags: { ss: 1 }, label: 'Send to GY: summon 2 Beasts',
-      cond: (g, c, p) => nFreeM(g, p) + 1 >= 2 && g.p[p].deck.filter(x => isMon(x) && race(x) === 'Beast' && lv(x) <= 3 && E.lib.ssable(g, p, x)).length >= 2,
+      // Goat archive: it can be activated with 1 or 0 such Beasts in the Deck, summoning none, and the opponent checks the Deck (pass2
+      // goat-07); Edison's text and site ruling 4 need 2 ("You cannot activate this effect to only Summon 1 monster")
+      cond: (g, c, p) => E.format() === 'goat' || (nFreeM(g, p) + 1 >= 2 && g.p[p].deck.filter(x => isMon(x) && race(x) === 'Beast' && lv(x) <= 3 && E.lib.ssable(g, p, x)).length >= 2),
       cost: function* (g, c, p) { move(g, c, 'gy', { reason: 'cost' }); },
       res: function* (g, c, p) {
-        const cands = g.p[p].deck.filter(x => isMon(x) && race(x) === 'Beast' && lv(x) <= 3 && E.lib.ssable(g, p, x)); if (cands.length < 2 || nFreeM(g, p) < 2) { shuffleDeck(g, p); return; }
+        const cands = g.p[p].deck.filter(x => isMon(x) && race(x) === 'Beast' && lv(x) <= 3 && E.lib.ssable(g, p, x)); if (cands.length < 2 || nFreeM(g, p) < 2) { if (cands.length < 2) log(g, `${PN(g, opp(p))} checked ${PN(g, p)}'s Deck: fewer than 2 Level 3 or lower Beasts.`); shuffleDeck(g, p); return; }
         const xs = yield* pick(g, p, 'Special Summon 2 Level 3 or lower Beasts', cands, 2, 2, 'good');
         for (const x of xs) if (ssx(g, p, x, 'atk')) { x.flags.rescueEnd = g.turnNo; x.flags.rescueBy = c.u; }
         shuffleDeck(g, p); } },

@@ -191,7 +191,7 @@ E.addScripts({
   'Fusion Devourer': { cont: { atk: (g, src, c) => D(c).k === 'fusion' && battling(g, src, c) ? -99999 : 0 } },
   'Fusion Gate': { effs: [{ type: 'act', res: function* () {} },
     { type: 'ign', loc: 'fz', anyPlayer: true, tags: { ss: 1 }, label: 'Fusion Summon (banish the materials)',
-      cond: (g, c, p) => canFusion(g, p, { from: ['hand', 'm'] }),
+      cond: (g, c, p) => canFusion(g, p, { from: ['hand', 'm'], banish: true }),
       res: function* (g, c, p) { if (onField(c) && faceUp(c)) yield* fusionSummon(g, p, { from: ['hand', 'm'], banish: true }); } }] },
   // PARTIAL: "an effect that inflicts damage" is read from the card's text.
   'Fusion Guard': { effs: [{ type: 'act', cond: (g, c, p, x) => dmgLink(x.top),

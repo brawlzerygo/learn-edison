@@ -165,8 +165,8 @@ T('Mass Driver burns for each Tribute', () => {
 });
 T('Mataza can\'t change control', () => {
   const g = duel({ board: [{ hand: ['Change of Heart'] }, { m: ['Mataza the Zapper'] }] });
-  act(g, 0, 'Change of Heart'); auto(g);
-  ok(on(g, 1, 'Mataza the Zapper'), 'Mataza stays with B');
+  const ch = g.p[0].hand.find(c => E.name(c) === 'Change of Heart');
+  ok(!g.prompt.opts.some(o => o.key.startsWith('a:' + ch.u + ':')) && on(g, 1, 'Mataza the Zapper'), 'Mataza stays with B: Change of Heart can\'t be used on it (its ruling; pass2 goat-07)');
 });
 T('Mazera DeVille: summoned from Warrior of Zera, discards 3', () => {
   const g2 = duel({ board: [{ hand: ['Pandemonium', 'Mazera DeVille'], m: ['Warrior of Zera'], turn: 2 }, { hand: [FILL, FILL, FILL, FILL] }] });
