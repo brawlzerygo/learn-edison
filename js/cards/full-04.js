@@ -191,7 +191,7 @@ E.addScripts({
   'Curse of Anubis': { effs: [{ type: 'act',
     res: function* (g, c, p) {
       const ms = fieldMons(g).filter(m => faceUp(m) && isEffMon(m)); if (!ms.length) return;
-      for (const m of ms) { if (m.pos === 'atk') { m.pos = 'def'; g.seq++; emit(g, { type: 'pos', c: m, p: m.ctrl }); } addMod(g, m, { def: -num(D(m).def), end: true }); }
+      for (const m of ms) { if (m.pos === 'atk') { m.pos = 'def'; g.seq++; emit(g, { type: 'pos', c: m, p: m.ctrl }); } addMod(g, m, { base: 0, which: 'def', end: true }); }   // its original DEF becomes 0 (the base layer: Ojama Country ruling 6, pass2 edison-19)
       const us = new Set(ms.map(m => m.u)); addRule(g, (g2, a) => a.type === 'pos' && a.c && us.has(a.c.u), { end: g.turnNo });
       log(g, 'Every face-up Effect Monster is in Defense Position with 0 original DEF this turn.'); } }] },
   // The 1000 damage comes right after the Spell is activated, with no chain (Edison rulings). Seen through the Spell's own

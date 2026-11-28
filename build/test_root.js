@@ -61,6 +61,7 @@
 // 122- (Group E4 part 3, 2026-11-28 audit): Soul Exchange targets in every Tribute pick; Tributes that lift a summon lock (Consecrated Light,
 //   The Last Warrior); player-chosen Ojama zones; Chain Energy, Gearfried, Last Turn's later step; one trigger per event group; Light of
 //   Intervention; Goat Dark Magician of Chaos; Lightsworn own chains and the hand limit; and the pass 2 FAILs (see each guard).
+// AI1. The computer Sets low-ATK Flip monsters instead of Normal Summoning them face-up (benzi_family), at every level.
 const { E, C } = require('./load')();
 const id = n => { const c = C.find(x => x.n === n); if (!c) throw new Error('no card ' + n); return c.id; };
 const FILL = 'Gene-Warped Warwolf';
@@ -1102,7 +1103,7 @@ T('88. A monster already destroyed by battle isn\'t destroyed again by an effect
   const g2 = duel([{ m: ['Cyber Dragon'] }, {}]); const cd = fld(g2, 0, 'Cyber Dragon'); cd.flags.battleDoomed = true;
   ok(!E.lib.destroy(g2, [cd], { by: 1 }).length && E.onField(cd), 'a battle-doomed monster is skipped by an effect\'s destroy');
   const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/cards/' + f), 'utf8');
-  ok(/snap\.batk/.test(src('full-07.js')) && /killerAtk/.test(src('batch-7.js')), 'Flame Wingman reads the original ATK from the snapshot, Zoma the killer\'s ATK at the battle');
+  ok(/snap\.batk/.test(src('goat-3.js')) && /killerAtk/.test(src('batch-7.js')), 'Goat Flame Wingman reads the original ATK from the snapshot (Edison reads it in the GY: guard 138a plays both), Zoma the killer\'s ATK at the battle');
 });
 
 T('89. An effect whose rulings allow it can be activated again in the same chain (Horus the Black Flame Dragon LV8 negating two Spells)', () => {
@@ -1262,7 +1263,7 @@ T('103. Card fixes (edison-14 to 21): Codarus leaves a target you took; Koa\'ki 
   const g = duel([{ m: ['Fortune Lady Fire'], turn: 1 }, {}]); const fl = fld(g, 0, 'Fortune Lady Fire'); fl.flags.lv = 12;
   const n0 = g.log.length; toTurnOf(g, 0);
   ok(g.turnNo === 3 && !g.log.slice(n0).some(l => /activated Fortune Lady Fire's effect/.test(l)), 'Fortune Lady Fire at Level 12: no Standby Phase chain link');
-  ok(/c\.flags\.hpbT = ev\.t/.test(src('batch-7.js')) && /damage\(g, opp\(c\.owner\), n/.test(src('batch-7.js')) && /noCtrlSwitch'\)\)\) \{ log\(g, 'Control of those monsters/.test(src('batch-7.js')) && /L\.data\.n = t && name\(t\)/.test(src('batch-7.js')), 'HPB, Zoma, Creature Swap, Machine Duplication');
+  ok(/hpbRec \|\| \(g\.hpbRec = \{\}\)\)\[c\.u\] = \{ t: ev\.t/.test(src('batch-7.js')) && /damage\(g, opp\(c\.owner\), n/.test(src('batch-7.js')) && /noCtrlSwitch'\)\)\) \{ log\(g, 'Control of those monsters/.test(src('batch-7.js')) && /L\.data\.n = t && name\(t\)/.test(src('batch-7.js')), 'HPB, Zoma, Creature Swap, Machine Duplication');
 });
 
 T('104. Goat card fixes: Dream Clown only from Attack to Defense; Dark Master - Zorc resolves after leaving the field; Mirror Wall in the Damage Step; Swords of Revealing Light counts under Imperial Order; Serial Spell doesn\'t stay; Last Turn\'s win check; Book of Life and Dark Blade under Kycoo', () => {
@@ -1650,6 +1651,677 @@ T('136. Pass 2 one-card fixes: Rivalry of Warlords isn\'t a blanket summon lock;
   const src = f => require('fs').readFileSync(require('path').join(__dirname, '../js/' + f), 'utf8');
   ok(/L\.canTarget\(g, m, \{ c, p, eff: \{ type: 'act' \}, cardAct: true \}\)/.test(src('cards/full-06.js')) && /cardAct: true \}\)\),/.test(src('cards/classic-4.js')), 'De-Fusion checks canTarget');
   ok(/'Night Assailant': \{ effs: \[\n    \{ type: 'trig', mand: true, faceDownOk: true, tags: \{ destroy: 1 \}, on: \(g, ev, c\) => ev\.type === 'flip' && ev\.c === c,   \/\//.test(src('cards/batch-3.js')), 'Night Assailant: no cond');
+});
+
+T('AI1. The computer Sets low-ATK Flip monsters (benzi_family: it Normal Summoned them face-up every time, Goat and Edison, every level)', () => {
+  const L = require('./load')({ ai: true }), AIx = L.AI, Ex = L.E;
+  const mk = () => ({ name: 't', main: Array(40).fill(id(FILL)), extra: [] });
+  const dz = hd => Ex.newDuel({ decks: [mk(), mk()], first: 0, seed: 1, noShuffle: true, names: ['A', 'B'], board: [{ hand: hd, turn: 3 }, {}] });
+  for (const n of ['Magician of Faith', 'Man-Eater Bug', 'Cyber Jar', 'Morphing Jar']) {
+    if (!C.some(x => x.n === n)) continue;
+    for (const lv of AIx.LEVELS) {
+      let faceUp = 0;
+      for (let i = 0; i < (lv === 'beginner' ? 40 : 3); i++) {
+        const g = dz([n]); const u = g.p[0].hand.find(c => Ex.name(c) === n).u;
+        const k = AIx.decide(g, 0, lv); if (k[0] === 'ns:' + u) faceUp++;
+      }
+      ok(!faceUp, `${n} (${lv}): never Normal Summoned face-up`);
+    }
+  }
+  const g = dz(['Dekoichi the Battlechanted Locomotive']);
+  ok(!!opt(g, /^Normal Summon ns:/) && !!opt(g, /^Set face-down set:/), 'Dekoichi (1400) can still be Summoned or Set (situational)');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../js/ai.js'), 'utf8');
+  ok(/const isFlipMon = d => !!\(d && \(d\.flip \|\| /.test(src), 'Flip monsters found by the flip flag (Goat data) or the Flip Effect ability (Edison data)');
+  ok(/cardValue\(g, c, true\) \* 0\.9 \+ \(isFlipMon\(E\(\)\.data\(c\)\) \? FLIP_WORTH : 0\)/.test(src), 'a Set Flip monster keeps its Flip effect\'s worth');
+});
+
+
+/* ----- 137-145 (fixer E4d, 2026-11-28): Wave 2, Group E4 part 4 ----- */
+T('137. Jinzo\'s summon can be negated by Horn of Heaven and Solemn Judgment (ruling 1: its trap lock starts once it is summoned); then Trap Hole can\'t be activated (pass2 edison-s01)', () => {
+  let g = duel([{ turn: 3, hand: ['Jinzo'], m: [FILL] }, { st: [{ n: 'Horn of Heaven', pos: 'set' }], m: [FILL] }]);
+  act(g, /^Tribute Summon/); let seen = drive(g, { respond: respondWith(g, 1, 'Horn of Heaven') });
+  ok(g.p[0].gy.some(c => E.name(c) === 'Jinzo') && !fld(g, 0, 'Jinzo'), 'Horn of Heaven negates Jinzo\'s Tribute Summon');
+  g = duel([{ turn: 3, m: [{ n: 'Jinzo', pos: 'set' }] }, { st: [{ n: 'Solemn Judgment', pos: 'set' }] }]);
+  act(g, /Flip/); drive(g, { respond: respondWith(g, 1, 'Solemn Judgment') });
+  ok(g.p[0].gy.some(c => E.name(c) === 'Jinzo') && g.p[1].lp === 4000 && !g.log.some(l => /negated by Jinzo/.test(l)), 'Solemn Judgment negates Jinzo\'s Flip Summon (B paid half, no "negated by Jinzo")');
+  g = duel([{ turn: 3, hand: ['Jinzo'], m: [FILL] }, { st: [{ n: 'Trap Hole', pos: 'set' }] }]);
+  act(g, /^Tribute Summon/); let th = false; drive(g, { respond: pr => { if (pr.p === 1 && pr.opts.some(o => /Trap Hole/.test(o.label))) th = true; return 'pass'; } });
+  ok(!!fld(g, 0, 'Jinzo') && !th, 'once Jinzo is summoned, Trap Hole is not offered');
+});
+/* ----- 138a-c (fixer E4d, 2026-11-28): the source-only checks of guards 66-98 played on the engine (a regex on the script passed while Blade Knight was broken) ----- */
+// drive like drive(), answering every pick with the options whose label matches re (first options otherwise); respond(pr) as in drive; P: the engine
+const gDrive = (g, re, respond, P = E) => { for (let i = 0; i < 60 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt;
+  if (pr.type === 'respond') P.act(g, [(respond && respond(pr)) || 'pass']); else if (pr.type === 'yesno') P.act(g, ['y']);
+  else { const m = pr.opts.filter(o => re.test(o.label)); P.act(g, (m.length >= (pr.min || 1) ? m : pr.opts).slice(0, pr.min || 1).map(x => x.key)); } } };
+// both formats: [name, engine, new duel]; gFind/gActU work on either engine
+const gFmts = () => { const gx = goatEngine(); return [['Edison', E, duel], ['Goat', gx.G, gx.mk]]; };
+const gId = (P, n) => P.cards().find(x => x.n === n).id;
+const gFind = (P, g, p, n) => P.fieldOf(g, p).find(c => P.name(c) === n) || g.p[p].hand.find(c => P.name(c) === n);
+const gActU = (P, g, c) => P.act(g, [g.prompt.opts.find(o => o.key.startsWith('a:' + c.u + ':')).key]);
+// a Skill Drain applies for a moment, then leaves (the opponent's)
+const gSkillDrain = (P, g) => { const sd = g.p[1].deck[0]; sd.id = gId(P, 'Skill Drain'); P.lib.move(g, sd, 'st', { pos: 'up' }); P.lib.emit(g, { type: 'probe' }); P.lib.destroy(g, [sd], { by: 0 }); };
+// an Edison duel with an Extra Deck for player A
+const duelEx = (b, ex) => E.newDuel({ decks: [{ name: 't', main: Array(40).fill(id(FILL)), extra: ex.map(id) }, { name: 't', main: Array(40).fill(id(FILL)), extra: [] }], first: 0, seed: 1, noShuffle: true, names: ['A', 'B'], board: b });
+
+T('138a. Played on the engine: Deck Devastation Virus\'s length, Flamvell Uruquizas and Dark End Dragon (own changes, face-up at resolution), Sangan and "?" ATK, Shrink on a Gorz Token, King Tiger Wanghu, Mystic Tomato', () => {
+  // 607 Deck Devastation Virus: until the end of the victim's 3rd turn, the activation turn counting (ruling 4)
+  const crowAt = (g, p, t) => { g.turnNo = t; const d = g.p[p].deck[g.p[p].deck.length - 1]; d.id = id('D.D. Crow'); E.lib.draw(g, p, 1); return d.zone === 'gy'; };
+  let g = duel([{ hand: [FILL] }, { m: ['Dark Magician'], st: [{ n: 'Deck Devastation Virus', pos: 'set' }] }]);
+  act(g, new RegExp('ns:' + hand(g, FILL).u)); drive(g, { respond: respondWith(g, 1, 'Deck Devastation Virus') });
+  let T0 = g.turnNo;
+  ok(g.log.some(l => /activated Deck Devastation Virus/.test(l)) && crowAt(g, 0, T0 + 4) && !crowAt(g, 0, T0 + 5), 'DDV activated on the victim\'s turn T: a draw on T+4 (their 3rd turn) is destroyed, one on T+5 isn\'t');
+  g = duel([{ m: ['Dark Magician'], st: [{ n: 'Deck Devastation Virus', pos: 'set' }], turn: 2 }, {}]);
+  actU(g, g.p[0].st[0]); drive(g); T0 = g.turnNo;
+  ok(crowAt(g, 1, T0 + 5) && !crowAt(g, 1, T0 + 6), 'DDV activated on your own turn T: their draw on T+5 is destroyed, one on T+6 isn\'t');
+  // 639 Uruquizas / Dark End Dragon: the change is their own, lost for good once negated
+  g = duel([{ m: ['Dark End Dragon'], turn: 2 }, { m: ['Sangan'], st: [{ n: 'Skill Drain', pos: 'set' }] }]);
+  const ded = fld(g, 0, 'Dark End Dragon'); actU(g, ded); drive(g);
+  const dedAfter = E.atk(g, ded); let sd = g.p[1].st.find(Boolean); sd.pos = 'up'; E.lib.emit(g, { type: 'pos', c: sd, p: 1 });
+  const dedSD = E.atk(g, ded); E.lib.move(g, sd, 'gy', { reason: 'effect' });
+  ok(dedAfter === 2100 && dedSD === 2600 && E.atk(g, ded) === 2600, `Dark End Dragon's -500 is gone under Skill Drain and stays gone after it leaves (${dedAfter}, ${dedSD}, ${E.atk(g, ded)})`);
+  g = duel([{ m: ['Flamvell Uruquizas'], turn: 2 }, { st: [{ n: 'Skill Drain', pos: 'set' }] }]);
+  const uq = fld(g, 0, 'Flamvell Uruquizas'); act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + uq.u + ':d')); drive(g);
+  const uqAfter = E.atk(g, uq); sd = g.p[1].st.find(Boolean); sd.pos = 'up'; E.lib.emit(g, { type: 'pos', c: sd, p: 1 });
+  const uqSD = E.atk(g, uq); E.lib.move(g, sd, 'gy', { reason: 'effect' });
+  ok(uqAfter === 2400 && uqSD === 2100 && E.atk(g, uq) === 2100, `Uruquizas's +300 from its battle damage is gone under Skill Drain for good (${uqAfter}, ${uqSD}, ${E.atk(g, uq)})`);
+  // 1190 Dark End Dragon turned face-down in response: nothing is sent
+  g = duel([{ m: ['Dark End Dragon'], turn: 2 }, { m: ['Sangan'], st: [{ n: 'Book of Moon', pos: 'set' }] }]);
+  const ded2 = fld(g, 0, 'Dark End Dragon'); actU(g, ded2); drive(g, { respond: respondWith(g, 1, 'Book of Moon') });
+  ok(ded2.pos === 'set' && !!fld(g, 1, 'Sangan'), 'Dark End Dragon turned face-down by Book of Moon in response: Sangan isn\'t sent to the GY');
+  // 661 Sangan: a "?" ATK isn't 1500 or less in the Deck (both formats)
+  for (const [F, P, mk] of gFmts()) {
+    const h = mk([{ m: ['Sangan'], hand: ['Dark Hole'] }, {}]); h.p[0].deck.forEach((c, i) => { c.id = gId(P, i % 2 ? 'Maju Garzett' : 'Gren Maju Da Eiza'); });
+    gActU(P, h, gFind(P, h, 0, 'Dark Hole')); gDrive(h, /./, null, P);
+    ok(h.log.some(l => /activated Sangan's effect/.test(l)) && !h.p[0].hand.some(c => /Maju/.test(P.name(c))), `${F}: Sangan with only "?" ATK monsters in the Deck adds nothing`);
+  }
+  // 677 Shrink on a Gorz Token: its "?" original ATK is 0
+  g = duel([{ m: ['Cyber Dragon'], hand: ['Shrink'], turn: 2 }, { hand: ['Gorz the Emissary of Darkness'] }]);
+  const cd = fld(g, 0, 'Cyber Dragon'); act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + cd.u + ':d')); drive(g);
+  const tk = fld(g, 1, 'Emissary of Darkness Token');
+  act(g, /^End Battle|endbp/); passAll(g); actU(g, hand(g, 'Shrink')); gDrive(g, /Token/);
+  ok(tk && E.atk(g, tk) === 0 && E.atk(g, cd) === 2100, `Shrink on the 2100 ATK Emissary of Darkness Token makes it 0 (${tk && E.atk(g, tk)})`);
+  // 770 King Tiger Wanghu: its own summon counts, and the whole summon is destroyed
+  g = duel([{ hand: ['King Tiger Wanghu'] }, { fz: 'Ojama Country', m: ['Ojama Yellow'] }]);
+  act(g, new RegExp('ns:' + hand(g, 'King Tiger Wanghu').u)); drive(g);
+  ok(gyOf(g, 0, 'King Tiger Wanghu'), 'Wanghu Normal Summoned at 1000 ATK under Ojama Country destroys itself (ruling 6)');
+  for (const [F, P, mk] of gFmts()) {
+    const h = mk([{ st: [{ n: 'Return from the Different Dimension', pos: 'set' }], ban: ['King Tiger Wanghu', 'Sangan'], turn: 2 }, {}]);
+    gActU(P, h, h.p[0].st[0]); gDrive(h, /./, null, P);
+    ok(h.p[0].gy.some(c => P.name(c) === 'Sangan') && !!P.fieldOf(h, 0).find(c => P.name(c) === 'King Tiger Wanghu'), `${F}: Wanghu and Sangan summoned together: Sangan is destroyed, Wanghu stays (ruling 4)`);
+  }
+  // 790 Mystic Tomato: only monsters it can Special Summon count
+  for (const [F, P, mk] of gFmts()) for (const tsu of [true, false]) {
+    const atkr = F === 'Goat' ? 'Summoned Skull' : 'Cyber Dragon', h = mk([{ m: [atkr], turn: 2 }, { m: ['Mystic Tomato'] }]); h.p[1].deck.forEach(c => { c.id = gId(P, tsu ? 'Tsukuyomi' : 'Sangan'); });
+    const a = gFind(P, h, 0, atkr); P.act(h, ['bp']); gDrive(h, /./, null, P); P.act(h, ['atk:' + a.u + ':' + h.p[1].m.find(Boolean).u]); gDrive(h, /./, null, P);
+    const used = h.log.some(l => /activated Mystic Tomato/.test(l));
+    ok(tsu ? !used : used, `${F}: Mystic Tomato ${tsu ? 'with only Tsukuyomi in the Deck doesn\'t activate' : 'with Sangan in the Deck activates'}`);
+  }
+});
+
+T('138b. Played on the engine: Imperial Order\'s maintenance under Imperial Custom, Gravity Bind with Dimensional Prison, end-of-Battle-Phase effects, Slate Warrior, Aslla piscu, Flame Wingman and Zoma, Greenkappa, Mokey Mokey King', () => {
+  // 916 Imperial Order not paid: destroyed by the rule, so Imperial Custom doesn't save it
+  let g = duel([{ st: [{ n: 'Imperial Order', pos: 'up' }, { n: 'Imperial Custom', pos: 'up' }] }, {}]); g.p[0].lp = 500;
+  toTurnOf(g, 1);
+  ok(gyOf(g, 0, 'Imperial Order') && !!g.p[0].st.find(c => c && E.name(c) === 'Imperial Custom'), 'Imperial Order that can\'t be paid is destroyed with Imperial Custom face-up (Imperial Custom ruling 3)');
+  // 938 Gravity Bind chained to Dimensional Prison stops the attack without negating it: Prison still banishes
+  g = duel([{ m: ['Cyber Dragon'], turn: 2 }, { st: [{ n: 'Dimensional Prison', pos: 'set' }, { n: 'Gravity Bind', pos: 'set' }] }]);
+  let cd = fld(g, 0, 'Cyber Dragon'); act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + cd.u + ':d'));
+  drive(g, { respond: pr => pr.p === 1 && (respondWith(g, 1, 'Dimensional Prison')(pr) || respondWith(g, 1, 'Gravity Bind')(pr)) });
+  ok(g.log.some(l => /Gravity Bind \(Chain Link 2\)/.test(l)) && cd.zone === 'ban' && g.p[1].lp === 8000, 'Gravity Bind chained to Dimensional Prison: the attacker is still banished (site ruling)');
+  g = duel([{ m: ['Cyber Dragon'], turn: 2 }, { st: [{ n: 'Gravity Bind', pos: 'set' }] }]);
+  cd = fld(g, 0, 'Cyber Dragon'); act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + cd.u + ':d')); drive(g, { respond: respondWith(g, 1, 'Gravity Bind') });
+  ok(g.p[1].lp === 8000 && !cd.negAtk && g.log.some(l => /The attack stopped/.test(l)), 'Gravity Bind alone: the attack stops, no damage, and it isn\'t counted as a negated attack');
+  // 1012 Ancient Forest and Multiple Piece Golem at the end of the Battle Phase
+  g = duel([{ m: ['Cyber Dragon'], fz: 'Ancient Forest', turn: 2 }, {}]);
+  cd = fld(g, 0, 'Cyber Dragon'); act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + cd.u + ':d')); drive(g);
+  const stillThere = cd.zone === 'm'; act(g, /^End Battle|endbp/); drive(g);
+  ok(stillThere && cd.zone === 'gy' && g.phase === 'main2', 'Ancient Forest: the attacker stays through the battle and is destroyed when the Battle Phase ends, before Main Phase 2');
+  g = duel([{ m: ['Multiple Piece Golem'], turn: 2 }, {}]);
+  const mp = fld(g, 0, 'Multiple Piece Golem'); act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + mp.u + ':d')); const s1 = drive(g);
+  act(g, /^End Battle|endbp/); const s2 = drive(g);
+  ok(!s1.some(t => /Multiple Piece/.test(t)) && s2.some(t => /Multiple Piece/.test(t)) && mp.zone === 'extra' && g.phase === 'main2', 'Multiple Piece Golem is offered its return when the Battle Phase ends, not after the damage');
+  // 1037 Slate Warrior's FLIP +500 is its own change (both formats)
+  for (const [F, P, mk] of gFmts()) {
+    const h = mk([{ m: [{ n: 'Slate Warrior', pos: 'set' }], turn: 2 }, {}]); const sw = gFind(P, h, 0, 'Slate Warrior');
+    P.act(h, ['flip:' + sw.u]); gDrive(h, /./, null, P); const up = P.atk(h, sw); gSkillDrain(P, h);
+    ok(up === 2400 && P.atk(h, sw) === 1900 && P.def(h, sw) === 400, `${F}: Slate Warrior flipped (${up}), then a Skill Drain that leaves: back to 1900/400 for good (archive)`);
+  }
+  // 1093 Aslla piscu returned to the Deck: nothing; returned to the hand: it activates
+  for (const [tr, fires] of [['Phoenix Wing Wind Blast', false], ['Compulsory Evacuation Device', true]]) {
+    g = duel([{ m: ['Earthbound Immortal Aslla piscu'], hand: [FILL], fz: 'Mystic Plasma Zone', turn: 2 }, { m: ['Sangan'], hand: [FILL], st: [{ n: tr, pos: 'set' }] }]);
+    act(g, new RegExp('ns:' + hand(g, FILL).u)); gDrive(g, /Aslla/, pr => pr.p === 1 && respondWith(g, 1, tr)(pr));
+    ok(g.log.some(l => new RegExp(tr + '\\.').test(l)) && (fires ? g.p[1].lp === 7200 && !fld(g, 1, 'Sangan') : g.p[1].lp === 8000 && !!fld(g, 1, 'Sangan')),
+      `Aslla piscu ${fires ? 'returned to the hand destroys and burns' : 'put on top of the Deck by Phoenix Wing Wind Blast does nothing (site ruling 8)'}`);
+  }
+  // 1105 Flame Wingman: the destroyed monster's original ATK per each format's ruling 4 (a tributeless Fusilier: Edison 2800, Goat 1400)
+  for (const [F, P, mk] of gFmts()) {
+    const h = mk([{ m: ['Elemental HERO Flame Wingman'] }, { hand: ['Fusilier Dragon, the Dual-Mode Beast'] }]);
+    const go = who => { const t0 = h.turnNo; for (let i = 0; i < 80 && h.prompt; i++) { if (h.prompt.type === 'idle' && h.prompt.p === who && h.turnNo !== t0) return;
+      if (h.prompt.type === 'respond') P.act(h, ['pass']); else if (h.prompt.type === 'idle') P.act(h, [(h.prompt.opts.find(o => o.key === 'end') || h.prompt.opts[h.prompt.opts.length - 1]).key]);
+      else if (h.prompt.type === 'yesno') P.act(h, ['n']); else P.act(h, h.prompt.opts.slice(0, h.prompt.min || 1).map(o => o.key)); } };
+    go(1); const fu = gFind(P, h, 1, 'Fusilier Dragon, the Dual-Mode Beast'); P.act(h, ['ns:' + fu.u]); gDrive(h, /./, null, P);
+    go(0); const fw = gFind(P, h, 0, 'Elemental HERO Flame Wingman'); P.act(h, ['bp']); gDrive(h, /./, null, P); P.act(h, ['atk:' + fw.u + ':' + fu.u]); gDrive(h, /./, null, P);
+    const want = F === 'Edison' ? 2800 : 1400, got = 8000 - 700 - h.p[1].lp;
+    ok(P.atk(h, fu) === 1400 || fu.zone === 'gy', `${F}: Fusilier Summoned without Tribute`);
+    ok(got === want, `${F}: Flame Wingman destroying a tributeless Fusilier deals ${want} (${F} ruling 4; dealt ${got})`);
+  }
+  // 1105 Zoma: the killer's ATK at the battle once the killer is gone (ruling 12, 5)
+  g = duel([{ m: [FILL], hand: [FILL], turn: 3 }, { st: [{ n: 'Zoma the Spirit', pos: 'set' }] }]);
+  act(g, new RegExp('ns:' + hand(g, FILL).u)); drive(g, { respond: respondWith(g, 1, 'Zoma the Spirit') });
+  const z = fld(g, 1, 'Zoma the Spirit'), w = g.p[0].m.find(Boolean); z.pos = 'atk'; E.lib.addMod(g, w, { atk: -200 });
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + w.u + ':' + z.u)); drive(g);
+  ok(w.zone === 'gy' && g.p[0].lp === 6200, `Zoma and an 1800 ATK Warwolf (2000 printed) destroy each other: 1800 damage (${8000 - g.p[0].lp})`);
+  // 1122 Greenkappa skips a target no longer Set; Mokey Mokey King needs to have been face-up
+  g = duel([{ m: [{ n: 'Greenkappa', pos: 'set' }], turn: 2 }, { st: [{ n: 'Call of the Haunted', pos: 'set' }, { n: 'Mirror Force', pos: 'set' }], gy: ['Sangan'] }]);
+  act(g, new RegExp('flip:' + fld(g, 0, 'Greenkappa').u)); drive(g, { respond: pr => pr.p === 1 && respondWith(g, 1, 'Call of the Haunted')(pr) });
+  ok(gyOf(g, 1, 'Mirror Force') && !!g.p[1].st.find(c => c && E.name(c) === 'Call of the Haunted') && !!fld(g, 1, 'Sangan'), 'Greenkappa: Call of the Haunted chained (face-up at resolution) stays, Mirror Force is destroyed (goat-10)');
+  for (const pos of ['atk', 'set']) {
+    g = duel([{ hand: ['Dark Hole'], m: [{ n: 'Mokey Mokey King', pos }], gy: ['Mokey Mokey', 'Mokey Mokey'] }, {}]);
+    actU(g, hand(g, 'Dark Hole')); const seen = drive(g);
+    ok(pos === 'atk' ? seen.some(t => /Mokey Mokey King/.test(t)) : !seen.some(t => /Mokey Mokey King/.test(t)) && !g.p[0].m.some(Boolean), `Mokey Mokey King destroyed ${pos === 'atk' ? 'face-up: offers its summon' : 'face-down: no summon (goat-11)'}`);
+  }
+});
+
+T('138c. Played on the engine: Flip Flop Frog, Grand Neos and Gyzarus materials, Flamvell Firedog on an owned monster, Neko Mane King, Secutor, Card Trooper, Silverwind, Goat Toon Cannon Soldier', () => {
+  // 1147 Flip Flop Frog: only the opponent's monsters, up to the face-up Frogs (Frog the Jam is in neither pool, so that part stays unplayed)
+  let g = duel([{ m: [{ n: 'Flip Flop Frog', pos: 'set' }, 'Treeborn Frog'], turn: 2 }, { m: [FILL, FILL, FILL] }]);
+  act(g, new RegExp('flip:' + fld(g, 0, 'Flip Flop Frog').u)); let pk = null;
+  for (let i = 0; i < 20 && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (pr.type === 'pick' && /Return/.test(pr.text)) pk = pr;
+    E.act(g, pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.max || 1).map(o => o.key)); }
+  const theirs = new Set(g.p[1].m.filter(Boolean).concat(g.p[1].hand).map(c => 'u' + c.u));
+  ok(pk && pk.max === 2 && pk.opts.length === 3 && pk.opts.every(o => theirs.has(o.key)) && g.p[0].m.filter(Boolean).length === 2 && g.p[1].m.filter(Boolean).length === 1,
+    'Flip Flop Frog with 2 face-up Frogs: returns up to 2, picked from the opponent\'s monsters only');
+  // 1160 Grand Neos takes a Gemini-Summoned Neos Alius (name()); Gyzarus takes face-down materials
+  g = duelEx([{ m: ['Elemental HERO Neos Alius', 'Neo-Spacian Grand Mole'], turn: 2 }, {}], ['Elemental HERO Grand Neos']);
+  const before = !!opt(g, /shuffle Neos \+ Grand Mole/); act(g, new RegExp('gem:' + fld(g, 0, 'Elemental HERO Neos Alius').u)); drive(g);
+  ok(!before && !!opt(g, /shuffle Neos \+ Grand Mole/), 'Grand Neos: offered once Neos Alius is Gemini Summoned (named Elemental HERO Neos), not before');
+  g = duelEx([{ m: [{ n: 'Gladiator Beast Bestiari', pos: 'set' }, { n: 'Gladiator Beast Laquari', pos: 'set' }], turn: 2 }, {}], ['Gladiator Beast Gyzarus']);
+  ok(!!opt(g, /shuffle Bestiari/), 'Gyzarus: offered with a face-down Bestiari and a face-down Laquari (site rulings)');
+  // 1168 (the lint stays): Flamvell Firedog destroys a monster the opponent controls but you own
+  g = duel([{ m: ['Flamvell Firedog', 'Sangan'] }, { hand: ['Snatch Steal'] }]); g.p[0].deck.slice(-10).forEach(c => { c.id = id('Flamvell Magician'); });
+  const sg = fld(g, 0, 'Sangan'), fd = fld(g, 0, 'Flamvell Firedog');
+  toTurnOf(g, 1); E.act(g, [g.prompt.opts.find(o => o.key.startsWith('a:' + g.p[1].hand.find(c => E.name(c) === 'Snatch Steal').u + ':')).key]); gDrive(g, /Sangan/);
+  toTurnOf(g, 0); act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + fd.u + ':' + sg.u)); const seenF = drive(g);
+  ok(sg.ctrl === 1 || sg.zone === 'gy', 'Sangan was taken by Snatch Steal');
+  ok(seenF.some(t => /Flamvell Firedog/.test(t)) && !!fld(g, 0, 'Flamvell Magician'), 'Firedog destroying your own Sangan the opponent controls: "an opponent\'s monster", it Special Summons');
+  // 1173 Neko Mane King: no Flip Summon after it ends the turn
+  g = duel([{ hand: ['Fissure'], m: [{ n: 'Sangan', pos: 'set' }], turn: 2 }, { m: ['Neko Mane King'] }]);
+  const fs0 = !!opt(g, new RegExp('flip:' + fld(g, 0, 'Sangan').u)); actU(g, hand(g, 'Fissure')); drive(g);
+  ok(fs0 && g.log.some(l => /It became the End Phase/.test(l)) && !opt(g, /^flip:|Flip Summon/) && g.prompt.opts.every(o => o.key === 'end'), 'Neko Mane King destroyed by Fissure: only "End turn" is left, no Flip Summon');
+  // 1174 Secutor: 2 Gladiator Beasts in the Deck are summoned, 1 is not (ruling 4)
+  for (const n of [1, 2]) {
+    g = duel([{ m: ['Gladiator Beast Secutor'], turn: 2 }, {}]); const sc = fld(g, 0, 'Gladiator Beast Secutor'); sc.flags.gb = true;
+    g.p[0].deck.slice(0, n).forEach(c => { c.id = id('Gladiator Beast Laquari'); });
+    act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + sc.u + ':d')); drive(g); act(g, /^End Battle|endbp/); drive(g);
+    const onF = g.p[0].m.filter(c => c && E.name(c) === 'Gladiator Beast Laquari').length;
+    ok(g.log.some(l => /activated Gladiator Beast Secutor/.test(l)) && onF === (n === 2 ? 2 : 0), `Secutor with ${n} Gladiator Beast${n > 1 ? 's' : ''} in the Deck: ${n === 2 ? 'both' : 'none'} Special Summoned (${onF})`);
+  }
+  // 1189 Card Trooper: 1 to 3, up to the whole Deck
+  for (const n of [0, 1, 2]) {
+    g = duel([{ m: ['Card Trooper'], turn: 2 }, {}]); g.p[0].deck.length = n; g.seq++; const ct = fld(g, 0, 'Card Trooper');
+    const offered = E.idleOpts(g).some(o => o.key.startsWith('a:' + ct.u + ':'));
+    if (!n) { ok(!offered, 'Card Trooper with an empty Deck: not offered'); continue; }
+    E.act(g, [E.idleOpts(g).find(o => o.key.startsWith('a:' + ct.u + ':')).key]); const most = g.prompt.opts.length; E.act(g, [g.prompt.opts[most - 1].key]); drive(g);
+    ok(offered && most === n && g.p[0].deck.length === 0 && E.atk(g, ct) === 400 + 500 * n && g.winner == null, `Card Trooper with ${n} card${n > 1 ? 's' : ''} in the Deck: sends ${n}, +${500 * n}`);
+  }
+  // 1195 Silverwind: activated under Skill Drain it still locks the Battle Phase (ruling 2); its activation negated lifts the lock
+  for (const neg of [false, true]) {
+    g = duelEx([{ m: ['Blackwing - Gale the Whirlwind', FILL, 'Treeborn Frog'], turn: 2 }, { m: ['Sangan'], hand: [FILL], st: [{ n: 'Skill Drain', pos: 'up' }, { n: 'Divine Wrath', pos: 'set' }] }], ['Blackwing - Silverwind the Ascendant']);
+    act(g, /^Synchro Summon/); const seen = drive(g, { respond: pr => neg && pr.p === 1 && g.log.some(l => /activated Blackwing - Silverwind/.test(l)) && respondWith(g, 1, 'Divine Wrath')(pr) });
+    ok(seen.some(t => /Silverwind/.test(t)) && !!fld(g, 1, 'Sangan') && (neg ? g.log.some(l => /Divine Wrath/.test(l)) && !!opt(g, /^Battle Phase/) : !opt(g, /^Battle Phase/)),
+      neg ? 'Silverwind\'s activation negated by Divine Wrath: the Battle Phase is open' : 'Silverwind under Skill Drain: activated, destroys nothing, no Battle Phase');
+  }
+  // 1212 Goat Toon Cannon Soldier follows the shared Toon script: the burn, and destroyed with Toon World
+  const { G, mk } = goatEngine();
+  let h = mk([{ m: ['Toon Cannon Soldier', 'Sangan'], st: [{ n: 'Toon World', pos: 'up' }], turn: 2 }, {}]);
+  gActU(G, h, gFind(G, h, 0, 'Toon Cannon Soldier')); gDrive(h, /Sangan/, null, G);
+  ok(h.p[1].lp === 7500, 'Goat Toon Cannon Soldier: Tribute 1 monster, 500 damage');
+  h = mk([{ m: ['Toon Cannon Soldier'], st: [{ n: 'Toon World', pos: 'up' }], hand: ['Mystical Space Typhoon'], turn: 2 }, {}]);
+  gActU(G, h, gFind(G, h, 0, 'Mystical Space Typhoon')); gDrive(h, /Toon World/, null, G);
+  ok(h.p[0].gy.some(c => G.name(c) === 'Toon World') && h.p[0].gy.some(c => G.name(c) === 'Toon Cannon Soldier'), 'Goat Toon Cannon Soldier is destroyed with Toon World (its Goat text)');
+});
+// attack with a on t (both engines): enter the Battle Phase, pass the windows, declare, drive to the next idle
+const gAttack = (P, g, a, t, respond) => { const bp = g.prompt.opts.find(o => /^Battle Phase/.test(o.label)); P.act(g, [bp.key]); gDrive(g, /./, null, P);
+  P.act(g, [g.prompt.opts.find(o => o.key === 'atk:' + a.u + (t ? ':' + t.u : '')).key]); gDrive(g, /./, respond, P); };
+T('139. Goat: Blade Knight\'s per-visit negation (Slate Warrior\'s GY effect does nothing, archive); Slate\'s -500 under Grave Protector (archive); Lightning Blade\'s "Warrior-Type" (pass2 goat-11)', () => {
+  const { G, mk } = goatEngine();
+  let g = mk([{ m: ['Blade Knight'], hand: ['Sangan', 'Sangan'], turn: 2 }, { m: [{ n: 'Slate Warrior', pos: 'set' }] }]);
+  const bk = gFind(G, g, 0, 'Blade Knight'); gAttack(G, g, bk, g.p[1].m.find(Boolean));
+  ok(g.p[1].gy.some(c => G.name(c) === 'Slate Warrior') && G.atk(g, bk) === 1600 && g.log.some(l => /Slate Warrior's effect was negated/.test(l)), 'Blade Knight alone destroys Slate Warrior: its GY effect is negated, Blade Knight keeps 1600');
+  g = mk([{ m: ['Blue-Eyes White Dragon'], turn: 2 }, { m: [{ n: 'Slate Warrior', pos: 'atk' }, 'Grave Protector'] }]);
+  const bw = gFind(G, g, 0, 'Blue-Eyes White Dragon'); gAttack(G, g, bw, gFind(G, g, 1, 'Slate Warrior'));
+  ok(g.p[1].deck.some(c => G.name(c) === 'Slate Warrior') && G.atk(g, bw) === 2500, `Grave Protector shuffles Slate Warrior into the Deck and Blue-Eyes still loses 500 (${G.atk(g, bw)})`);
+  g = mk([{ m: ['D.D. Warrior Lady'], hand: ['Lightning Blade', 'Sangan'], st: [{ n: 'DNA Surgery', pos: 'set' }], turn: 2 }, {}]);
+  gActU(G, g, gFind(G, g, 0, 'Lightning Blade')); gDrive(g, /./, null, G);
+  const lb = g.p[0].st.find(c => c && G.name(c) === 'Lightning Blade');
+  gActU(G, g, g.p[0].st.find(c => c && G.name(c) === 'DNA Surgery')); gDrive(g, /^Dragon$/, null, G);
+  G.act(g, ['ns:' + gFind(G, g, 0, 'Sangan').u]); gDrive(g, /./, null, G);
+  ok(!!lb && lb.zone === 'gy', 'Lightning Blade ("Equip only to a Warrior-Type monster") is destroyed once DNA Surgery makes its monster a Dragon');
+});
+T('140. Deck searches under Thunder King Rai-Oh, read from what the effect does: Ojama Blue and Preparation of Rites can\'t be activated; Crystal Seer\'s and Magical Merchant\'s card goes to the GY (site rulings; pass2 edison-15/19/20)', () => {
+  let g = duel([{ turn: 3, m: ['Thunder King Rai-Oh', 'Blue-Eyes White Dragon'] }, { m: [{ n: 'Ojama Blue', pos: 'atk' }], deckTop: ['Ojama Yellow', 'Ojamagic'] }]);
+  act(g, /^Battle Phase/); drive(g); act(g, new RegExp('atk:' + fld(g, 0, 'Blue-Eyes White Dragon').u + ':' + fld(g, 1, 'Ojama Blue').u)); const seen = drive(g);
+  ok(g.p[1].gy.some(c => E.name(c) === 'Ojama Blue') && !seen.some(t => /Ojama Blue/.test(t)) && !g.log.some(l => /added Ojama/.test(l)), 'Ojama Blue destroyed by battle under the opponent\'s Rai-Oh: no "Use Ojama Blue\'s effect?", nothing added');
+  g = duel([{ turn: 3, hand: ['Preparation of Rites'], deckTop: [FILL, 'Relinquished'], gy: ['Black Illusion Ritual'] }, { m: ['Thunder King Rai-Oh'] }]);
+  ok(!keyOf(g, hand(g, 'Preparation of Rites')), 'Preparation of Rites can\'t be activated under Rai-Oh (its search is mandatory, ruling 1)');
+  g = duel([{ turn: 3, hand: ['Preparation of Rites'], deckTop: [FILL, 'Relinquished'], gy: ['Black Illusion Ritual'] }, {}]);
+  ok(!!keyOf(g, hand(g, 'Preparation of Rites')), 'and it can without Rai-Oh');
+  g = duel([{ turn: 3, m: [{ n: 'Crystal Seer', pos: 'set' }], deckTop: [FILL, 'Pot of Greed', 'Pot of Greed'] }, { m: ['Thunder King Rai-Oh'] }]);
+  act(g, /Flip/); drive(g);
+  ok(g.p[0].gy.filter(c => E.name(c) === 'Pot of Greed').length === 1 && !g.p[0].hand.some(c => E.name(c) === 'Pot of Greed'), 'Crystal Seer under Rai-Oh: the chosen card is sent to the GY, the other goes to the bottom');
+  g = duel([{ turn: 3, m: [{ n: 'Magical Merchant', pos: 'set' }], deckTop: [FILL, 'Pot of Greed'] }, { m: ['Thunder King Rai-Oh'] }]);
+  act(g, /Flip/); drive(g);
+  ok(g.p[0].gy.some(c => E.name(c) === 'Pot of Greed') && !g.p[0].hand.some(c => E.name(c) === 'Pot of Greed'), 'Magical Merchant under Rai-Oh: the excavated Spell goes to the GY (Rai-Oh ruling)');
+});
+// drive with a look at every pick (onPick(pr) may return the keys to answer)
+const driveP = (g, onPick, respond) => { for (let i = 0; i < 60 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt;
+  if (pr.type === 'respond') { E.act(g, [(respond && respond(pr)) || 'pass']); continue; } if (pr.type === 'yesno') { E.act(g, ['y']); continue; }
+  const k = pr.type === 'pick' && onPick && onPick(pr); E.act(g, k || pr.opts.slice(0, pr.min || 1).map(x => x.key)); } };
+T('141. Black Illusion Ritual\'s Tributes: Djinn in the GY under Mask of Restrict (site ruling), only field monsters with a full field (pass2 goat-08), a second Relinquished (pass2 edison-20)', () => {
+  let g = duel([{ hand: ['Black Illusion Ritual', 'Relinquished', 'Sangan'], gy: ['Djinn Releaser of Rituals'] }, { st: [{ n: 'Mask of Restrict', pos: 'up' }] }]);
+  let k = keyOf(g, hand(g, 'Black Illusion Ritual')); let offered = [];
+  if (k) { E.act(g, [k.key]); driveP(g, pr => { if (/Tribute a monster/.test(pr.text)) offered = pr.opts.map(o => o.label); }); }
+  ok(!!k && ['', 'Djinn Releaser of Rituals'].includes(offered.join()) && !!fld(g, 0, 'Relinquished') && g.p[0].ban.some(c => E.name(c) === 'Djinn Releaser of Rituals') && !!hand(g, 'Sangan'), `under Mask of Restrict: Black Illusion Ritual is offered, Djinn in the GY is banished (the only Tribute), Relinquished is summoned (${offered})`);
+  g = duel([{ hand: ['Black Illusion Ritual', 'Relinquished', 'Sangan'], m: ['Sangan'] }, { st: [{ n: 'Mask of Restrict', pos: 'up' }] }]);
+  ok(!keyOf(g, hand(g, 'Black Illusion Ritual')), 'under Mask of Restrict with no Djinn: not offered (hand and field monsters can\'t be Tributed)');
+  g = duel([{ hand: ['Black Illusion Ritual', 'Relinquished', 'Jinzo'], m: ['Sangan', 'Sangan', 'Sangan', 'Sangan', 'Sangan'] }, {}]);
+  E.act(g, [keyOf(g, hand(g, 'Black Illusion Ritual')).key]); offered = [];
+  driveP(g, pr => { if (/Tribute a monster/.test(pr.text)) offered = pr.opts.map(o => o.label); });
+  ok(offered.length && !offered.includes('Jinzo') && !!fld(g, 0, 'Relinquished') && g.p[0].hand.some(c => E.name(c) === 'Jinzo'), `full field: only field monsters can be Tributed, Relinquished is summoned (${offered})`);
+  g = duel([{ hand: ['Black Illusion Ritual', 'Relinquished', 'Relinquished'] }, {}]);
+  E.act(g, [keyOf(g, hand(g, 'Black Illusion Ritual')).key]); drive(g);
+  ok(!!fld(g, 0, 'Relinquished') && g.p[0].gy.some(c => E.name(c) === 'Relinquished'), 'one Relinquished Tributed for the other');
+});
+const pickRe = re => pr => { const o = pr.opts.find(o => re.test(o.label)); return o ? [o.key] : null; };
+const whereIs = (g, n) => { for (const p of [0, 1]) for (const z of ['hand', 'm', 'st', 'gy', 'ban', 'deck', 'extra']) if ((g.p[p][z] || []).some(c => c && E.name(c) === n)) return p + ':' + z; return '-'; };
+T('142. Pass 2 edison-18/19 card fixes played out: Mind Protector\'s maintenance, G.B. Hunter vs Bait Doll / Mystic Swordsman LV6 / Storm Caller, Slingen, Forcefield, Reaper on the Nightmare, Curse of Anubis, Brain Research Lab, Core Reinforcement, B. Skull Dragon', () => {
+  // Mind Protector: a maintenance cost (no chain), paid under Skill Drain too
+  let g = duel([{ m: ['Mind Protector'], turn: 3 }, { st: [{ n: 'Skill Drain', pos: 'up' }] }]); drive(g);
+  ok(g.p[0].lp === 7500 && !!fld(g, 0, 'Mind Protector') && !g.log.some(l => /activated Mind Protector/.test(l)), `Mind Protector under Skill Drain: pays 500 with no chain link (LP ${g.p[0].lp})`);
+  // G.B. Hunter: Bait Doll can't be activated (ruling 7); Mystic Swordsman LV6 doesn't ask (ruling 6); Storm Caller doesn't activate (ruling 5)
+  g = duel([{ m: ['G.B. Hunter'], hand: ['Bait Doll'], turn: 3 }, { st: [{ n: 'Mirror Force', pos: 'set' }] }]);
+  ok(!keyOf(g, hand(g, 'Bait Doll')), 'Bait Doll can\'t be activated with G.B. Hunter face-up');
+  g = duel([{ m: ['Mystic Swordsman LV6', 'G.B. Hunter'], turn: 3 }, { m: [{ n: 'Cyber Dragon', pos: 'set' }] }]);
+  act(g, /^Battle Phase/); drive(g); act(g, new RegExp('atk:' + fld(g, 0, 'Mystic Swordsman LV6').u + ':' + g.p[1].m.find(Boolean).u)); let asked = drive(g);
+  ok(!asked.some(t => /top of your opponent's Deck/.test(t)) && whereIs(g, 'Cyber Dragon') === '1:gy', 'Mystic Swordsman LV6 under G.B. Hunter: no "top of the Deck" question, the monster goes to the GY');
+  g = duel([{ m: ['Storm Caller', 'Psychic Commander', 'G.B. Hunter'], turn: 3 }, { m: ['Ojama Green'] }]);
+  act(g, /^Battle Phase/); drive(g); act(g, new RegExp('atk:' + fld(g, 0, 'Psychic Commander').u + ':' + fld(g, 1, 'Ojama Green').u)); asked = drive(g);
+  ok(whereIs(g, 'Ojama Green') === '1:gy' && !g.log.some(l => /activated Storm Caller/.test(l)), 'Storm Caller under G.B. Hunter: the destroyed monster stays in the GY');
+  // Slingen: only a face-up Morphtronic can be destroyed instead
+  g = duel([{ turn: 3, m: ['Cyber Dragon'] }, { m: [{ n: 'Morphtronic Slingen', pos: 'def' }, { n: 'Morphtronic Boarden', pos: 'set' }] }]);
+  act(g, /^Battle Phase/); drive(g); act(g, new RegExp('atk:' + fld(g, 0, 'Cyber Dragon').u + ':' + fld(g, 1, 'Morphtronic Slingen').u)); asked = drive(g);
+  ok(!asked.some(t => /another Morphtronic/.test(t)) && whereIs(g, 'Morphtronic Slingen') === '1:gy', 'Morphtronic Slingen with only a Set Morphtronic: no replacement, Slingen is destroyed');
+  // Morphtronic Forcefield needs a Morphtronic monster in the Deck (site ruling 3)
+  g = duel([{ hand: ['Dark Hole'], turn: 3 }, { m: ['Morphtronic Boarden'], st: [{ n: 'Morphtronic Forcefield', pos: 'set' }], deckTop: ['Morphtronic Accelerator'] }]);
+  actU(g, hand(g, 'Dark Hole')); let ff = false; drive(g, { respond: pr => { if (pr.p === 1 && pr.opts.some(o => /Forcefield/.test(o.label))) ff = true; return 'pass'; } });
+  ok(!ff, 'Morphtronic Forcefield isn\'t offered with only a Morphtronic Spell in the Deck');
+  // Reaper on the Nightmare ②: an Equip Spell targeting it destroys it after resolving (site ruling 2)
+  g = duel([{ m: ['Reaper on the Nightmare'], hand: ['Black Pendant'], turn: 3 }, {}]); actU(g, hand(g, 'Black Pendant')); driveP(g, pickRe(/Reaper/));
+  ok(whereIs(g, 'Reaper on the Nightmare') === '0:gy', 'Reaper on the Nightmare targeted by Black Pendant is destroyed');
+  // Curse of Anubis sets the original DEF to 0: Ojama Country first, then Curse: Sangan 600 / 0 (Country ruling 6)
+  g = duel([{ m: ['Sangan', 'Ojama Green'], fz: 'Ojama Country', st: [{ n: 'Curse of Anubis', pos: 'set' }], turn: 3 }, {}]);
+  const sg = fld(g, 0, 'Sangan'); actU(g, g.p[0].st.find(Boolean)); drive(g);
+  ok(E.atk(g, sg) === 600 && E.def(g, sg) === 0, `Ojama Country, then Curse of Anubis: Sangan ${E.atk(g, sg)} / ${E.def(g, sg)} (600 / 0)`);
+  // Brain Research Lab negated: its counters go (site ruling)
+  g = duel([{ fz: 'Brain Research Lab', turn: 3 }, { hand: ['Spell Canceller'], m: [FILL] }]); const brl = g.p[0].fz; brl.flags.psy = 2;
+  E.lib.ss(g, 1, g.p[1].hand.find(c => E.name(c) === 'Spell Canceller'), 'atk'); E.lib.emit(g, { type: 'probe' });
+  ok(!brl.flags.psy, 'Brain Research Lab under Spell Canceller: its Psychic Counters are removed');
+  // Core Reinforcement destroyed by MST in its End Phase: the monster goes with it, no damage (ruling 3)
+  g = duel([{ st: [{ n: 'Core Reinforcement', pos: 'set' }], turn: 3, gy: ["Koa'ki Meiru Guardian"], hand: ["Iron Core of Koa'ki Meiru"] }, { st: [{ n: 'Mystical Space Typhoon', pos: 'set' }] }]);
+  g.p[1].st.find(Boolean).turnIn = -5; actU(g, g.p[0].st.find(Boolean)); drive(g); E.act(g, ['end']); let used = false;
+  driveP(g, pr => { if (pr.p === 1) { const o = pr.opts.find(x => /Core Reinforcement/.test(x.label)); return o ? [o.key] : null; } return null; },
+    pr => { if (pr.p === 1 && g.phase === 'end' && !used) { const o = pr.opts.find(x => /Mystical/.test(x.label)); if (o) { used = true; return o.key; } } return 'pass'; });
+  ok(used && whereIs(g, "Koa'ki Meiru Guardian") === '0:gy' && g.p[0].lp === 8000, `Core Reinforcement destroyed in the End Phase: Guardian destroyed, no damage (LP ${g.p[0].lp})`);
+  // B. Skull Dragon: exact materials; King of the Swamp substitutes, Toon Summoned Skull doesn't
+  const bsd = hd => E.newDuel({ decks: [{ name: 't', main: Array(40).fill(id(FILL)), extra: [id('B. Skull Dragon (Archfiend)')] }, { name: 't', main: Array(40).fill(id(FILL)), extra: [] }], first: 0, seed: 1, noShuffle: true, names: ['A', 'B'], board: [{ hand: ['Polymerization', ...hd] }, {}] });
+  ok(!keyOf(g = bsd(['Toon Summoned Skull (Archfiend)', 'Red-Eyes Black Dragon']), hand(g, 'Polymerization')), 'Toon Summoned Skull isn\'t a B. Skull Dragon material');
+  ok(!!keyOf(g = bsd(['King of the Swamp', 'Red-Eyes Black Dragon']), hand(g, 'Polymerization')), 'King of the Swamp substitutes for Summoned Skull');
+});
+const atkOn = (g, a, t, o) => { act(g, /^Battle Phase/); drive(g); act(g, new RegExp('atk:' + a.u + (t ? ':' + t.u : ''))); return drive(g, o); };
+T('143. Pass 2 queue, Edison: Rooklord\'s banish cost, Super Roboyarou, Hyper Psychic Blaster off the field, Karma Cut\'s log, Scrubbed Raid, Begone Knave, Ccarayhua, Revival of the Immortals, Code A, Imperial Custom self-destroys, The Wicked Eraser with Double Coston', () => {
+  let g = duel([{ turn: 3, hand: ["Koa'ki Meiru Rooklord"], m: ["Koa'ki Meiru Drago"], gy: ["Koa'ki Meiru Boulder"] }, { m: [FILL], st: [{ n: 'Imperial Iron Wall', pos: 'up' }] }]);
+  act(g, /Tribute 1 Koa/); let asked = drive(g);
+  ok(!!fld(g, 0, "Koa'ki Meiru Rooklord") && !asked.some(t => /Rooklord/.test(t)) && !g.log.some(l => /activated Koa'ki Meiru Rooklord/.test(l)), 'Rooklord under Imperial Iron Wall: its banish-cost trigger isn\'t offered');
+  g = duelEx([{ turn: 3, m: ['Super Roboyarou'] }, {}], ['Super Robolady']);
+  const rl = g.p[0].extra.find(c => E.name(c) === 'Super Robolady');
+  ok(!!rl && !!keyOf(g, fld(g, 0, 'Super Roboyarou')), 'Super Roboyarou\'s effect is offered with a summonable Super Robolady');
+  E.lib.addRule(g, (g2, a) => a.type === 'ss' && a.c === rl, { end: g.turnNo + 9 }); g.seq++; E.act(g, ['end']); drive(g); E.act(g, ['end']); drive(g);
+  ok(!keyOf(g, fld(g, 0, 'Super Roboyarou')), 'not when Super Robolady can\'t be Special Summoned (pass2 goat-s01)');
+  g = duel([{ turn: 3, m: ['Hyper Psychic Blaster'] }, { m: [{ n: 'Man-Eater Bug', pos: 'set' }] }]);
+  atkOn(g, fld(g, 0, 'Hyper Psychic Blaster'), g.p[1].m.find(Boolean));
+  ok(g.p[0].lp === 8000 + 2400 && whereIs(g, 'Hyper Psychic Blaster') === '0:gy', `Hyper Psychic Blaster destroyed by Man-Eater Bug's flip still gains 3000 - 600 (site ruling 2; LP ${g.p[0].lp})`);
+  g = duel([{ turn: 3, hand: [FILL], st: [{ n: 'Karma Cut', pos: 'set' }] }, { m: [FILL, 'Kycoo the Ghost Destroyer'], gy: [FILL] }]);
+  actU(g, g.p[0].st.find(Boolean)); driveP(g, pr => { const o = pr.opts.find(x => x.label === FILL); return /Banish/.test(pr.text) && o ? [o.key] : null; });
+  ok(g.p[1].gy.some(c => E.name(c) === FILL) && !g.log.some(l => /more .* in the GY (was|were) banished/.test(l)), 'Karma Cut with Kycoo face-up: the GY copy stays, and the log doesn\'t say it was banished (pass2 edison-s01)');
+  g = duel([{ turn: 3, m: ['Cyber Dragon'] }, { m: [FILL], st: [{ n: 'Scrubbed Raid', pos: 'up' }, { n: 'Mirror Force', pos: 'set' }] }]);
+  act(g, /^Battle Phase/); drive(g); act(g, new RegExp('atk:' + fld(g, 0, 'Cyber Dragon').u + ':' + fld(g, 1, FILL).u)); let raids = 0;
+  drive(g, { respond: pr => { const o = pr.p === 1 && pr.opts.find(x => /Scrubbed Raid/.test(x.label)); if (o) { raids++; return o.key; } return 'pass'; } });
+  ok(raids === 1 && g.p[1].st.some(c => c && E.name(c) === 'Scrubbed Raid'), `Scrubbed Raid is used once; once the Battle Phase ended it isn\'t offered again (used ${raids})`);
+  g = duel([{ turn: 3, m: ['Amazoness Swords Woman'] }, { m: ['Cyber Dragon'], st: [{ n: 'Begone, Knave!', pos: 'up' }] }]);
+  atkOn(g, fld(g, 0, 'Amazoness Swords Woman'), fld(g, 1, 'Cyber Dragon'));
+  ok(whereIs(g, 'Amazoness Swords Woman') === '0:gy', 'Begone, Knave! doesn\'t return Amazoness Swords Woman destroyed by that battle (site ruling 3)');
+  g = duel([{ turn: 3, m: ['Cyber Dragon'] }, { m: ['Earthbound Immortal Uru', { n: 'Earthbound Immortal Ccarayhua', pos: 'set' }], fz: 'Mystic Plasma Zone' }]);
+  atkOn(g, fld(g, 0, 'Cyber Dragon'), g.p[1].m.find(c => c && c.pos === 'set'));
+  ok(!!fld(g, 0, 'Cyber Dragon') && !!fld(g, 1, 'Earthbound Immortal Uru'), 'a Set Ccarayhua flipped while Uru is face-up is destroyed by the rule: its effect doesn\'t destroy the field (site ruling 2)');
+  g = duel([{ turn: 3, st: [{ n: 'Revival of the Immortals', pos: 'set' }], gy: ['Earthbound Immortal Ccarayhua'], fz: 'Mystic Plasma Zone' }, {}]);
+  actU(g, g.p[0].st.find(Boolean)); drive(g); const ei = fld(g, 0, 'Earthbound Immortal Ccarayhua');
+  ok(!!ei && !opt(g, new RegExp('atk:' + ei.u)) && E.lib.forbid(g, { type: 'attack', c: ei }), 'a monster revived by Revival of the Immortals can\'t declare an attack this turn');
+  g = duel([{ turn: 3, hand: ['Dark Hole'] }, { m: ['Alien Warrior', 'Alien Telepath', 'Alien Ammonite'], st: [{ n: 'Code A Ancient Ruins', pos: 'up' }] }]);
+  actU(g, hand(g, 'Dark Hole')); drive(g); const ca = g.p[1].st.find(c => c && E.name(c) === 'Code A Ancient Ruins');
+  ok(E.lib.ctr(ca, 'A') === 1, `Dark Hole on 3 Aliens: Code A gets 1 A-Counter (${E.lib.ctr(ca, 'A')})`);
+  for (const cu of [true, false]) {
+    g = duel([{ turn: 3, m: ['Sealmaster Meisei'], st: [{ n: 'Talisman of Spell Sealing', pos: 'up' }, ...(cu ? [{ n: 'Imperial Custom', pos: 'up' }] : [])] }, { m: ['Cyber Dragon'] }]);
+    atkOn(g, fld(g, 0, 'Sealmaster Meisei'), fld(g, 1, 'Cyber Dragon'));
+    ok(whereIs(g, 'Sealmaster Meisei') === '0:gy' && whereIs(g, 'Talisman of Spell Sealing') === (cu ? '0:st' : '0:gy'), cu ? 'Imperial Custom keeps Talisman of Spell Sealing after Sealmaster Meisei leaves (its own destroy is an effect, ruling 4)' : 'without Imperial Custom it is destroyed'); }
+  g = duel([{ turn: 3, hand: ['The Wicked Eraser'], m: ['Double Coston', 'Sangan'] }, {}]);
+  ok(!!opt(g, /Tribute Summon \(Tribute 3/), 'The Wicked Eraser\'s 3-Tribute summon with Double Coston (2 for a DARK) + Sangan');
+  act(g, /Tribute Summon \(Tribute 3/); drive(g); ok(!!fld(g, 0, 'The Wicked Eraser'), 'and it is summoned');
+});
+T('144. Pass 2 queue, Goat: Gearfried destroys an Equip as the equipping link finishes, Reflect Bounder\'s self-destruction is no chain link, TER can\'t target Blindly Loyal Goblin, Premature Burial negated by Spell Canceller, Cursed Seal\'s name lock (pass2 goat-08/09)', () => {
+  const { G, mk } = goatEngine(); const resp = (g, p, n) => pr => { const c = pr.p === p && [...g.p[p].st, ...g.p[p].m, ...g.p[p].hand].find(x => x && G.name(x) === n); const o = c && pr.opts.find(x => x.key.startsWith('a:' + c.u + ':')); return o && o.key; };
+  let g = mk([{ hand: ['Gearfried the Iron Knight'], st: [{ n: 'Blast with Chain', pos: 'set' }], turn: 2 }, { m: ['Sangan'], st: [{ n: 'Trap Hole', pos: 'set' }] }]);
+  for (const c of [...g.p[0].st, ...g.p[1].st]) if (c) c.turnIn = -1;
+  G.act(g, [g.prompt.opts.find(o => /^ns:/.test(o.key)).key]);
+  gDrive(g, /Sangan|Gearfried/, pr => resp(g, 1, 'Trap Hole')(pr) || (pr.p === 0 && g.chain.length === 1 ? resp(g, 0, 'Blast with Chain')(pr) : null), G);
+  const i1 = g.log.findIndex(l => /Gearfried the Iron Knight destroyed Blast with Chain/.test(l)), i2 = g.log.findIndex(l => /Gearfried the Iron Knight was destroyed/.test(l));
+  ok(i1 >= 0 && i1 < i2 && g.log.some(l => /activated Blast with Chain's effect/.test(l)), 'Gearfried destroys Blast with Chain before Trap Hole resolves, and Blast with Chain\'s effect activates (Netrep)');
+  g = mk([{ m: ['D.D. Warrior Lady'], turn: 2 }, { m: [{ n: 'Reflect Bounder', pos: 'atk' }] }]);
+  gAttack(G, g, gFind(G, g, 0, 'D.D. Warrior Lady'), gFind(G, g, 1, 'Reflect Bounder'));
+  ok(g.p[1].gy.some(c => G.name(c) === 'Reflect Bounder') && !g.p[1].ban.some(c => G.name(c) === 'Reflect Bounder'), 'Reflect Bounder destroys itself with no chain link: D.D. Warrior Lady can\'t banish it (archive)');
+  g = mk([{ m: ['Thousand-Eyes Restrict'], turn: 2 }, { m: ['Blindly Loyal Goblin'] }]);
+  ok(!g.prompt.opts.some(o => o.key.startsWith('a:' + gFind(G, g, 0, 'Thousand-Eyes Restrict').u + ':')), 'Thousand-Eyes Restrict can\'t target Blindly Loyal Goblin (archive)');
+  g = mk([{ st: [{ n: 'Premature Burial', pos: 'set' }], gy: ['Spell Canceller'], turn: 2 }, { st: [{ n: 'Dust Tornado', pos: 'set' }] }]);
+  for (const c of [...g.p[0].st, ...g.p[1].st]) if (c) c.turnIn = -1;
+  gActU(G, g, g.p[0].st.find(Boolean)); gDrive(g, /Spell Canceller/, null, G);
+  const pb = g.p[0].st.find(c => c && G.name(c) === 'Premature Burial'); const dt = g.p[1].st.find(Boolean); G.lib.destroy(g, [pb], { by: 1 }); G.act(g, ['end']); gDrive(g, /./, null, G);
+  ok(!!gFind(G, g, 0, 'Spell Canceller') && g.p[0].gy.some(c => G.name(c) === 'Premature Burial'), 'Premature Burial negated by the Spell Canceller it revived: destroyed, Spell Canceller stays (ruling 3)');
+  g = mk([{ hand: ['Black Pendant', 'Black Pendant', 'Sangan'], m: ['Sangan'], turn: 2 }, { st: [{ n: 'Cursed Seal of the Forbidden Spell', pos: 'set' }], hand: ['Pot of Greed'] }]);
+  for (const c of g.p[1].st) if (c) c.turnIn = -1;
+  gActU(G, g, g.p[0].hand.find(c => G.name(c) === 'Black Pendant')); gDrive(g, /Sangan/, pr => resp(g, 1, 'Cursed Seal of the Forbidden Spell')(pr), G);
+  const bp2 = g.p[0].hand.find(c => G.name(c) === 'Black Pendant'); G.act(g, [g.prompt.opts.find(o => o.key === 'setst:' + bp2.u).key]); gDrive(g, /./, null, G);
+  const lp = g.p[1].lp; G.lib.destroy(g, [bp2], { by: 1 }); G.act(g, ['end']); gDrive(g, /./, null, G);
+  ok(g.p[1].lp === lp && !g.log.some(l => /activated Black Pendant's effect/.test(l)), `Cursed Seal on Black Pendant: a Set Black Pendant destroyed later deals no damage (archive ruling 3; B ${lp} -> ${g.p[1].lp})`);
+});
+
+// ---- 145 (fixer E4d, 2026-11-28): scenarios in place of source-text checks (101 to 105) ----
+T('145-1. Phoenix Wing Wind Blast skips a chained Normal Trap; Gemini Spark needs a Deck; Instant Fusion\'s turn use is a non-negated activation and skips material-only Fusions', () => {
+  let g = duel([{ hand: ['Mystical Space Typhoon', FILL], st: [{ n: 'Phoenix Wing Wind Blast', pos: 'set' }], turn: 3 }, { st: [{ n: 'Dust Tornado', pos: 'set' }, { n: 'Swords of Revealing Light', pos: 'up' }] }]);
+  const pw = g.p[0].st.find(Boolean), dt = g.p[1].st.find(Boolean), sw = g.p[1].st.find(c => c && E.name(c) === 'Swords of Revealing Light'), mst = hand(g, 'Mystical Space Typhoon'); let dtOffered = false;
+  actU(g, mst);
+  for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt;
+    if (pr.type === 'respond') { const o = pr.opts.find(x => x.key.startsWith('a:' + (pr.p === 1 ? dt : pw).u + ':')); E.act(g, [o ? o.key : 'pass']); continue; }
+    if (pr.type === 'pick' && pr.p === 0 && /top of the Deck/.test(pr.text) && pr.opts.some(o => o.key === 'u' + dt.u)) dtOffered = true;
+    const want = pr.opts.find(o => o.key === 'u' + (pr.p === 0 && /Destroy/.test(pr.text) ? dt.u : pr.p === 1 ? mst.u : -1)); E.act(g, [want ? want.key : pr.opts[0].key]); }
+  ok(g.log.some(l => /Phoenix Wing Wind Blast \(Chain Link 3\)/.test(l)) && !dtOffered && sw.zone === 'deck', 'PWWB chained to Dust Tornado: the chained Normal Trap is no target, Swords of Revealing Light (Continuous) is');
+  g = duel([{ m: ['Elemental HERO Neos Alius'], hand: ['Gemini Spark'], turn: 3 }, { m: [FILL] }]);
+  ok(!!keyOf(g, hand(g, 'Gemini Spark')), 'Gemini Spark is offered with a Deck');
+  g.p[0].deck.length = 0; g.seq++;
+  ok(!E.idleOpts(g).some(o => o.key.startsWith('a:' + hand(g, 'Gemini Spark').u + ':')), 'Gemini Spark with an empty Deck is not offered');
+  g = duel([{ hand: ['Instant Fusion'], extra: ['Dark Balter the Terrible'], turn: 3 }, {}]);
+  ok(!keyOf(g, hand(g, 'Instant Fusion')), 'Instant Fusion: Dark Balter (only Fusion Summoned with its materials) is no target');
+  g = duel([{ hand: ['Instant Fusion', 'Instant Fusion'], extra: ['Flame Swordsman', 'Flame Swordsman'], turn: 3 }, {}]);
+  actU(g, hand(g, 'Instant Fusion')); drive(g);
+  ok(!!fld(g, 0, 'Flame Swordsman') && !keyOf(g, hand(g, 'Instant Fusion')), 'Instant Fusion resolved: the second copy is not offered this turn');
+  g = duel([{ hand: ['Instant Fusion', 'Instant Fusion'], extra: ['Flame Swordsman', 'Flame Swordsman'], turn: 3 }, { st: [{ n: 'Solemn Judgment', pos: 'set' }] }]);
+  actU(g, hand(g, 'Instant Fusion')); drive(g, { respond: respondWith(g, 1, 'Solemn Judgment') });
+  ok(!fld(g, 0, 'Flame Swordsman') && g.p[1].gy.some(c => E.name(c) === 'Solemn Judgment') && !!keyOf(g, hand(g, 'Instant Fusion')), 'Instant Fusion negated by Solemn Judgment: the second copy can still be activated');
+});
+
+T('145-2. Trident Dragion attacks once per card destroyed plus one; Prohibition (rulings 1, 4, 11); a Gemini Summoned Tuned Magician is a Synchro Tuner; Reinforce Truth\'s Battle Phase lock holds when its effect is negated', () => {
+  let g = duel([{ m: ['Magna Drago', 'Blue-Eyes White Dragon', FILL], st: [{ n: 'Mirror Force', pos: 'set' }], extra: ['Trident Dragion'], turn: 3 }, {}]);
+  const td = g.p[0].extra[0]; act(g, /^Synchro Summon/);
+  for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; E.act(g, pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.max || pr.min || 1).map(o => o.key)); }
+  act(g, /^Battle Phase/); passAll(g); let n = 0;
+  for (let i = 0; i < 5; i++) { const o = opt(g, new RegExp('atk:' + td.u + ':')); if (!o) break; E.act(g, [o.key]); drive(g); n++; }
+  ok(g.log.some(l => /Gene-Warped Warwolf, Mirror Force were destroyed/.test(l)) && n === 3, 'Trident Dragion destroys 2 cards and attacks 3 times');
+  const prohibit = g => { actU(g, hand(g, 'Prohibition')); for (let i = 0; i < 10 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (pr.type === 'respond') E.act(g, ['pass']); else { const o = pr.opts.find(o => o.label === 'Cyber Dragon'); E.act(g, [(o || pr.opts[0]).key]); } } };
+  g = duel([{ m: ['Cyber Dragon'], hand: ['Prohibition', 'Monster Reborn', 'Cyber Dragon'], gy: ['Cyber Dragon'], turn: 3 }, { m: [FILL] }]);
+  const old = fld(g, 0, 'Cyber Dragon'), inH = hand(g, 'Cyber Dragon'), rev = g.p[0].gy[0];
+  prohibit(g);
+  ok(g.log.some(l => /declared Cyber Dragon/.test(l)) && !g.prompt.opts.some(o => o.key.endsWith(':' + inH.u) || o.key.includes(':' + inH.u + ':')) && !!opt(g, new RegExp('pos:' + old.u)), 'Prohibition on Cyber Dragon: the copy in the hand can\'t be summoned, the copy on the field is unaffected (ruling 1)');
+  actU(g, hand(g, 'Monster Reborn')); drive(g);
+  ok(rev.zone === 'm' && !opt(g, new RegExp('pos:' + rev.u)), 'a copy in the GY can be Special Summoned (ruling 4), and it can\'t change its position');
+  E.lib.setFaceDown(g, rev); rev.turnIn = 1; g.seq++;
+  ok(!E.idleOpts(g).some(o => o.key === 'flip:' + rev.u), 'set face-down after Prohibition: it can\'t be Flip Summoned (ruling 11)');
+  act(g, /^Battle Phase/); passAll(g);
+  ok(!!opt(g, new RegExp('atk:' + old.u + ':')), 'the copy that was on the field can still attack');
+  g = duel([{ m: [{ n: 'Cyber Dragon', pos: 'set' }], hand: ['Prohibition'], turn: 3 }, { m: [FILL] }]); const sc = g.p[0].m[0]; sc.turnIn = 1;
+  prohibit(g); ok(!!opt(g, new RegExp('flip:' + sc.u)), 'a copy Set on the field before Prohibition can still be Flip Summoned (ruling 1)');
+  g = duel([{ m: ['Tuned Magician', FILL], extra: ['Stardust Dragon'], turn: 3 }, {}]);
+  ok(!opt(g, /^Synchro Summon/), 'Tuned Magician not Gemini Summoned: no Synchro Summon');
+  fld(g, 0, 'Tuned Magician').flags.gemini = true; g.seq++;
+  ok(E.idleOpts(g).some(o => /^syn:/.test(o.key)), 'Gemini Summoned Tuned Magician + a Level 4: Stardust Dragon can be Synchro Summoned');
+  g = duel([{ st: [{ n: 'Reinforce Truth', pos: 'set' }], deckTop: [FILL, 'Speed Warrior'], turn: 3 }, { st: [{ n: 'Royal Decree', pos: 'up' }] }]);
+  actU(g, g.p[0].st.find(Boolean)); drive(g);
+  ok(!fld(g, 0, 'Speed Warrior') && g.log.some(l => /Reinforce Truth's effect was negated/.test(l)) && !opt(g, /^Battle Phase/), 'Reinforce Truth negated by Royal Decree: still no Battle Phase this turn');
+});
+
+T('145-3. Codarus leaves a target its controller took; Koa\'ki Meiru Tornado destroys Tokens; Hyper Psychic Blaster gains from the original DEF of a destroyed monster; Zoma hits its owner\'s opponent; Creature Swap with Blindly Loyal Goblin (Edison: neither switches; Goat: not choosable); Machine Duplication calls the name on the field', () => {
+  let g = duel([{ m: ['Codarus', FILL], st: [{ n: 'Umi', pos: 'up' }, { n: 'Enemy Controller', pos: 'set' }], turn: 3 }, { m: ['Cyber Dragon'] }]);
+  const ec = g.p[0].st.find(c => c && E.name(c) === 'Enemy Controller'), cd = fld(g, 1, 'Cyber Dragon'), w = fld(g, 0, FILL);
+  actU(g, fld(g, 0, 'Codarus'));
+  for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt;
+    if (pr.type === 'respond') { const o = pr.p === 0 && pr.opts.find(o => o.key.startsWith('a:' + ec.u + ':')); E.act(g, [o ? o.key : 'pass']); }
+    else if (pr.type === 'choose') E.act(g, [(pr.opts.find(o => /take control/.test(o.label)) || pr.opts[0]).key]);
+    else { const o = pr.opts.find(o => o.key === 'u' + cd.u || o.key === 'u' + w.u); E.act(g, [(o || pr.opts[0]).key]); } }
+  ok(g.log.some(l => /took control of Cyber Dragon/.test(l)) && cd.zone === 'm' && cd.ctrl === 0, 'Codarus targets Cyber Dragon, A takes it with Enemy Controller in the chain: it stays (ruling 3)');
+  g = duel([{ m: ["Koa'ki Meiru Tornado"], hand: ["Iron Core of Koa'ki Meiru"], turn: 3 }, { m: ['Sheep Token', FILL] }]);
+  actU(g, fld(g, 0, "Koa'ki Meiru Tornado")); drive(g);
+  ok(!fld(g, 1, 'Sheep Token') && !!fld(g, 1, FILL), 'Koa\'ki Meiru Tornado destroys the Token (Special Summoned), not the other monster');
+  g = duel([{ m: ['Hyper Psychic Blaster'], turn: 3 }, { m: [{ n: FILL, pos: 'def' }] }]); const hpb = fld(g, 0, 'Hyper Psychic Blaster');
+  E.lib.addMod(g, fld(g, 1, FILL), { def: 1000 });
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + hpb.u + ':')); drive(g);
+  ok(g.p[1].lp === 8000 - 1900 && g.p[0].lp === 8000 + 2900, 'HPB on a 1100 DEF (100 + 1000) monster: 1900 piercing, then 2900 LP from its original DEF once destroyed');
+  g = duel([{ st: [{ n: 'Zoma the Spirit', pos: 'set' }], m: ['Cyber Dragon'], turn: 3 }, {}]);
+  actU(g, g.p[0].st.find(Boolean)); drive(g); const z = g.p[0].m.find(c => c && E.name(c) === 'Zoma the Spirit');
+  ok(!!z && E.lib.takeControl(g, 1, z), 'Zoma summoned, B takes control of it');
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + fld(g, 0, 'Cyber Dragon').u + ':' + z.u)); drive(g);
+  ok(g.p[1].lp === 8000 - 2100 && g.p[0].lp === 8000, 'A\'s Zoma (controlled by B) destroyed by A\'s Cyber Dragon: its owner\'s opponent B takes 2100 (ruling 3)');
+  g = duel([{ m: ['Blindly Loyal Goblin', FILL], hand: ['Creature Swap'], turn: 3 }, { m: ['Cyber Dragon'] }]); const blg = fld(g, 0, 'Blindly Loyal Goblin');
+  actU(g, hand(g, 'Creature Swap')); for (let i = 0; i < 10 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; E.act(g, pr.type === 'respond' ? ['pass'] : [(pr.opts.find(o => o.key === 'u' + blg.u) || pr.opts[0]).key]); }
+  ok(blg.ctrl === 0 && !!fld(g, 1, 'Cyber Dragon') && g.log.some(l => /Control of those monsters can't switch/.test(l)), 'Edison Creature Swap choosing Blindly Loyal Goblin: neither monster switches (site ruling)');
+  const { G, mk } = goatEngine(); g = mk([{ m: ['Blindly Loyal Goblin', 'Sangan'], hand: ['Creature Swap'], turn: 3 }, { m: ['Sangan'] }]); let blgOffered = false;
+  G.act(g, [g.prompt.opts.find(o => o.key.startsWith('a:' + g.p[0].hand.find(c => G.name(c) === 'Creature Swap').u + ':')).key]);
+  for (let i = 0; i < 10 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (pr.type === 'pick' && pr.opts.some(o => /Blindly Loyal/.test(o.label))) blgOffered = true; G.act(g, pr.type === 'respond' ? ['pass'] : pr.opts.slice(0, 1).map(o => o.key)); }
+  ok(!blgOffered && G.fieldOf(g, 0).some(c => G.name(c) === 'Blindly Loyal Goblin') && g.log.some(l => /switched control of Sangan and Sangan/.test(l)), 'Goat Creature Swap: the face-up Goblin can\'t be chosen, the other monster switches (Netrep)');
+  g = duel([{ m: ['Proto-Cyber Dragon'], hand: ['Machine Duplication'], deckTop: [FILL, 'Cyber Dragon', 'Cyber Dragon'], turn: 3 }, {}]);
+  const pc = g.p[0].m[0]; E.lib.addMod(g, pc, { atk: -700 }); g.seq++; g.prompt.opts = E.idleOpts(g);
+  actU(g, hand(g, 'Machine Duplication')); drive(g);
+  ok(g.p[0].m.filter(c => c && E.data(c).n === 'Cyber Dragon').length >= 1 && g.log.some(l => /Special Summoned Cyber Dragon/.test(l)), 'Machine Duplication on a 400 ATK Proto-Cyber Dragon (named Cyber Dragon) Special Summons Cyber Dragon from the Deck');
+});
+
+T('145-4. Goat: Dream Clown only from Attack to Defense; Dark Master - Zorc resolves after leaving the field; Mirror Wall in the Damage Step; Swords of Revealing Light counts under Imperial Order; Serial Spell doesn\'t stay; Last Turn\'s win check', () => {
+  const { G, mk } = goatEngine();
+  const gf = (g, p, n) => G.fieldOf(g, p).find(c => G.name(c) === n), gh = (g, p, n) => g.p[p].hand.find(c => G.name(c) === n);
+  const gk = (g, c) => g.prompt && g.prompt.opts.find(o => o.key.startsWith('a:' + c.u + ':'));
+  const gdrive = (g, o = {}) => { for (let i = 0; i < 80 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt;
+    G.act(g, pr.type === 'respond' ? [(o.respond && o.respond(pr)) || 'pass'] : pr.type === 'yesno' ? [o.no ? 'n' : 'y'] : pr.opts.slice(0, pr.min || 1).map(x => x.key)); } };
+  const useOn = (p, c) => pr => { const o = pr.p === p && pr.opts.find(o => o.key.startsWith('a:' + c.u + ':')); return o && o.key; };
+  let g = mk([{ m: ['Dream Clown'], turn: 3 }, { m: ['Sangan'] }]); const dc = gf(g, 0, 'Dream Clown');
+  G.act(g, ['pos:' + dc.u]); gdrive(g);
+  ok(!gf(g, 1, 'Sangan') && g.p[1].gy.some(c => G.name(c) === 'Sangan'), 'Dream Clown changed from Attack to Defense destroys Sangan');
+  g = mk([{ m: ['Sangan'], hand: ['Swords of Revealing Light'], turn: 3 }, { m: [{ n: 'Dream Clown', pos: 'set' }] }]);
+  G.act(g, [gk(g, gh(g, 0, 'Swords of Revealing Light')).key]); gdrive(g);
+  ok(g.log.some(l => /Dream Clown was flipped face-up/.test(l)) && !!gf(g, 0, 'Sangan'), 'Dream Clown flipped face-up Defense by Swords: no destruction');
+  g = mk([{ m: ['Dark Master - Zorc'], turn: 3 }, { m: ['Sangan'], st: [{ n: 'Compulsory Evacuation Device', pos: 'set' }] }]); const zorc = gf(g, 0, 'Dark Master - Zorc');
+  G.act(g, [gk(g, zorc).key]); gdrive(g, { respond: useOn(1, g.p[1].st[0]) });
+  ok(zorc.zone === 'hand' && g.log.some(l => /A rolled a \d/.test(l)), 'Zorc bounced in the chain: its die roll still resolves (goat-11)');
+  g = mk([{ m: ['Gemini Elf'], turn: 3 }, { m: [{ n: 'Sangan', pos: 'def' }], st: [{ n: 'Mirror Wall', pos: 'set' }] }]); const ge = gf(g, 0, 'Gemini Elf'), mw = g.p[1].st[0]; let dsOffer = false;
+  G.act(g, ['bp']); gdrive(g); G.act(g, [g.prompt.opts.find(o => o.key.startsWith('atk:' + ge.u + ':')).key]);
+  gdrive(g, { respond: pr => { const o = pr.p === 1 && g.inDS && pr.opts.find(o => o.key.startsWith('a:' + mw.u + ':')); if (o) { dsOffer = true; return o.key; } } });
+  ok(dsOffer && G.atk(g, ge) === 950, 'Mirror Wall is activated in the Damage Step and halves Gemini Elf (goat-10)');
+  g = mk([{ st: [{ n: 'Swords of Revealing Light', pos: 'up' }, { n: 'Imperial Order', pos: 'up' }], turn: 3 }, {}]); const sw = g.p[0].st[0];
+  for (let i = 0; i < 300 && g.prompt && g.turnNo < 9 && g.winner == null; i++) { const pr = g.prompt; G.act(g, pr.type === 'idle' ? ['end'] : pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(g.turnNo === 9 && sw.zone === 'gy' && !!gf(g, 0, 'Imperial Order'), 'Swords under a face-up Imperial Order is destroyed after the opponent\'s 3rd End Phase (Netrep)');
+  g = mk([{ hand: ['Swords of Revealing Light', 'Sangan'], st: [{ n: 'Serial Spell', pos: 'set' }], turn: 3 }, { m: ['Sangan'] }]); const ser = g.p[0].st[0];
+  G.act(g, [gk(g, gh(g, 0, 'Swords of Revealing Light')).key]); gdrive(g, { respond: useOn(0, ser) });
+  ok(g.log.some(l => /Serial Spell copies Swords/.test(l)) && ser.zone === 'gy' && !!gf(g, 0, 'Swords of Revealing Light'), 'Serial Spell copying Swords goes to the GY; Swords stays (goat-04)');
+  g = mk([{ hand: ['Pot of Greed'], turn: 3 }, { m: ['Gemini Elf'], st: [{ n: 'Last Turn', pos: 'set' }], lp: 1000 }]);
+  G.act(g, [gk(g, gh(g, 0, 'Pot of Greed')).key]); gdrive(g, { respond: useOn(1, g.p[1].st[0]) });
+  for (let i = 0; i < 40 && g.prompt && g.winner == null; i++) { const pr = g.prompt; G.act(g, pr.type === 'idle' ? [(pr.opts.find(o => o.key === 'end') || pr.opts[pr.opts.length - 1]).key] : pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['n'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(g.winner === 1 && g.log.some(l => /Sangan attacks Gemini Elf/.test(l)), 'Last Turn: A\'s summoned Sangan loses to Gemini Elf; at the End Phase only B has a monster and wins (goat-11)');
+});
+
+T('145-5. Zombyra can\'t attack directly; Rescue Cat destroys the Beasts it summoned, whoever controls them; Ha Des\' negation ends when the monster leaves the GY; Dandylion always activates and Monster Reincarnation may discard its target; Gravekeeper\'s Spy asks the position once', () => {
+  let g = duel([{ m: ['Zombyra the Dark', FILL], turn: 3 }, {}]); act(g, /^Battle Phase/); passAll(g);
+  ok(!opt(g, new RegExp('atk:' + fld(g, 0, 'Zombyra the Dark').u + ':d')) && !!opt(g, new RegExp('atk:' + fld(g, 0, FILL).u + ':d')), 'Zombyra has no direct attack (the other monster does)');
+  g = duel([{ m: ['Rescue Cat', 'Dark Gray'], deckTop: [FILL, 'Silver Fang', 'Silver Fang'], turn: 3 }, {}]);
+  actU(g, fld(g, 0, 'Rescue Cat')); drive(g); const sfs = g.p[0].m.filter(c => c && E.name(c) === 'Silver Fang');
+  ok(sfs.length === 2 && E.lib.takeControl(g, 1, sfs[0]), 'Rescue Cat summons 2 Silver Fang; B takes one');
+  toTurnOf(g, 1);
+  ok(sfs.every(c => c.zone === 'gy') && !!fld(g, 0, 'Dark Gray'), 'End Phase: both Silver Fang destroyed (also the one B controls), the other Beast stays (goat-07)');
+  g = duel([{ m: ['Revived King Ha Des', 'Goblin Zombie'], hand: ['Monster Reborn', 'Dark Hole'], turn: 3 }, { m: ['Sangan'] }]); const sg = fld(g, 1, 'Sangan');
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + fld(g, 0, 'Goblin Zombie').u + ':' + sg.u)); drive(g);
+  ok(sg.zone === 'gy' && !g.log.some(l => /activated Sangan's effect/.test(l)), 'Sangan destroyed by a Zombie under Ha Des: no search');
+  act(g, /^End Battle|endbp/); passAll(g); actU(g, hand(g, 'Monster Reborn')); E.act(g, ['u' + sg.u]); drive(g); actU(g, hand(g, 'Dark Hole')); drive(g);
+  ok(g.log.some(l => /B activated Sangan's effect/.test(l)), 'revived and destroyed again: Sangan\'s effect activates (the negation was for that GY visit)');
+  g = duel([{ m: [FILL, FILL, FILL, FILL], hand: ['Monster Reincarnation', 'Dandylion'], turn: 3 }, {}]);
+  const mr = hand(g, 'Monster Reincarnation'), dl = hand(g, 'Dandylion'); g.p[0].hand = g.p[0].hand.filter(c => c === mr || c === dl); g.seq++; g.prompt.opts = E.idleOpts(g);
+  ok(!!keyOf(g, mr), 'Monster Reincarnation with no monster in the GY: offered when a monster in the hand can be discarded (ruling 1)');
+  actU(g, mr); drive(g);
+  ok(dl.zone === 'hand' && g.log.some(l => /activated Dandylion's effect/.test(l)) && g.p[0].m.filter(Boolean).length === 4, 'Dandylion discarded and added back; its effect activates with 1 free zone (summons nothing)');
+  g = duel([{ m: [{ n: "Gravekeeper's Spy", pos: 'set' }], deckTop: [FILL, "Gravekeeper's Guard"], turn: 3 }, {}], { askPos: true }); const spy = g.p[0].m[0]; spy.turnIn = 1;
+  act(g, new RegExp('flip:' + spy.u)); const qs = [];
+  for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (/position/i.test(pr.text || '')) qs.push(pr.text); E.act(g, pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(qs.length === 1 && !!fld(g, 0, "Gravekeeper's Guard"), 'Gravekeeper\'s Spy: one position question for Gravekeeper\'s Guard');
+});
+
+T('145-6. Injection Fairy Lily\'s 3000 only in damage calculation; De-Fusion under G.B. Hunter; Brain Research Lab once per turn across copies; Iron Core Specimen Lab for the opponent\'s Koa\'ki Meiru; Monster Gate and Reasoning with no monster; Jirai Gumo\'s coin is a cost; Barrel Behind the Door can\'t answer Barrel (Edison and Goat)', () => {
+  let g = duel([{ m: ['Injection Fairy Lily'], turn: 3 }, { m: ['Cyber Dragon'] }]); const li = fld(g, 0, 'Injection Fairy Lily'); const atks = [];
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + li.u + ':' + fld(g, 1, 'Cyber Dragon').u));
+  for (let i = 0; i < 30 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt;
+    if (pr.type === 'respond') { if (g.inDS) atks.push(E.atk(g, li)); const o = pr.p === 0 && pr.opts.find(o => o.key.startsWith('a:' + li.u + ':')); E.act(g, [o ? o.key : 'pass']); }
+    else E.act(g, pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(atks.length && atks.every(a => a === 400) && g.p[0].lp === 6000 && g.p[1].lp === 8000 - 1300 && E.atk(g, li) === 400, 'Lily pays 2000: 400 in the Damage Step windows, 3400 at damage calculation (1300 damage), 400 after');
+  g = duel([{ hand: ['De-Fusion'], m: ['Flame Swordsman'], turn: 3 }, {}]); const ok1 = !!keyOf(g, hand(g, 'De-Fusion'));
+  g = duel([{ hand: ['De-Fusion'], m: ['Flame Swordsman', 'G.B. Hunter'], turn: 3 }, {}]);
+  ok(ok1 && !keyOf(g, hand(g, 'De-Fusion')), 'De-Fusion: offered on Flame Swordsman, not with G.B. Hunter face-up (G.B. Hunter ruling 1)');
+  g = duel([{ fz: 'Brain Research Lab', hand: [FILL, 'Krebons', 'Krebons', 'Brain Research Lab'], turn: 3 }, {}]);
+  act(g, new RegExp('ns:' + hand(g, FILL).u)); drive(g); actU(g, g.p[0].fz); drive(g); act(g, new RegExp('ns:' + hand(g, 'Krebons').u)); drive(g);
+  const b2 = hand(g, 'Brain Research Lab'); actU(g, b2); drive(g);
+  ok(fld(g, 0, 'Krebons') && g.p[0].fz === b2 && !opt(g, /Extra Normal Summon of a Psychic/), 'Brain Research Lab used, a new copy activated: no second extra Normal Summon this turn');
+  g = duel([{ fz: 'Iron Core Specimen Lab', hand: ["Iron Core of Koa'ki Meiru"], turn: 3 }, { m: ["Koa'ki Meiru Drago"], deckTop: [FILL, "Koa'ki Meiru Boulder"] }]);
+  for (let i = 0; i < 60 && g.prompt && !(g.prompt.type === 'idle' && g.turnNo === 5); i++) { const pr = g.prompt; E.act(g, pr.type === 'idle' ? ['end'] : pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(g.log.some(l => /B activated Iron Core Specimen Lab's effect/.test(l)) && g.p[1].hand.some(c => E.name(c) === "Koa'ki Meiru Boulder"), 'A\'s Iron Core Specimen Lab: B\'s Koa\'ki Meiru Drago destroyed in B\'s End Phase, B adds Koa\'ki Meiru Boulder (rulings 2 to 5)');
+  for (const card of ['Monster Gate', 'Reasoning']) {
+    g = duel([{ hand: [card], m: [FILL], turn: 3 }, {}]); for (const c of g.p[0].deck) c.id = id('Pot of Greed'); const n0 = g.p[0].deck.length; g.seq++; g.prompt.opts = E.idleOpts(g);
+    actU(g, hand(g, card)); drive(g);
+    ok(g.p[0].deck.length === n0 && !g.p[0].gy.some(c => E.name(c) === 'Pot of Greed') && g.log.some(l => /No monster was found: the Deck was shuffled/.test(l)), card + ' with no monster in the Deck: nothing is sent to the GY, the Deck is shuffled');
+  }
+  g = duel([{ m: ['Jirai Gumo'], turn: 3 }, { m: [FILL] }]); const jg = fld(g, 0, 'Jirai Gumo');
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + jg.u + ':')); drive(g); const lg = g.log.join('\n');
+  ok(/A tossed a coin/.test(lg) && lg.indexOf('A tossed a coin') < lg.indexOf('Jirai Gumo attacks') && !/activated Jirai Gumo/.test(lg), 'Jirai Gumo tosses its coin as it declares the attack, with no chain link (a cost)');
+  const barrel = (dl, Gx, mkx) => { const g = mkx([{ hand: ['Ookazi'], st: [{ n: 'Barrel Behind the Door', pos: 'set' }], turn: 3 }, { st: [{ n: 'Barrel Behind the Door', pos: 'set' }] }]);
+    const ab = g.p[0].st[0], bb = g.p[1].st[0]; let aOff = false;
+    Gx.act(g, [g.prompt.opts.find(o => o.key.startsWith('a:' + g.p[0].hand.find(c => Gx.name(c) === 'Ookazi').u + ':')).key]);
+    for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt;
+      if (pr.type === 'respond') { if (pr.p === 0 && pr.opts.some(o => o.key.startsWith('a:' + ab.u + ':'))) aOff = true; const o = pr.p === 1 && pr.opts.find(o => o.key.startsWith('a:' + bb.u + ':')); Gx.act(g, [o ? o.key : 'pass']); }
+      else Gx.act(g, pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+    ok(!aOff && g.p[0].lp === 7200 && g.p[1].lp === 8000, dl + ': B\'s Barrel turns Ookazi back; A\'s Barrel can\'t answer it (ruling 2)'); };
+  barrel('Edison', E, b => duel(b));
+  const { G, mk } = goatEngine(); barrel('Goat', G, mk);
+});
+
+T('145-7. Cyber Jar under a summon lock; Stardust Dragon returns twice in one End Phase; Goat Sasuke Samurai #4 face-down tosses nothing; Golem Sentry on its summon turn; a Soul Exchange target as a Ritual Tribute; Gearfried destroys an Equip inside the chain; Goat Spirit Reaper and a destroyed Snatch Steal; the hand limit repeats, mandatory effects only', () => {
+  let g = duel([{ m: ['Cyber Dragon'], turn: 3 }, { m: [{ n: 'Cyber Jar', pos: 'set' }], st: [{ n: 'Scapegoat', pos: 'set' }] }]); const sc = g.p[1].st[0], h0 = g.p[1].hand.length;
+  act(g, /^Battle Phase/); for (let i = 0; i < 10 && g.prompt && g.prompt.type === 'respond'; i++) { const o = g.prompt.p === 1 && g.prompt.opts.find(o => o.key.startsWith('a:' + sc.u + ':')); E.act(g, [o ? o.key : 'pass']); }
+  act(g, new RegExp('atk:' + fld(g, 0, 'Cyber Dragon').u + ':')); drive(g);
+  ok(g.log.some(l => /Sheep Token/.test(l)) && g.p[1].gy.filter(c => E.name(c) === FILL).length === 5 && g.p[1].hand.length === h0 && g.p[0].m.filter(c => c && E.name(c) === FILL).length === 5, 'Cyber Jar after B\'s Scapegoat: B\'s 5 excavated monsters go to the GY (not the hand), A\'s are summoned (Scapegoat ruling 2)');
+  g = duel([{ hand: ['Heavy Storm'], st: [{ n: 'Dust Tornado', pos: 'set' }], turn: 3 }, { m: ['Stardust Dragon'], st: [{ n: 'Mirror Force', pos: 'set' }] }]);
+  const sd = fld(g, 1, 'Stardust Dragon'), dtn = g.p[0].st[0];
+  const sdResp = pr => { if (pr.p === 1) { const o = sd.zone === 'm' && pr.opts.find(x => x.key.startsWith('a:' + sd.u + ':')); return o && o.key; } if (g.phase === 'end' && sd.zone === 'm') { const o = pr.opts.find(x => x.key.startsWith('a:' + dtn.u + ':')); return o && o.key; } };
+  actU(g, hand(g, 'Heavy Storm')); drive(g, { respond: sdResp }); act(g, /^End turn|\[end\]/); drive(g, { respond: sdResp });
+  ok(g.turnNo === 4 && sd.zone === 'm' && g.log.filter(l => /B Special Summoned Stardust Dragon/.test(l)).length === 2 && g.log.some(l => /Dust Tornado's activation was negated/.test(l)), 'Stardust negates Heavy Storm, returns in the End Phase, negates Dust Tornado there and returns again (ruling 11)');
+  g = duel([{ hand: ['Golem Sentry'], turn: 3 }, {}]); act(g, new RegExp('ns:' + hand(g, 'Golem Sentry').u)); drive(g);
+  ok(!!opt(g, /^Turn face-down/), 'Golem Sentry can turn face-down on the turn it was summoned');
+  g = duel([{ hand: ['Soul Exchange', 'Black Luster Ritual', 'Black Luster Soldier'], turn: 3 }, { m: ['Blue-Eyes White Dragon'] }]); const blr = hand(g, 'Black Luster Ritual');
+  const before = !!keyOf(g, blr); actU(g, hand(g, 'Soul Exchange')); drive(g); const after = !!keyOf(g, blr); actU(g, blr); drive(g);
+  ok(!before && after && !!fld(g, 0, 'Black Luster Soldier') && g.p[1].gy.some(c => E.name(c) === 'Blue-Eyes White Dragon'), 'Black Luster Ritual: offered only once Soul Exchange targets Blue-Eyes, which is Tributed for Black Luster Soldier');
+  g = duel([{ m: ['Gearfried the Iron Knight'], hand: ['Pot of Greed'], st: [{ n: 'Blast with Chain', pos: 'set' }], turn: 3 }, { m: [FILL] }]); const bwc = g.p[0].st[0];
+  actU(g, hand(g, 'Pot of Greed'));
+  for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt;
+    if (pr.type === 'respond') { const o = pr.p === 0 && pr.opts.find(o => o.key.startsWith('a:' + bwc.u + ':')); E.act(g, [o ? o.key : 'pass']); }
+    else E.act(g, pr.type === 'yesno' ? ['y'] : [(pr.opts.find(o => o.key === 'u' + fld(g, 1, FILL).u) || pr.opts[0]).key]); }
+  let lg = g.log.join('\n');
+  ok(lg.indexOf('Blast with Chain was destroyed') > 0 && lg.indexOf('Blast with Chain was destroyed') < lg.indexOf('A drew 2 cards') && lg.indexOf('A drew 2 cards') < lg.indexOf("A activated Blast with Chain's effect") && !fld(g, 1, FILL), 'Blast with Chain chained to Pot of Greed is destroyed before Pot of Greed resolves; its own effect starts a new chain (Netrep)');
+  const { G, mk } = goatEngine();
+  for (const pos of ['set', 'def']) { g = mk([{ m: ['Gemini Elf'], turn: 3 }, { m: [{ n: 'Sasuke Samurai #4', pos }] }]); const ge = G.fieldOf(g, 0)[0];
+    G.act(g, ['bp']); for (let i = 0; i < 10 && g.prompt && g.prompt.type === 'respond'; i++) G.act(g, ['pass']); G.act(g, [g.prompt.opts.find(o => o.key.startsWith('atk:' + ge.u + ':')).key]);
+    for (let i = 0; i < 30 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; G.act(g, pr.type === 'respond' ? ['pass'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+    ok(g.log.some(l => /activated Sasuke Samurai #4's effect/.test(l)) === (pos === 'def'), pos === 'set' ? 'Goat Sasuke Samurai #4 attacked face-down: no coin toss (EDOPro)' : 'face-up: it tosses'); }
+  for (const chain of [true, false]) { g = mk([{ hand: ['Snatch Steal'], turn: 3 }, { m: ['Spirit Reaper'], st: [{ n: 'Mystical Space Typhoon', pos: 'set' }] }]);
+    const sr = G.fieldOf(g, 1).find(c => G.name(c) === 'Spirit Reaper'), ms = g.p[1].st[0];
+    G.act(g, [g.prompt.opts.find(o => o.key.startsWith('a:' + g.p[0].hand.find(c => G.name(c) === 'Snatch Steal').u + ':')).key]);
+    for (let i = 0; i < 30 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; const o = chain && pr.type === 'respond' && pr.p === 1 && pr.opts.find(o => o.key.startsWith('a:' + ms.u + ':')); G.act(g, pr.type === 'respond' ? [o ? o.key : 'pass'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+    ok(chain ? sr.zone === 'm' && sr.ctrl === 1 : sr.zone === 'gy', chain ? 'Goat: Snatch Steal destroyed by a chained MST: Spirit Reaper stays (pass2 goat-03)' : 'Snatch Steal resolved: Spirit Reaper is destroyed'); }
+  g = duel([{ hand: ['The White Stone of Legend', 'Archfiend of Gilfer', FILL, FILL, FILL, FILL, FILL], m: [FILL], deckTop: [FILL, 'Blue-Eyes White Dragon'], turn: 3 }, { m: ['Cyber Dragon'] }]);
+  const ws = hand(g, 'The White Stone of Legend'), gil = hand(g, 'Archfiend of Gilfer'); act(g, /^End turn|\[end\]/); const yns = []; let limits = 0;
+  for (let i = 0; i < 30 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (/hand limit/.test(pr.text || '')) limits++;
+    if (pr.type === 'respond') E.act(g, ['pass']); else if (pr.type === 'yesno') { yns.push(pr.text); E.act(g, ['y']); }
+    else if (/hand limit/.test(pr.text) && pr.opts.some(o => o.key === 'u' + ws.u)) E.act(g, ['u' + ws.u, 'u' + gil.u]); else E.act(g, pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(g.turnNo === 4 && limits === 2 && g.p[0].hand.length === 6 && g.p[0].hand.some(c => E.name(c) === 'Blue-Eyes White Dragon') && !yns.some(t => /Gilfer/.test(t)), 'hand limit: White Stone adds Blue-Eyes, A discards again; Archfiend of Gilfer\'s optional effect isn\'t offered');
+});
+
+T('145-8. Fake Trap answers Blowback Dragon; Goat BTH on your own Lava Golem (not Edison); Goat Lava Golem\'s lock under Skill Drain; RFTDD banishes under Jinzo with no chain; Fortune Lady\'s Level up lost for good when negated; negate(): a Continuous Spell to the GY, a tag out left in the Deck', () => {
+  const { G, mk } = goatEngine();
+  const fake = (lbl, Gx, mkx) => { const g = mkx([{ m: ['Blowback Dragon'], turn: 3 }, { st: [{ n: 'Fake Trap', pos: 'set' }, { n: 'Mirror Force', pos: 'set' }] }]);
+    const bd = Gx.fieldOf(g, 0).find(c => Gx.name(c) === 'Blowback Dragon'), ft = g.p[1].st[0], mf = g.p[1].st[1]; let off = false;
+    Gx.act(g, [g.prompt.opts.find(o => o.key.startsWith('a:' + bd.u + ':')).key]);
+    for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (pr.type === 'pick' && pr.p === 0) { Gx.act(g, [(pr.opts.find(o => o.key === 'u' + mf.u) || pr.opts[0]).key]); continue; }
+      if (pr.type === 'respond') { const o = pr.p === 1 && pr.opts.find(o => o.key.startsWith('a:' + ft.u + ':')); if (o) off = true; Gx.act(g, [o ? o.key : 'pass']); } else Gx.act(g, pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+    ok(off && ft.zone === 'gy' && mf.zone === 'st', lbl + ': Fake Trap can answer Blowback Dragon targeting a Set Trap (archive: a coin effect that would destroy it)'); };
+  fake('Edison', E, b => duel(b)); fake('Goat', G, mk);
+  for (const [lbl, Gx, mkx, mon] of [['Edison', E, b => duel(b), FILL], ['Goat', G, mk, 'Sangan']]) {
+    const g = mkx([{ hand: ['Lava Golem'], st: [{ n: 'Bottomless Trap Hole', pos: 'set' }], turn: 3 }, { m: [mon, mon] }]); const bth = g.p[0].st[0]; let off = false;
+    Gx.act(g, [g.prompt.opts.find(o => /^Special Summon to their field/.test(o.label)).key]);
+    for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; if (pr.type === 'respond') { const o = pr.p === 0 && pr.opts.find(o => o.key.startsWith('a:' + bth.u + ':')); if (o) off = true; Gx.act(g, [o ? o.key : 'pass']); } else Gx.act(g, pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+    ok(off === (lbl === 'Goat'), lbl === 'Goat' ? 'Goat: A can activate Bottomless Trap Hole on the Lava Golem A put on B\'s field (archive)' : 'Edison: Bottomless Trap Hole isn\'t offered on your own Lava Golem');
+  }
+  let g = mk([{ hand: ['Lava Golem'], turn: 3 }, { m: ['Sangan', 'Sangan'], st: [{ n: 'Skill Drain', pos: 'up' }] }]);
+  G.act(g, [g.prompt.opts.find(o => /^Special Summon to their field/.test(o.label)).key]);
+  for (let i = 0; i < 20 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; G.act(g, pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(G.fieldOf(g, 1).some(c => G.name(c) === 'Lava Golem') && g.p[0].hand.length > 0 && !g.prompt.opts.some(o => /^(ns|set):/.test(o.key)), 'Goat: Lava Golem summoned under Skill Drain: no Normal Summon/Set this turn (Netrep)');
+  g = duel([{ st: [{ n: 'Return from the Different Dimension', pos: 'set' }], ban: ['Jinzo', FILL], turn: 3 }, {}]);
+  actU(g, g.p[0].st[0]); drive(g); const back = g.p[0].m.filter(Boolean).length; act(g, /^End turn|\[end\]/); drive(g);
+  ok(back === 2 && g.p[0].ban.length === 2 && !g.log.some(l => /activated Return from the Different Dimension's effect/.test(l)), 'RFTDD brings back Jinzo: both are banished in the End Phase anyway, with no chain link');
+  g = duel([{ m: ['Fortune Lady Light'], turn: 1 }, { st: [{ n: 'Skill Drain', pos: 'set' }] }]); const flt = fld(g, 0, 'Fortune Lady Light');
+  toTurnOf(g, 0); const up = E.lv(flt); const sdr = g.p[1].st.find(Boolean); sdr.pos = 'up'; E.lib.emit(g, { type: 'pos', c: sdr, p: 1 }); const neg = E.lv(flt);
+  E.lib.move(g, sdr, 'gy', { reason: 'effect' });
+  ok(up === 3 && neg === 1 && E.lv(flt) === 1, 'Fortune Lady Light at Level 3 after two Standby Phases; under Skill Drain Level 1, and still Level 1 once Skill Drain leaves');
+  g = duel([{ hand: ['Messenger of Peace'], turn: 3 }, { m: ['Light and Darkness Dragon'] }]); const mop = hand(g, 'Messenger of Peace');
+  actU(g, mop); drive(g);
+  ok(g.log.some(l => /Messenger of Peace's activation was negated/.test(l)) && mop.zone === 'gy', 'Messenger of Peace negated by Light and Darkness Dragon goes to the GY (pass2 edison-09)');
+  g = duel([{ m: ['Gladiator Beast Laquari'], deckTop: [FILL, 'Gladiator Beast Bestiari'], turn: 3 }, { m: [{ n: FILL, pos: 'def' }, 'Light and Darkness Dragon'] }]); const lq = fld(g, 0, 'Gladiator Beast Laquari');
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + lq.u + ':' + fld(g, 1, FILL).u)); drive(g); act(g, /^End Battle|endbp/); drive(g);
+  ok(g.log.some(l => /Gladiator Beast Laquari's effect was negated/.test(l)) && lq.zone === 'deck' && !fld(g, 0, 'Gladiator Beast Bestiari'), 'Laquari\'s tag out negated by LaDD: Laquari stays in the Deck, nothing is summoned (pass2 edison-10)');
+});
+
+T('145-9. Xing Zhen Hu forgets a card that left the field; Don Zaloog chooses as it activates; Vampire Lord\'s mark is used up in its next Standby Phase; Rivalry of Warlords isn\'t a blanket summon lock; De-Fusion can\'t target King Dragun (Edison and Goat); Night Assailant\'s Flip effect with no target', () => {
+  let g = duel([{ st: [{ n: 'Pot of Greed', pos: 'set' }, { n: 'Pot of Greed', pos: 'set' }, { n: 'Xing Zhen Hu', pos: 'set' }], turn: 3 }, {}]); const [p1, p2, xz] = g.p[0].st;
+  actU(g, xz); drive(g); const locked = !keyOf(g, p1) && !keyOf(g, p2);
+  E.lib.move(g, p1, 'hand', { reason: 'effect' }); g.seq++; g.prompt.opts = E.idleOpts(g); act(g, new RegExp('setst:' + p1.u)); passAll(g);
+  ok(locked && !!keyOf(g, p1) && !keyOf(g, p2), 'Xing Zhen Hu locks both Set Pots; one returned to the hand and Set again is a new card, the other stays locked');
+  g = duel([{ m: ['Don Zaloog'], turn: 3 }, { st: [{ n: 'Divine Wrath', pos: 'set' }] }]); const dz = fld(g, 0, 'Don Zaloog'); const seq = [];
+  act(g, /^Battle Phase/); passAll(g); act(g, new RegExp('atk:' + dz.u + ':d'));
+  for (let i = 0; i < 30 && g.prompt && g.prompt.type !== 'idle'; i++) { const pr = g.prompt; seq.push(pr.type + pr.p); E.act(g, pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  ok(seq.indexOf('choose0') >= 0 && seq.indexOf('choose0') < seq.indexOf('respond1') && g.log.some(l => /B discarded .* at random/.test(l)), 'Don Zaloog: the mode is chosen before B can respond (goat-12)');
+  const runTo = (g, t) => { for (let i = 0; i < 200 && g.prompt && !(g.prompt.type === 'idle' && g.turnNo >= t && g.prompt.p === 0); i++) { const pr = g.prompt; E.act(g, pr.type === 'idle' ? [(pr.opts.find(o => o.key === 'end') || pr.opts[pr.opts.length - 1]).key] : pr.type === 'respond' ? ['pass'] : pr.type === 'yesno' ? ['y'] : pr.opts.slice(0, pr.min || 1).map(o => o.key)); } };
+  for (const law of [false, true]) {
+    g = duel([{ m: ['Vampire Lord'], st: law ? [{ n: "Solomon's Lawbook", pos: 'set' }] : [], turn: 3 }, {}]); const vl = fld(g, 0, 'Vampire Lord');
+    if (law) { actU(g, g.p[0].st[0]); drive(g); }
+    E.lib.destroy(g, [vl], { by: 1 }); passAll(g); runTo(g, 5); const z5 = vl.zone; runTo(g, 7);
+    ok(law ? z5 === 'gy' && vl.zone === 'gy' && g.turnNo === 7 : z5 === 'm', law ? 'Vampire Lord: its Standby Phase skipped by Solomon\'s Lawbook, it doesn\'t come back on the following one either (archive)' : 'Vampire Lord destroyed by B\'s effect comes back in A\'s next Standby Phase');
+  }
+  g = duel([{ m: ['Cyber Dragon'], st: [{ n: 'Rivalry of Warlords', pos: 'up' }], hand: ['Monster Gate'], turn: 3 }, {}]);
+  ok(!!keyOf(g, hand(g, 'Monster Gate')), 'Rivalry of Warlords with a Machine: Monster Gate (a summon from the Deck of an unknown Type) can still be activated');
+  g = duel([{ hand: ['De-Fusion'], turn: 3 }, { m: ['King Dragun'] }]); const kd = !keyOf(g, hand(g, 'De-Fusion'));
+  g = duel([{ hand: ['De-Fusion'], m: ['Flame Swordsman'], turn: 3 }, { m: ['King Dragun'] }]); actU(g, hand(g, 'De-Fusion')); drive(g);
+  ok(kd && g.log.some(l => /Flame Swordsman returned to the Extra Deck/.test(l)) && !!fld(g, 1, 'King Dragun'), 'Edison: De-Fusion can\'t target the opponent\'s King Dragun; with Flame Swordsman it takes that one');
+  const { G, mk } = goatEngine(); g = mk([{ hand: ['De-Fusion'], turn: 3 }, { m: ['King Dragun'] }]);
+  ok(!g.prompt.opts.some(o => o.key.startsWith('a:' + g.p[0].hand.find(c => G.name(c) === 'De-Fusion').u + ':')), 'Goat: De-Fusion is not offered when the only Fusion is the opponent\'s King Dragun');
+  g = duel([{ m: [{ n: 'Night Assailant', pos: 'set' }], turn: 3 }, {}]); const na = g.p[0].m[0]; na.turnIn = 1; g.seq++; g.prompt.opts = E.idleOpts(g);
+  act(g, new RegExp('flip:' + na.u)); drive(g);
+  ok(g.log.some(l => /A activated Night Assailant's effect/.test(l)), 'Night Assailant Flip Summoned with no opponent\'s monster: its Flip effect still activates (pass2 edison-11)');
 });
 
 console.log(fails ? `\n${fails} failed` : '\nAll root-cause guards passed.');

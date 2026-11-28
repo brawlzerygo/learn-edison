@@ -175,7 +175,7 @@ E.addScripts({
       return false; } }] },
   // A Trap whose timing is right is activated and resolved right away (inside Bait Doll's resolution, no chain of its own).
   // PARTIAL: "timing" is the Trap's own activation condition; a Trap with no script counts as wrong timing.
-  'Bait Doll': { effs: [{ type: 'act', cond: (g, c) => stOnField(g).some(x => x !== c && x.zone === 'st' && x.pos === 'set'),
+  'Bait Doll': { effs: [{ type: 'act', cond: (g, c) => stOnField(g).some(x => x !== c && x.zone === 'st' && x.pos === 'set') && !E.lib.toDeckBlocked(g, c, true),   // it shuffles itself in: not under G.B. Hunter (ruling 7, pass2 edison-19)
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Target which Set card?', stOnField(g).filter(x => x !== c && x.zone === 'st' && x.pos === 'set'), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) {
       const t = live(L2)[0];

@@ -93,7 +93,7 @@ const meiseiUp = (g, p) => monsOf(g, p).some(x => faceUp(x) && named(x, MEISEI))
 // "Destroy this card when Sealmaster Meisei is removed from the field" (no face-up Meisei left on your side)
 const meiseiGone = { type: 'trig', loc: 'st', mand: true, tags: { destroy: 1 }, label: 'Sealmaster Meisei left: destroy this card',
   on: (g, ev, c) => ev.type === 'move' && ev.wasField && named(ev.c, MEISEI) && ev.prevCtrl === c.ctrl && !meiseiUp(g, c.ctrl),
-  res: function* (g, c, p) { if (onField(c) && !meiseiUp(g, p)) destroy(g, [c], { rule: true }); } };
+  res: function* (g, c, p) { if (onField(c) && !meiseiUp(g, p)) destroy(g, [c], { by: p }); } };   // by its own effect: Imperial Custom keeps it (ruling 4; pass2 edison-14)
 const isUnion = c => isMon(c) && /Union/.test(D(c).ab || '');
 const isNormalMon = c => D(c).k === 'normal';
 // "Your opponent skips their next Main Phase 1" / "can't declare an attack during their next turn": their next turn's number

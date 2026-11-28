@@ -57,9 +57,13 @@ const lockInstall = { type: 'trig', loc: 'any', res: noop,
 // Summoned" from the text and offers no Normal Summon, so this is a summon rule from the hand that uses the Normal Summon,
 // Tributes 3 and counts as a Tribute Summon (Solemn Judgment can negate it).
 // PARTIAL: it can't be Set this way, and the log line says "Special Summoned".
+// Its 3 Tributes count by what each is worth (Double Coston is 2 for a DARK, pass2 edison-16; fixer E4d): picked one at a time to 3.
 const wickedProc = { label: 'Tribute Summon (Tribute 3 monsters)', how: 'tribute',
-  cond: (g, c, p) => g.ns[p] < 1 && !g.noSummon[p] && tributeCands(g, p).length >= 3 && !forbid(g, { type: 'ns', c, p }),
-  cost: function* (g, c, p, grp) { const xs = yield* pick(g, p, `Tribute 3 monsters for ${name(c)}`, tributeCands(g, p), 3, 3, 'cost'); g.ns[p]++;
+  cond: (g, c, p) => g.ns[p] < 1 && !g.noSummon[p] && E.lib.tribTotal(g, tributeCands(g, p), c) >= 3 && !forbid(g, { type: 'ns', c, p }),
+  cost: function* (g, c, p, grp) { let xs = []; let need = 3;
+    if (tributeCands(g, p).every(x => E.lib.tribWorth(g, x, c) === 1)) { xs = yield* pick(g, p, `Tribute 3 monsters for ${name(c)}`, tributeCands(g, p), 3, 3, 'cost'); need = 0; }
+    while (need > 0) { const cs = tributeCands(g, p).filter(x => !xs.includes(x)); if (!cs.length) break; const [x] = yield* pick(g, p, `Tribute for ${name(c)} (${need} more)`, cs, 1, 1, 'cost'); if (!x) break; xs.push(x); need -= E.lib.tribWorth(g, x, c); }
+    g.ns[p]++;
     for (const x of xs) move(g, x, 'gy', { reason: 'tribute', by: p, group: grp, tributeFor: c.u }); c.tributes = xs.map(x => x.u);
     log(g, `${PN(g, p)} Tributed ${xs.map(x => D(x).n).join(', ')} to Tribute Summon ${name(c)}.`); } };
 // the Damage Step battle partner of c

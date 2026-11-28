@@ -258,7 +258,7 @@ E.addScripts({
   'Slate Warrior': { effs: [
     { type: 'trig', mand: true, faceDownOk: true, label: '+500 ATK and DEF', on: (g, ev, c) => ev.type === 'flip' && ev.c === c,
       res: function* (g, c) { if (onField(c) && faceUp(c)) { addMod(g, c, { atk: 500, def: 500, own: true }); log(g, `${name(c)} gained 500 ATK and DEF.`); } } },   // its own change: lost for good once negated (archive)
-    { type: 'trig', loc: 'gy', mand: true, label: 'The monster that destroyed it loses 500', on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.battle && ev.destroyed && ev.wasField && !!ev.killer,
+    { type: 'trig', loc: 'any', mand: true, label: 'The monster that destroyed it loses 500', on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.battle && ev.destroyed && ev.wasField && !!ev.killer && c.zone !== 'm',   // any destination: Grave Protector shuffles it into the Deck and the -500 still applies (archive; pass2 goat-11)
       res: function* (g, c, p, L2) { const k = L2.ev.killer; if (k && onField(k) && faceUp(k)) { addMod(g, k, { atk: -500, def: -500 }); log(g, `${name(k)} lost 500 ATK and DEF.`); } } }] },
   // Destroyed by an effect while on the field (with the equipped monster too, per the rulings; not when it is just sent to
   // the GY because the monster left). The equip is noted on the card (c.flags.smoke), so the trigger sees it in the snapshot.

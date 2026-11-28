@@ -112,6 +112,7 @@ const watch = { type: 'trig', loc: 'any', res: noop, on: (g, ev) => {
 /* Obelisk (port of classic-1.js). "This card's Normal Summon can't be negated. When Normal Summoned, cards and effects can't be
  activated." PARTIAL: the lock lasts while the engine still treats the summon as the last thing that happened (g.sw). */
 const godLock = {
+  duringSummon: true,   // it applies in its own summon negation window (engine statics skip a summoning monster otherwise: Jinzo)
   forbid: (g, src, a) => a.type === 'activate' && a.c !== src && (
     (g.attempt && g.attempt.cs.includes(src) && ['normal', 'tribute'].includes(g.attempt.how)) ||
     (g.sw && g.sw.cs.includes(src) && ['normal', 'tribute'].includes(g.sw.how))),
@@ -301,7 +302,7 @@ E.addScripts({
     // destroyed in its controller's 2nd End Phase after activation (counted as a trigger with a chain link)
     { type: 'trig', loc: 'st', mand: true, label: 'Destroy Overdoom Line',
       on: (g, ev, c) => { if (ev.type !== 'phase' || ev.ph !== 'end' || ev.tp !== c.ctrl || c.flags.f42cd == null) return false; c.flags.f42cd++; return c.flags.f42cd >= 2; },
-      res: function* (g, c) { if (onField(c)) destroy(g, [c], { rule: true }); } }],
+      res: function* (g, c) { if (onField(c)) destroy(g, [c], { by: c.ctrl }); } }],   // by its own effect, not a rule: Imperial Custom keeps it (ruling 5; pass2 edison-14)
     cont: { atk: (g, src, m) => m.flags.f42doom === src.u ? 1000 : 0 } },
   'Overwhelm': { effs: [{ type: 'act',
     cond: (g, c, p, x) => { const T = x.top; if (!T || T.negated) return false;

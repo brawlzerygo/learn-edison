@@ -440,7 +440,7 @@ E.addScripts({
       on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.battle && ev.to === 'gy' && !!ev.killer,
       res: function* (g, c, p, L) { const k = L.ev.killer; if (k && onField(k) && k.zone === 'm') { addCtr(g, k, 'A', 2); log(g, `${name(k)} got 2 A-Counters.`); } } }] },
   'Code A Ancient Ruins': { effs: [{ type: 'act', res: function* (g) { touch(g); } },
-    { type: 'trig', loc: 'st', mand: true, noChain: true,   // ruling 2: "does not start a chain"
+    { type: 'trig', loc: 'st', mand: true, noChain: true, onceGroup: true,   // ruling 2: "does not start a chain"; "monster(s)": one counter per destruction (pass2 edison-14)
       on: (g, ev, c) => faceUp(c) && ev.type === 'move' && ev.destroyed && ev.wasField && ev.snap && ev.snap.faceUp && ev.snap.mon && /Alien/.test(ev.snap.name),
       res: function* (g, c) { if (!onField(c)) return; addCtr(g, c, 'A', 1); log(g, 'Code A Ancient Ruins got an A-Counter.'); } },
     { type: 'ign', loc: 'st', opt: true, tags: { ss: 1 }, label: 'Remove 2 A-Counters: revive an Alien',

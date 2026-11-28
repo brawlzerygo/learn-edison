@@ -24,7 +24,7 @@ E.addScripts({
   'Elemental HERO Flame Wingman': {
     effs: [{ type: 'trig', mand: true, label: 'Damage equal to its ATK', on: (g, ev, c) => battleKill(ev, c) && ev.prevCtrl !== c.ctrl,
       res: function* (g, c, p, L2) { const t = L2.ev.c; if (t.zone !== 'gy' || !isMon(t)) return;
-        const f = L2.ev.snap && L2.ev.snap.flags, n = f && f.baseAtk != null && !f.ownBaseAtk ? f.baseAtk : baseAtk(t);
+        const n = L2.ev.snap && L2.ev.snap.batk != null ? L2.ev.snap.batk : baseAtk(t);   // its original ATK as it left the field (1400; pass2 goat-08)
         damage(g, opp(p), n, { src: c, srcP: p }); } }] },
   // No shared script. The +2000 applies during damage calculation only (E.lib.dcalc, 2026-11-28 audit).
   'Cipher Soldier': {

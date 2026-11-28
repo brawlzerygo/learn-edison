@@ -298,9 +298,9 @@ E.addScripts({
   // PARTIAL: "can't attack directly" blocks its attacks while the opponent has no monsters (a replayed attack can still go direct).
   'Magical Scientist': { effs: [
     { type: 'ign', tags: { ss: 1 }, label: 'Pay 1000: summon a Fusion Monster',
-      cond: (g, c, p) => E.lib.canPay(g, p, 1000) && freeM(g, p) >= 0 && g.p[p].extra.some(x => D(x).k === 'fusion' && lv(x) <= 6),
+      cond: (g, c, p) => E.lib.canPay(g, p, 1000) && freeM(g, p) >= 0 && g.p[p].extra.some(x => D(x).k === 'fusion' && lv(x) <= 6 && E.lib.ssable(g, p, x)),   // one it can summon (fixer E4d scan)
       cost: function* (g, c, p) { pay(g, p, 1000); },
-      res: function* (g, c, p) { const fs = g.p[p].extra.filter(x => D(x).k === 'fusion' && lv(x) <= 6); if (!fs.length || freeM(g, p) < 0) return;
+      res: function* (g, c, p) { const fs = g.p[p].extra.filter(x => D(x).k === 'fusion' && lv(x) <= 6 && E.lib.ssable(g, p, x)); if (!fs.length || freeM(g, p) < 0) return;
         const [x] = yield* pick(g, p, 'Special Summon which Level 6 or lower Fusion Monster?', fs, 1, 1, 'good'); if (!x) return;
         const i = yield* choose(g, p, `${name(x)}: which position?`, ['Attack Position', 'Defense Position']);
         if (!ss(g, p, x, i ? 'def' : 'atk')) return; x.flags.sci = g.turnNo;
@@ -398,7 +398,7 @@ E.addScripts({
     // ENGINE: a Spell/Trap's continuous effects (cont) can't be negated, so those still apply.
     res: function* (g, c, p, L2) { L2.data.L.negBy = p; negate(g, L2.data.L, false);
       addRule(g, (g2, a) => a.type === 'activate' && a.c && isTrap(a.c) && D(a.c).sub === 'Continuous', { end: g.turnNo }); log(g, 'Continuous Trap Cards are negated this turn.'); } }] },
-  'Metal Dragon': { mats: [x => /^Steel Ogre Grotto #?1$/.test(D(x).n), x => named(x, 'Lesser Dragon')], effs: [] },
+  'Metal Dragon': { mats: [Object.assign(x => ['Steel Ogre Grotto 1', 'Steel Ogre Grotto #1'].includes(D(x).n), { named: true }), x => named(x, 'Lesser Dragon')], effs: [] },   // exact names (Edison and Goat spellings), a named material (fixer E4d)
   'Metal Shooter': { self: { atk: (g, c) => 800 * ctr(c, 'shooter'),
       replaceDestroy: (g, c, o) => { if (o.battle || o.rule || ctr(c, 'shooter') < 1) return false; addCtr(g, c, 'shooter', -1); log(g, `Metal Shooter removed a counter instead (${ctr(c, 'shooter')} left).`); return true; } },
     effs: [{ type: 'trig', mand: true, label: 'Place 2 counters', on: (g, ev, c) => evSummoned(ev, c, ['normal', 'tribute']),

@@ -62,6 +62,14 @@ function cardValue(g, c, onField) {
 }
 /* A Set card of mine keeps most of its worth; in Goat a Set Spell that isn't a Quick-Play only waits there to be hit by
  Heavy Storm or Breaker, so it is worth less than in the hand (play it, or keep it in hand). */
+/* Flip monsters (2026-11-28, benzi_family: the computer Normal Summoned Flip monsters face-up every time, in Goat and Edison).
+ A Set monster scored 0.9 of a face-up one, so Setting never looked better, and a Flip effect was worth nothing until it
+ happened. A Flip monster face-down now keeps its Flip effect's worth (FLIP_WORTH), and one with low ATK (under FLIP_SET_ATK:
+ Magician of Faith, Man-Eater Bug, Cyber Jar, Morphing Jar...) is never Normal Summoned face-up when it can be Set, at every
+ level (its face-up summon isn't a candidate, so no slip or wobble picks it). Stronger ones (Dekoichi, 1400) weigh the Flip
+ against attacking (Zack: "dekoichi could go either way situationally"). */
+const FLIP_WORTH = 350, FLIP_SET_ATK = 1200;
+const isFlipMon = d => !!(d && (d.flip || /\bFlip\b/.test(d.ab || '')));
 function setShare(c, i) { if (!goat()) return 0.9; const d = E().data(c); return (d.k === 'trap' || d.sub === 'Quick-Play' ? 0.85 : 0.5) - (i >= 2 ? 0.08 * (i - 1) : 0); } // the 3rd Set card on is more Heavy Storm bait
 function chaosFuel(g, p) { let l = 0, dk = 0; for (const c of g.p[p].gy) { const d = E().data(c); if (d.k === 'spell' || d.k === 'trap') continue; if (d.a === 'LIGHT') l++; else if (d.a === 'DARK') dk++; } return Math.min(l, dk); }
 function evaluate(g, me) {
@@ -72,7 +80,7 @@ function evaluate(g, me) {
     let v = Math.min(P.lp, 8000) * 0.55 + Math.max(0, P.lp - 8000) * 0.15;
     if (P.lp <= 2000) v -= (2000 - P.lp) * 0.4; // low LP is extra dangerous
     for (const c of P.m) if (c) {
-      if (c.pos === 'set') v += p === me ? cardValue(g, c, true) * 0.9 : 1000;
+      if (c.pos === 'set') v += p === me ? cardValue(g, c, true) * 0.9 + (isFlipMon(E().data(c)) ? FLIP_WORTH : 0) : 1000;
       else v += cardValue(g, c, true) * (c.ctrl !== c.owner && c.flags.ctrlUntil != null ? 0.15 : 1);
     }
     let nSet = 0;
@@ -285,8 +293,14 @@ function candidates(g, pr) {
     const rec = (s, cur) => { if (out.length > 40) return; if (cur.length >= pr.min && cur.length <= pr.max && cur.length) out.push(cur.slice()); if (cur.length === pr.max) return; for (let i = s; i < keys.length; i++) { cur.push(keys[i]); rec(i + 1, cur); cur.pop(); } };
     rec(0, []); return out.length ? out : [defaultAnswer(g, pr)];
   }
-  return pr.opts.map(o => [o.key]);
+  let opts = pr.opts;
+  if (pr.type === 'idle') { // a low-ATK Flip monster that can be Set is never Normal Summoned face-up (FLIP_SET_ATK)
+    const setU = new Set(opts.filter(o => o.kind === 'set').map(o => o.u));
+    opts = opts.filter(o => !(o.kind === 'ns' && setU.has(o.u) && o.label === 'Normal Summon' && weakFlip(g, o.u)));
+  }
+  return opts.map(o => [o.key]);
 }
+function weakFlip(g, u) { const c = findCard(g, u), d = c && E().data(c); return !!(d && isFlipMon(d) && (parseInt(d.atk, 10) || 0) < FLIP_SET_ATK); }
 /* Four levels (Zack, 2026-11-24, for Learn Retro Play): Beginner, Intermediate, Advanced, Tournament.
  slip: how often it makes a plain mistake (a random play, or missing a response it had); noise: how much its judgment of a
  play wobbles (variety, and misreads at the low end); depth: how many of its own moves it looks ahead in its Main Phase

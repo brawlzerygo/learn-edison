@@ -287,9 +287,9 @@ E.addScripts({
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Banish which face-up monster?', oppFaceUp(g, p), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) {
       const t = live(L2)[0]; if (!t || !faceUp(t) || t.ctrl === p) return; const n = L.nameOff(t);   // the name off the field (ruling 7: Proto-Cyber Dragon), Harpie Ladies share one (ruling 8)
-      move(g, t, 'ban', { reason: 'effect', by: p }); log(g, `${n} was banished.`);
+      move(g, t, 'ban', { reason: 'effect', by: p }); if (t.zone === 'ban') log(g, `${n} was banished.`);   // the log names only real banishes (pass2 edison-s01)
       const xs = g.p[opp(p)].gy.filter(x => L.nameIs(x, n) || L.nameOff(x) === n); for (const x of xs) move(g, x, 'ban', { reason: 'effect', by: p });
-      if (xs.length) log(g, `${xs.length} more ${n} in the GY ${xs.length > 1 ? 'were' : 'was'} banished.`); } }] },
+      const gone = xs.filter(x => x.zone === 'ban').length; if (gone) log(g, `${gone} more ${n} in the GY ${gone > 1 ? 'were' : 'was'} banished.`); } }] },
   'Kasha': {
     proc: { label: 'Special Summon (you control 2 Zombies)', cond: (g, c, p) => monsOf(g, p).filter(x => faceUp(x) && race(x) === 'Zombie').length >= 2 },
     effs: [lockInstall, { type: 'trig', mand: true, label: 'Shuffle every other monster into the Deck',

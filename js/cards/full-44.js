@@ -403,8 +403,10 @@ E.addScripts({
   'Storm Caller': { effs: [
     { type: 'trig', label: 'Put the destroyed monster on top of its owner\'s Deck',
       on: (g, ev, c) => ev.type === 'move' && ev.battle && ev.destroyed && ev.to === 'gy' && !!ev.killer && ev.killer !== c && race(ev.killer) === 'Psychic' && (onField(ev.killer) ? ev.killer.ctrl : ev.killer.owner) === c.ctrl && ev.c.owner !== c.ctrl && ev.prevCtrl !== c.ctrl,
-      cond: (g, c, p, x) => x.ev.c.zone === 'gy',
-      res: function* (g, c, p, L2) { const x = L2.ev.c; if (x.zone === 'gy') { move(g, x, 'deckTop', { reason: 'effect', by: p }); log(g, `${D(x).n} was put on top of ${PN(g, x.owner)}'s Deck.`); } } },
+      // PARTIAL: a trigger after the GY, not a true "instead of the GY" replacement; a field monster that can't go to the Deck (G.B. Hunter,
+      // ruling 5) gives no option (pass2 edison-19)
+      cond: (g, c, p, x) => x.ev.c.zone === 'gy' && !E.lib.toDeckBlocked(g, x.ev.c, true),
+      res: function* (g, c, p, L2) { const x = L2.ev.c; if (x.zone === 'gy' && !E.lib.toDeckBlocked(g, x, true)) { move(g, x, 'deckTop', { reason: 'effect', by: p }); log(g, `${D(x).n} was put on top of ${PN(g, x.owner)}'s Deck.`); } } },
     { type: 'trig', loc: 'any', mand: true, label: 'Its controller takes damage',
       on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.destroyed && !ev.battle,
       res: function* (g, c, p, L2) { damage(g, L2.ev.prevCtrl, num(D(c).atk), { src: c, srcP: opp(L2.ev.prevCtrl) }); } }] },

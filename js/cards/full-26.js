@@ -184,7 +184,7 @@ E.addScripts({
       cost: function* (g, c, p) { pay(g, p, 800); },
       target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which monster from your GY?', g.p[p].gy.filter(x => canSS(g, p, x)), 1, 1, 'good'); },
       res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy' && onField(c) && ss(g, p, t, 'atk')) { equip(g, c, t); c.flags.pb = t.u; } } },
-    { type: 'trig', loc: 'any', mand: true, tags: { destroy: 1 }, label: 'Destroy the equipped monster', on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.destroyed && ev.snap && ev.snap.flags && ev.snap.flags.pb,
+    { type: 'trig', loc: 'any', mand: true, tags: { destroy: 1 }, label: 'Destroy the equipped monster', on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.destroyed && ev.snap && ev.snap.flags && ev.snap.flags.pb && !ev.snap.negd,   // not when it was negated as it left (Spell Canceller ruling 3; pass2 goat-08)
       res: function* (g, c, p, L2) { const t = fieldMons(g).find(x => x.u === L2.ev.snap.flags.pb); if (t) destroy(g, [t], { by: p }); } }] },
   'Prickle Fairy': {
     cont: { grant: (g, src, c, flag) => flag === 'noAttackTarget' && c !== src && onField(c) && c.zone === 'm' && c.ctrl === src.ctrl && faceUp(c) && race(c) === 'Insect' && !negd(g, src),
@@ -327,7 +327,8 @@ E.addScripts({
   'Reflect Bounder': { effs: [
     { type: 'trig', mand: true, label: 'Damage equal to the attacker’s ATK', on: (g, ev, c) => ev.type === 'dsStart' && ev.t === c && c.pos === 'atk' && ev.a.ctrl !== c.ctrl,
       res: function* (g, c, p, L2) { const a = L2.ev.a; if (!onField(c) || !onField(a)) return; c.flags.reflect = g.turnNo; damage(g, opp(p), stat(g, a, 'atk'), { src: c, srcP: p }); } },
-    { type: 'trig', mand: true, tags: { destroy: 1 }, label: 'Destroy this card', on: (g, ev, c) => ev.type === 'afterCalc' && ev.t === c && c.flags.reflect === g.turnNo,
+    // no chain link: it is already in the GY when D.D. Warrior Lady's effect resolves (archive; still stopped while negated: Ha Des; pass2 goat-09)
+    { type: 'trig', mand: true, noChain: true, tags: { destroy: 1 }, label: 'Destroy this card', on: (g, ev, c) => ev.type === 'afterCalc' && ev.t === c && c.flags.reflect === g.turnNo,
       res: function* (g, c) { if (onField(c)) destroy(g, [c], { by: c.ctrl }); } }] },
   'Regenerating Mummy': { effs: [{ type: 'trig', loc: 'gy', mand: true, label: 'Return to the hand',
     on: (g, ev, c) => sentByOpp(g, ev, c, ['hand']),

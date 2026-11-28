@@ -210,7 +210,7 @@ E.addScripts({
     target: function* (g, c, p, L2) { L2.data.L = g.chain[g.chain.length - 1]; },
     res: function* (g, c, p, L2) { const T = L2.data.L; if (!T || T.negated) return; const nm = D(T.c).n, o = opp(p);
       T.negBy = p; negate(g, T, true);
-      addRule(g, (g2, a) => a.type === 'activate' && a.p === o && a.eff && a.eff.type === 'act' && isSpell(a.c) && D(a.c).n === nm);
+      addRule(g, (g2, a) => a.type === 'activate' && a.p === o && !!a.c && isSpell(a.c) && D(a.c).n === nm);   // every effect of that name, not only its activation (archive ruling 3: Black Pendant's GY effect; pass2 goat-08)
       log(g, `${PN(g, o)} can't activate ${nm} for the rest of the Duel.`); } }] },
   'Cyclon Laser': { cont: { atk: (g, src, m) => src.equipTo === m.u ? 300 : 0, grant: (g, src, m, flag) => flag === 'piercing' && src.equipTo === m.u },
     effs: [equipAct(m => named(m, 'Gradius'), 'Equip to which Gradius?')] },

@@ -32,6 +32,14 @@ KIND_OF = {'Normal': 'normal', 'Normal Tuner': 'normal', 'Effect': 'effect', 'Fl
            'Effect Gemini': 'effect', 'Effect Union': 'effect', 'Effect Spirit': 'effect', 'Effect Toon': 'effect',
            'Synchro': 'synchro', 'Fusion': 'fusion', 'Ritual': 'ritual'}
 
+# Hand corrections to edisonformat.net's errata.json (typos in its text), applied to data/errata.js on every build
+ERRATA_FIXES = [
+    ('Goyo Guardian', 'what', 'Sumchro Summon', 'Synchro Summon'),
+    ('Goyo Guardian', 'what', 'You no not have', 'You do not have'),
+    ('Mausoleum of the Emperor', 'text', 'can pay choose 1 or 2', 'can choose 1 or 2'),
+    ('Mausoleum of the Emperor', 'text', 'during th resolution', 'during the resolution'),
+]
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 UA = {'User-Agent': 'Mozilla/5.0 (personal study tool)'}
@@ -142,6 +150,12 @@ def main():
         byname = {r['n']: r['id'] for r in out}
         errata = [{'n': e['Name'], 'id': byname.get(e['Name']), 'what': e.get('Desc', '').replace('\\n', '\n'),
                    'text': e.get('Text', '').replace('\\n', '\n')} for e in json.load(open(ep))]
+        # Typo fixes made by hand in data/errata.js, kept here so a rebuild leaves the file as it is (2026-11-28, fixer E4d).
+        # Each is (card name, field, wrong text, right text); a fix whose wrong text is gone from the source is reported.
+        for n, k, bad, good in ERRATA_FIXES:
+            e = next((x for x in errata if x['n'] == n), None)
+            if e and bad in e[k]: e[k] = e[k].replace(bad, good)
+            elif not e or good not in e[k]: print('errata fix not applied:', n, k, repr(bad))
         with open(os.path.join(ROOT, 'data/errata.js'), 'w') as fh:
             fh.write('window.EDISON_ERRATA=' + json.dumps(errata, ensure_ascii=False, separators=(',', ':')) + ';\n')
         print('errata', len(errata), 'unmatched', [e['n'] for e in errata if not e['id']])

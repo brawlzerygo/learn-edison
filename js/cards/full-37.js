@@ -22,11 +22,12 @@ const ritualSpell = (pred, exact) => ({ effs: [{ type: 'act', tags: { ss: 1 },
   res: function* (g, c, p) { yield* ritualSummon(g, p, { monster: pred, exact }); } }] });
 // "by an effect of a card controlled by your opponent" (same as full-26.js): the move's own `by` when given, else the turn player.
 const byOpp = (g, ev, c) => ev.by != null && ev.by !== c.owner;   // the move's by (engine move: the resolving link's controller), never the turn player
-// Countdown on a face-up Spell/Trap: counts the controller's (mine) or the opponent's (!mine) phases of one kind after activation.
+// Countdown on a face-up Spell/Trap: counts the controller's (mine) or the opponent's (!mine) phases of one kind after activation. Its
+// destroy is the card's own effect, not a rule (Imperial Custom keeps a Depth Amulet, ruling 2; pass2 edison-14).
 const countdown = (ph, mine, n, label, how = 'destroy') => ({ type: 'trig', loc: 'st', mand: true, label,
   on: (g, ev, c) => { if (ev.type !== 'phase' || ev.ph !== ph || c.flags.f37cd == null) return false;
     if ((ev.tp === c.ctrl) !== mine) return false; c.flags.f37cd++; return c.flags.f37cd >= n; },
-  res: function* (g, c, p) { if (!onField(c)) return; if (how === 'destroy') destroy(g, [c], { rule: true }); else { move(g, c, 'gy', { reason: 'rule' }); log(g, `${name(c)} was sent to the GY.`); } } });
+  res: function* (g, c, p) { if (!onField(c)) return; if (how === 'destroy') destroy(g, [c], { by: c.ctrl }); else { move(g, c, 'gy', { reason: 'rule' }); log(g, `${name(c)} was sent to the GY.`); } } });
 const startCount = c => { c.flags.f37cd = 0; };
 
 /* A Trap that answers a moment with no response window in the engine (same as full-26.js): a trigger that only fires while

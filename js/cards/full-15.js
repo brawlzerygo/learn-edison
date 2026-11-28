@@ -325,12 +325,12 @@ E.addScripts({
   // PARTIAL: the monster summoned by this effect can still be revived (the engine doesn't track "properly summoned").
   'Super Robolady': { self: { atk: (g, c) => g.inDS && g.battle && g.battle.a === c && !g.battle.t ? 1000 : 0 },
     effs: [{ type: 'ign', tags: { ss: 1 }, label: 'Return this card: Special Summon Super Roboyarou',
-      cond: (g, c, p) => c.turnIn !== g.turnNo && g.p[p].extra.some(x => named(x, 'Super Roboyarou')),
+      cond: (g, c, p) => c.turnIn !== g.turnNo && g.p[p].extra.some(x => named(x, 'Super Roboyarou') && E.lib.ssable(g, p, x)),   // one it can summon (Prohibition; pass2 goat-s01)
       cost: function* (g, c, p) { move(g, c, 'extra', { reason: 'cost' }); log(g, `${PN(g, p)} returned Super Robolady to the Extra Deck.`); },
       res: function* (g, c, p) { const x = g.p[p].extra.find(y => named(y, 'Super Roboyarou')); if (x) ss(g, p, x, 'atk'); } }] },
   'Super Roboyarou': { self: { atk: (g, c) => g.inDS && g.battle && ((g.battle.a === c && g.battle.t) || g.battle.t === c) ? 1000 : 0 },
     effs: [{ type: 'ign', tags: { ss: 1 }, label: 'Return this card: Special Summon Super Robolady',
-      cond: (g, c, p) => c.turnIn !== g.turnNo && g.p[p].extra.some(x => named(x, 'Super Robolady')),
+      cond: (g, c, p) => c.turnIn !== g.turnNo && g.p[p].extra.some(x => named(x, 'Super Robolady') && E.lib.ssable(g, p, x)),   // one it can summon (Prohibition; pass2 goat-s01)
       cost: function* (g, c, p) { move(g, c, 'extra', { reason: 'cost' }); log(g, `${PN(g, p)} returned Super Roboyarou to the Extra Deck.`); },
       res: function* (g, c, p) { const x = g.p[p].extra.find(y => named(y, 'Super Robolady')); if (x) ss(g, p, x, 'atk'); } }] },
   'Super Solar Nutrient': { effs: [{ type: 'act', tags: { ss: 1 },

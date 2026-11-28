@@ -228,7 +228,7 @@ const S = {
     cost: function* (g, c, p) { yield* discardN(g, p, 1); },
     // ruling 1 and archive: not a face-up Normal/Quick-Play Spell or Normal/Counter Trap (it is already resolving or waiting to leave)
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Put which card on top of the Deck?', fieldOf(g, opp(p)).filter(x => pwwbOk(g, x)), 1, 1, 'bad'); },
-    res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t) { move(g, t, 'deckTop', { reason: 'effect', by: p }); log(g, `${D(t).n} was put on top of the Deck.`); } } }] },
+    res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t) { move(g, t, 'deckTop', { reason: 'effect', by: p }); if (['deck', 'extra'].includes(t.zone)) log(g, `${D(t).n} was put on top of the Deck.`); } } }] },   // the log only when it went there (pass2 goat-08)
   'Doomkaiser Dragon': { hook: true, effs: [{ type: 'trig', when: true, tags: { ss: 1 }, on: (g, ev, c) => evSummoned(ev, c, ['special', 'synchro', 'fusion', 'ritual']),
     cond: (g, c, p) => freeM(g, p) >= 0 && g.p[opp(p)].gy.filter(x => E.lib.ssable(g, p, x)).some(isZombie),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which Zombie from their GY?', g.p[opp(p)].gy.filter(isZombie), 1, 1, 'good'); },
@@ -285,7 +285,8 @@ const S = {
   'Mask of Restrict': { cont: { forbid: (g, src, a) => { if (decreeOn(g, src)) return false;
       if (a.type === 'tribute') return true;
       if ((a.type === 'ns' || a.type === 'set') && lv(a.c) >= 5) return !(D(a.c).n === 'Blackwing - Sirocco the Dawn' && !monsOf(g, a.p).length && monsOf(g, opp(a.p)).length);
-      if (a.type === 'ss' && a.how === 'ritual') return true;
+      // no blanket Ritual Summon lock: Ritual Tributes (hand and field) go through the 'tribute' forbid, and Djinn banished from the GY is no
+      // Tribute (Djinn ruling 8, Mask ruling 5; pass2 edison-20, fixer E4d)
       if (a.type === 'activate' && D(a.c).n === 'Soul Exchange') return true;   // its whole use is the Tribute it allows
       return false; } },
     effs: [{ type: 'act', res: function* () {} }] },

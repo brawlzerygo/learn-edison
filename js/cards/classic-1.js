@@ -50,6 +50,7 @@ const godRules = { type: 'trig', loc: 'any', res: function* () {},
 // PARTIAL: the lock lasts while the engine still treats the summon as the last thing that happened (g.sw), so the
 // summoning player's other cards stay locked until their next action. The God's own effects are left free.
 const godLock = {
+  duringSummon: true,   // it applies in its own summon negation window (engine statics skip a summoning monster otherwise: Jinzo)
   forbid: (g, src, a) => a.type === 'activate' && a.c !== src && (
     (g.attempt && g.attempt.cs.includes(src) && ['normal', 'tribute'].includes(g.attempt.how)) ||
     (g.sw && g.sw.cs.includes(src) && ['normal', 'tribute'].includes(g.sw.how))),

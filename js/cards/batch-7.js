@@ -54,8 +54,13 @@ const NEG_TRAP = ['Jinzo', 'Royal Decree', 'Tyrant Dragon', 'Sorcerer of Dark Ma
 const GY_TARGET = ['Monster Reborn', 'Call of the Haunted', 'Premature Burial', 'Dark Grepher', 'Symbols of Duty', 'Magician of Faith', 'Pot of Avarice', 'Return of the Doomed'];
 
 const relEq = (g, c) => onField(c) ? g.p[c.ctrl].st.find(x => x && x.equipTo === c.u && isMon(x)) || null : null;
-const birPool = (g, p) => [...g.p[p].hand.filter(x => isMon(x) && D(x).n !== 'Relinquished' && lv(x) >= 1), ...monsOf(g, p).filter(x => lv(x) >= 1),
-  ...g.p[p].gy.filter(x => D(x).n === 'Djinn Releaser of Rituals' && !L.forbid(g, { type: 'banish', c: x, from: 'gy', p, inCond: true }))];   // not while it can't be banished (Iron Wall, Kycoo, Necrovalley)
+/* Black Illusion Ritual's Tributes (fixer E4d): hand and field monsters through the Tribute rules (tribPool: Soul Exchange, Mask of Restrict
+ stops them), Djinn in the GY even under Mask of Restrict (site ruling) but not while it can't be banished (Iron Wall, Kycoo, Necrovalley);
+ with no free Monster Zone only a monster in your own zone makes room (pass2 goat-08); a second Relinquished can be the Tribute. */
+const birPool = (g, p) => { const mask = L.forbid(g, { type: 'tribute', p }), noZone = freeM(g, p) < 0, rels = g.p[p].hand.filter(x => D(x).n === 'Relinquished').length;
+  return [...(mask || noZone ? [] : g.p[p].hand.filter(x => isMon(x) && lv(x) >= 1 && (D(x).n !== 'Relinquished' || rels > 1))),
+    ...L.tribPool(g, p, { known: true }).filter(x => lv(x) >= 1 && (!noZone || x.ctrl === p)),
+    ...(noZone ? [] : g.p[p].gy.filter(x => D(x).n === 'Djinn Releaser of Rituals' && !L.forbid(g, { type: 'banish', c: x, from: 'gy', p, inCond: true })))]; };
 const poleTop = g => { const ms = fieldMons(g).filter(faceUp); if (!ms.length) return []; const hi = Math.max(...ms.map(x => atk(g, x))); return ms.filter(x => atk(g, x) === hi); };
 const areaB = g => { const ch = fieldMons(g).filter(x => x.pos === 'atk' && lv(x) >= 4); for (const x of ch) x.pos = 'def'; return ch; };
 
@@ -73,7 +78,7 @@ E.addScripts({
       const deck = g.p[p].deck; let i = deck.length - 1; while (i >= 0 && !isST(deck[i])) i--;
       if (i < 0) { shuffleDeck(g, p); log(g, `${PN(g, p)} found no Spell or Trap and shuffled the Deck.`); return; }
       const st = deck[i], rest = deck.slice(i + 1);
-      move(g, st, 'hand', { reason: 'effect' }); log(g, `${PN(g, p)} added ${name(st)} to the hand.`);
+      move(g, st, 'hand', { reason: 'effect', lockedToGY: true }); if (st.zone === 'hand') log(g, `${PN(g, p)} added ${name(st)} to the hand.`);   // under a search lock it goes to the GY with the rest
       for (const x of rest) move(g, x, 'gy', { reason: 'effect' }); if (rest.length) log(g, `${PN(g, p)} sent ${rest.length} card(s) from the Deck to the GY.`); } }] },
   'Witch of the Black Rose': { cont: noSSFromGY, // "Cannot be Special Summoned": the engine's summoning-condition check (forbid, 2026-11-27) applies its text everywhere
     effs: [{ type: 'trig', mand: true, on: (g, ev, c) => evSummoned(ev, c, ['normal', 'tribute']),
@@ -135,7 +140,7 @@ E.addScripts({
       res: function* (g, c, p) { destroy(g, fieldMons(g).filter(x => x.flags.scopenBy === c.u && x.flags.scopenT === g.turnNo), { by: p }); } } ],
     self: { lv: (g, c) => c.pos === 'def' ? 4 : 0 } },
   'Morphtronic Slingen': { // ● Defense Position: "you can destroy another Morphtronic monster you control instead" (replaceOther, 2026-11-28 audit)
-    self: { replaceAsk: L.replaceOther((g, c) => monsOf(g, c.ctrl).filter(morphMon), 'Destroy another Morphtronic monster instead of %s?', 'Destroy which Morphtronic instead?', 'destroy', (g, c) => c.pos === 'def') },
+    self: { replaceAsk: L.replaceOther((g, c) => monsOf(g, c.ctrl).filter(m => faceUp(m) && morphMon(m)), 'Destroy another Morphtronic monster instead of %s?', 'Destroy which Morphtronic instead?', 'destroy', (g, c) => c.pos === 'def') },
     effs: [{ type: 'ign', opt: true, tags: { destroy: 1 }, label: 'Tribute a Morphtronic: destroy a card',
       cond: (g, c, p) => c.pos === 'atk' && E.lib.tribPool(g, p, { known: true }).some(x => morphMon(x) && D(x).n !== 'Morphtronic Slingen') && allField(g).length > 1,
       cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Tribute a Morphtronic monster', E.lib.tribPool(g, p, { known: true }).filter(x => morphMon(x) && D(x).n !== 'Morphtronic Slingen'), 1, 1, 'cost'); move(g, x, 'gy', { reason: 'cost' }); log(g, `${PN(g, p)} Tributed ${D(x).n}.`); },
@@ -148,8 +153,8 @@ E.addScripts({
       const xs = yield* pick(g, p, `Special Summon up to ${n} ${L.data.n}`, cs, 1, n, 'good'); for (const x of xs) ss(g, p, x); shuffleDeck(g, p); } }] },
   'Morphtronic Bind': { effs: [{ type: 'act', res: function* () {} }],
     cont: { forbid: (g, src, a) => (a.type === 'attack' || a.type === 'pos') && a.c.ctrl !== src.ctrl && lv(a.c) >= 4 && monsOf(g, src.ctrl).some(x => faceUp(x) && morphMon(x)) } },
-  'Reaper on the Nightmare': { // PARTIAL: "destroy this card after an effect that targets it resolves" is hard-coded for Spirit Reaper only (ENGINE: chain resolution hook)
-    self: { noBattleDestroy: true, directAttack: true },
+  'Reaper on the Nightmare': { // ② "destroy this card after an effect that targets it resolves": the engine's reapOnTarget, as Spirit Reaper (site ruling 2)
+    self: { noBattleDestroy: true, directAttack: true, reapOnTarget: true },
     effs: [{ type: 'trig', mand: true, on: (g, ev, c) => ev.type === 'damage' && ev.battle && ev.direct && ev.src === c,
       res: function* (g, c, p) { const h = g.p[opp(p)].hand; if (!h.length) return; const x = h[Math.floor(g.rnd() * h.length)]; move(g, x, 'gy', { reason: 'discard' }); log(g, `${PN(g, opp(p))} discarded ${name(x)} at random.`); } }] },
   // "Cards on the field can't be returned to the Deck": the engine's toDeck forbid (2026-11-28 audit, E4b): moves from the field to the Deck
@@ -158,7 +163,7 @@ E.addScripts({
   'Morphtronic Forcefield': { effs: [{ type: 'act',
     cond: (g, c, p, x) => { const top = x.top; if (!spellTrapAct(top) || top.negated || !(top.tags && top.tags.destroy)) return false;
       const mine = monsOf(g, p).filter(m => faceUp(m) && morphMon(m)); if (!mine.length) return false;
-      if (!g.p[p].deck.some(isMorph)) return false;
+      if (!g.p[p].deck.some(x => isMorph(x) && isMon(x))) return false;   // a Morphtronic monster in the Deck (site ruling 3, pass2 edison-19)
       return L.wouldDestroy(g, top).some(t => mine.includes(t)); },   // certain only: not Fissure or Smashing Ground (ruling 2)
     target: function* (g, c, p, L) { L.data.L = g.chain[g.chain.length - 1]; },
     res: function* (g, c, p, L) { L.data.L.negBy = p; negate(g, L.data.L, true); yield* search(g, p, isMorph, 'Add a Morphtronic card'); } }] },
@@ -167,7 +172,7 @@ E.addScripts({
   'Ojama Blue': { effs: [{ type: 'trig', loc: 'gy', when: true, on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.battle && ev.to === 'gy',
     cond: (g, c, p) => g.p[p].deck.filter(isOjama).length >= 2,
     res: function* (g, c, p) { const cs = g.p[p].deck.filter(isOjama); if (cs.length < 2) return; const xs = yield* pick(g, p, 'Add 2 Ojama cards to your hand', cs, 2, 2, 'good');
-      for (const x of xs) move(g, x, 'hand', { reason: 'effect' }); log(g, `${PN(g, p)} added ${xs.map(name).join(' and ')} to the hand.`); shuffleDeck(g, p); } }] },
+      for (const x of xs) move(g, x, 'hand', { reason: 'effect' }); const got = xs.filter(x => x.zone === 'hand'); if (got.length) log(g, `${PN(g, p)} added ${got.map(name).join(' and ')} to the hand.`); shuffleDeck(g, p); } }] },
   'Ojamagic': { effs: [{ type: 'act', res: function* () {} },
     { type: 'trig', loc: 'gy', mand: true, on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.to === 'gy' && (ev.from === 'hand' || ev.wasField),
       res: function* (g, c, p) { const want = ['Ojama Green', 'Ojama Yellow', 'Ojama Black']; const found = want.map(n => g.p[p].deck.find(x => D(x).n === n));
@@ -195,7 +200,8 @@ E.addScripts({
       cond: (g, c, p) => g.p[p].deck.filter(isEquipSpell).length >= 3 && !L.forbid(g, { type: 'search', p }),
       res: function* (g, c, p) { const cs = g.p[p].deck.filter(isEquipSpell); if (cs.length < 3) return;
         const xs = yield* pick(g, p, 'Reveal 3 Equip Spells from your Deck', cs, 3, 3, 'good'); log(g, `${PN(g, p)} revealed ${xs.map(name).join(', ')}.`);
-        const x = xs[Math.floor(g.rnd() * xs.length)]; move(g, x, 'hand', { reason: 'effect' }); log(g, `${PN(g, opp(p))} picked one at random; ${PN(g, p)} added it to the hand.`); shuffleDeck(g, p); } }] },
+        const x = xs[Math.floor(g.rnd() * xs.length)]; move(g, x, 'hand', { reason: 'effect', lockedToGY: true });   // Rai-Oh chained: to the GY (ruling 2)
+        log(g, x.zone === 'hand' ? `${PN(g, opp(p))} picked one at random; ${PN(g, p)} added it to the hand.` : `${PN(g, opp(p))} picked one at random.`); shuffleDeck(g, p); } }] },
   // Up to 2 of the opponent's empty Monster Zones are locked when it becomes face-up (the engine's cont.lockZones, as Ojama King; 2026-11-28
   // audit, E4b: real zones, so a Fusion that frees zones works; none after a control change, site ruling 2), chosen by its controller (full-12 chooseKingZones).
   'Ojama Knight': { mats: [c => isOjama(c), c => isOjama(c)],
@@ -217,7 +223,8 @@ E.addScripts({
       const max = Math.min(5, Math.floor(E.lib.lpPayable(g, p) / 100)); const i = yield* choose(g, p, 'Pay how much LP?', [...Array(max).keys()].map(k => String((k + 1) * 100))); L.data.n = (i + 1) * 100; pay(g, p, L.data.n); },
     res: function* (g, c, p, L) { const o = L.data.o; if (o && onField(o) && faceUp(o)) { addMod(g, o, { atk: -L.data.n, def: -L.data.n, end: true }); log(g, `${name(o)} lost ${L.data.n} ATK and DEF.`); } } }] },
   'Mind Protector': { cont: { forbid: (g, src, a) => a.type === 'attack' && atk(g, a.c) <= 2000 && race(a.c) !== 'Psychic' },
-    effs: [{ type: 'trig', mand: true, on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
+    // a maintenance cost (site ruling): no chain link, paid under Skill Drain too, and not paying destroys it by rule (pass2 edison-19)
+    effs: [{ type: 'trig', mand: true, noChain: true, rule: true, label: 'Maintenance cost', on: (g, ev, c) => faceUp(c) && ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
       res: function* (g, c, p) { if (!onField(c)) return; if (E.lib.canPay(g, p, 500) && (yield* yn(g, p, 'Pay 500 LP to keep Mind Protector?'))) pay(g, p, 500); else destroy(g, [c], { by: p, rule: true }); } }] },
   // "Cannot be Tributed, except for a Tribute Summon": self.noTribute 'cost' (Tribute Summons only); the Level drop is a Level mod (lvAdd),
   // so it stacks with A Legendary Ocean and Synchro Boost (2026-11-28 audit, E4b, edison-19)
@@ -229,6 +236,8 @@ E.addScripts({
   // PARTIAL: only offered after your Normal Summon; placing a counter instead of paying LP is not automated. 2026-11-28 audit, E4b: the
   // counter is placed when the extra summon happens ("if successful"), and the extra summon is once per turn per player (site ruling 8).
   'Brain Research Lab': {
+    // negated: all its Psychic Counters are removed (site ruling, Spell Canceller; pass2 edison-19)
+    self: { onNegated: (g, c) => { if (c.flags.psy) { c.flags.psy = 0; g.seq++; log(g, 'Brain Research Lab\'s Psychic Counters were removed.'); } } },
     effs: [{ type: 'act', res: function* () {} },
       { type: 'ign', loc: 'fz', opt: true, label: 'Extra Normal Summon of a Psychic',
         cond: (g, c, p) => g.ns[p] >= 1 && !(g.brlUsed && g.brlUsed[p] === g.turnNo) && g.p[p].hand.some(x => isMon(x) && race(x) === 'Psychic'),
@@ -244,9 +253,12 @@ E.addScripts({
     res: function* (g, c, p) { gain(g, p, 1200); } }] },
   'Hyper Psychic Blaster': { noSynchro: true, proc: synProc(x => race(x) === 'Psychic'), self: { piercing: true },
     // site ruling 1: the difference is taken at the end of the Damage Step (the defender's DEF then, its original DEF if it left the field)
-    effs: [{ type: 'trig', on: (g, ev, c) => { if (ev.type === 'afterCalc' && ev.a === c && ev.t && ev.tWasDef) c.flags.hpbT = ev.t; return false; }, res: function* () {} },
-      { type: 'trig', loc: 'any', mand: true, on: (g, ev, c) => { if (ev.type !== 'dsEnd' || ev.a !== c || !c.flags.hpbT) return false; const t = c.flags.hpbT; c.flags.hpbT = null; const d = onField(t) ? def(g, t) : num(D(t).def); c.flags.hpb = onField(c) ? Math.max(0, atk(g, c) - d) : 0; return c.flags.hpb > 0; },
-        res: function* (g, c, p) { const n = c.flags.hpb; c.flags.hpb = 0; gain(g, p, n); } }] },
+    // its ATK is noted at damage calculation (on the duel, since the card's flags reset if it leaves): it gains even when it left the field
+    // before the end of the Damage Step (site ruling 2, archive "even if this card is no longer face-up"; pass2 edison-20)
+    effs: [{ type: 'trig', on: (g, ev, c) => { if (ev.type === 'afterCalc' && ev.a === c && ev.t && ev.tWasDef) (g.hpbRec || (g.hpbRec = {}))[c.u] = { t: ev.t, atk: atk(g, c) }; return false; }, res: function* () {} },
+      { type: 'trig', loc: 'any', mand: true, on: (g, ev, c) => { const r = g.hpbRec && g.hpbRec[c.u]; if (ev.type !== 'dsEnd' || ev.a !== c || !r) return false; delete g.hpbRec[c.u];
+          const t = r.t, d = onField(t) ? def(g, t) : num(D(t).def); c.flags.hpb = Math.max(0, (onField(c) ? atk(g, c) : r.atk) - d); return c.flags.hpb > 0; },
+        res: function* (g, c, p) { const n = c.flags.hpb; c.flags.hpb = 0; if (n) gain(g, p, n); } }] },
 
   /* ----- Relinquished ----- */
   'Relinquished': {
@@ -275,14 +287,14 @@ E.addScripts({
   'Manju of the Ten Thousand Hands': { effs: [{ type: 'trig', when: true, on: (g, ev, c) => evSummoned(ev, c, ['normal', 'tribute', 'flip']),
     cond: (g, c, p) => g.p[p].deck.some(x => D(x).k === 'ritual' || isRitualSpell(x)),
     res: function* (g, c, p) { yield* search(g, p, x => D(x).k === 'ritual' || isRitualSpell(x), 'Add a Ritual Monster or Ritual Spell'); } }] },
-  'Black Illusion Ritual': { effs: [{ type: 'act', tags: { ss: 1 },
+  'Black Illusion Ritual': { effs: [{ type: 'act', tags: { ss: 1 }, tribPool: true,
       cond: (g, c, p) => g.p[p].hand.some(x => D(x).n === 'Relinquished') && birPool(g, p).length > 0 && (freeM(g, p) >= 0 || monsOf(g, p).length > 0),
       res: function* (g, c, p) {
         const rms = g.p[p].hand.filter(x => D(x).n === 'Relinquished'), ps = birPool(g, p); if (!rms.length || !ps.length) return;
-        const rm = rms[0]; const [t] = yield* pick(g, p, 'Tribute a monster for Relinquished (Djinn in the GY is banished)', ps, 1, 1, 'cost'); if (!t) return;
+        const [t] = yield* pick(g, p, 'Tribute a monster for Relinquished (Djinn in the GY is banished)', ps, 1, 1, 'cost'); if (!t) return; const rm = rms.find(x => x !== t);
         const grp = g.group; move(g, t, t.zone === 'gy' ? 'ban' : 'gy', { reason: 'ritual', by: p, group: grp }); log(g, `${PN(g, p)} ${t.zone === 'ban' ? 'banished' : 'Tributed'} ${D(t).n} for a Ritual Summon.`);
         if (freeM(g, p) < 0 || rm.zone !== 'hand') return; ss(g, p, rm, 'atk', { how: 'ritual', group: grp }); } }] },
-  'Preparation of Rites': { effs: [{ type: 'act', cond: (g, c, p) => g.p[p].deck.some(x => D(x).k === 'ritual' && lv(x) <= 7),
+  'Preparation of Rites': { effs: [{ type: 'act', search: true, cond: (g, c, p) => g.p[p].deck.some(x => D(x).k === 'ritual' && lv(x) <= 7),
     res: function* (g, c, p) { const x = yield* search(g, p, x => D(x).k === 'ritual' && lv(x) <= 7, 'Add a Level 7 or lower Ritual Monster'); if (!x) return;
       const rs = g.p[p].gy.filter(isRitualSpell); if (rs.length && (yield* yn(g, p, 'Add a Ritual Spell from your GY?'))) { const [y] = yield* pick(g, p, 'Add which Ritual Spell?', rs, 1, 1, 'good'); move(g, y, 'hand', { reason: 'effect' }); log(g, `${PN(g, p)} added ${name(y)} to the hand.`); } } }] },
 

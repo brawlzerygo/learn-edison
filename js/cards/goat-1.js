@@ -28,14 +28,16 @@ const chaosProc = { label: 'Special Summon (banish a LIGHT and a DARK)',
 const eyeEquip = (g, c) => allField(g).find(x => x.zone === 'st' && isMon(x) && x.equipTo === c.u) || null;
 // a face-down monster equipped this way gives 0 ATK/DEF (as full-17.js; EDOPro, goat-08 finding)
 const eqStat = (g, e, which) => e.flags.fdEquip ? 0 : stat(g, e, which);
+const absorbable = (g, p) => monsOf(g, opp(p)).filter(m => !(faceUp(m) && E.lib.has(g, m, 'noCtrlSwitch')));
 const absorb = { type: 'ign', opt: true, label: 'Equip an opponent’s monster',
-  cond: (g, c, p) => !eyeEquip(g, c) && freeST(g, p) >= 0 && monsOf(g, opp(p)).length > 0,
-  target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Equip which of their monsters to this card?', monsOf(g, opp(p)), 1, 1, 'bad'); },
+  // a monster whose control can't switch can't be targeted (archive: Blindly Loyal Goblin; pass2 goat-08)
+  cond: (g, c, p) => !eyeEquip(g, c) && freeST(g, p) >= 0 && absorbable(g, p).length > 0,
+  target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Equip which of their monsters to this card?', absorbable(g, p), 1, 1, 'bad'); },
   res: function* (g, c, p, L2) {
     // gone if the target came back to this card's controller in the chain (Remove Brainwashing: archive), or this card left or turned face-down
-    const t = live(L2)[0]; if (!t || t.zone !== 'm' || t.ctrl === p || !onField(c) || !faceUp(c) || eyeEquip(g, c) || freeST(g, p) < 0) return;
+    const t = live(L2)[0]; if (!t || t.zone !== 'm' || t.ctrl === p || !onField(c) || !faceUp(c) || eyeEquip(g, c) || freeST(g, p) < 0 || (faceUp(t) && E.lib.has(g, t, 'noCtrlSwitch'))) return;
     const nm = D(t).n, fd = t.pos === 'set'; move(g, t, 'st', { ctrl: p, pos: 'up', reason: 'equip', by: p });
-    t.equipTo = c.u; t.flags.negated = true; if (fd) t.flags.fdEquip = true;   // an Equip Card now: its monster effects don't apply
+    t.equipTo = c.u; t.flags.negated = true; if (fd) t.flags.fdEquip = true; g.seq++;   // an Equip Card now: its monster effects don't apply (seq: Jinzo's trap lock goes at once, pass2 goat-08)
     log(g, `${nm} was equipped to ${name(c)}.`);
   } };
 const absorbSelf = (refl) => ({

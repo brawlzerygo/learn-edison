@@ -334,7 +334,7 @@ E.addScripts({
   'Mystic Swordsman LV2': { effs: [swordDS(), swordKill, swordUp('Mystic Swordsman LV4')] },
   'Mystic Swordsman LV4': { effs: [lockInstall, swordDS(), swordKill, swordUp('Mystic Swordsman LV6')] },
   'Mystic Swordsman LV6': { effs: [lockInstall, swordDS(function* (g, c, p, L2) { const t = L2.ev.t; if (!t || !onField(t) || t.zone !== 'm') return;
-    const top = t.owner === opp(p) && !has(g, t, 'noEffectDestroy') && (yield* yn(g, p, "Place it on top of your opponent's Deck instead of the GY?"));
+    const top = t.owner === opp(p) && !has(g, t, 'noEffectDestroy') && !L.toDeckBlocked(g, t) && (yield* yn(g, p, "Place it on top of your opponent's Deck instead of the GY?"));
     if (!top) { killFoe(g, c, p, t); return; }
     move(g, t, 'deckTop', { reason: 'effect', destroyed: true, by: p }); log(g, `${D(t).n} was destroyed and put on top of the Deck.`); })] },
 

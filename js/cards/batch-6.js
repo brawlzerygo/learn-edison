@@ -152,7 +152,7 @@ E.addScripts({
   // PARTIAL: it doesn't trigger when destroyed in the hand or Deck.
   'Earthbound Immortal Ccarayhua': { self: eiSelf, cont: eiCont, effs: [eiSelfDestroy,
     { type: 'trig', loc: 'any', mand: true, ds: true, tags: { destroy: 1 }, label: 'Destroy all cards on the field',
-      on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.destroyed && !ev.battle && !(ev.snap && ev.snap.flags && ev.snap.flags.selfDestroy),
+      on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.destroyed && !ev.battle && !ev.rule && !(ev.snap && ev.snap.flags && ev.snap.flags.selfDestroy),
       res: function* (g, c, p) { destroy(g, allField(g), { by: p, src: c }); } }] },
   // "Can be treated as 2 Tributes for the Tribute Summon of a DARK monster": the engine's self.tribWorth, read by the Tribute Summon itself
   // (2026-11-28 audit, E4b: it was an ignition effect standing in for the summon, with no Solemn Judgment window)
@@ -377,13 +377,15 @@ E.addScripts({
       target: function* (g, c, p, L2) { yield* tgt(g, p, L2, "Special Summon which Koa'ki Meiru monster?", g.p[p].gy.filter(isKMMon), 1, 1, 'good'); },
       res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy' && onField(c) && ss(g, p, t, 'atk')) { link(g, c, t); g.coreRein = g.coreRein || {}; g.coreRein[c.u] = t.u; } else if (onField(c)) move(g, c, 'gy', { reason: 'rule' }); } },
     { type: 'trig', loc: 'any', mand: true, label: 'Take damage',
-      on: (g, ev, c) => ev.type === 'move' && ev.destroyed && ev.wasField && g.coreRein && g.coreRein[c.u] === ev.c.u && ev.phase === 'end' && g.tp === c.ctrl && (onField(c) || g.events.some(e => e.type === 'move' && e.c === c && e.wasField && e.group === ev.group)),   // destroyed together (Icarus Attack): still applies (site ruling 5)
+      on: (g, ev, c) => ev.type === 'move' && ev.destroyed && ev.wasField && g.coreRein && g.coreRein[c.u] === ev.c.u && ev.phase === 'end' && g.tp === c.ctrl && !ev.linkDestroy && (onField(c) || g.events.some(e => e.type === 'move' && e.c === c && e.wasField && e.group === ev.group)),   // destroyed together (Icarus Attack): still applies (site ruling 5); not when the monster went because Core Reinforcement left (ruling 3, pass2 edison-18)
       res: function* (g, c, p, L2) { const n = L2.ev.snap ? L2.ev.snap.atk : 0; if (n) damage(g, p, n, { src: c, srcP: p }); } }] },
   'Iron Core Luster': { effs: [{ type: 'act', tags: { destroy: 1 },
     cond: (g, c, p, x) => spellTrapAct(x.top) && x.top.p !== p && !x.top.negated && g.p[p].hand.some(isIC) && !allField(g).some(y => faceUp(y) && (D(y).n === 'Ceremonial Bell' || (D(y).n === 'Respect Play' && g.tp === p))),   // not while your hand is revealed (site ruling 2)
     cost: function* (g, c, p, L2) { const [x] = yield* pick(g, p, 'Reveal an Iron Core from your hand', g.p[p].hand.filter(isIC), 1, 1, 'cost'); log(g, `${PN(g, p)} revealed ${name(x)}.`); L2.data.L = g.chain[g.chain.length - 1]; },
     res: function* (g, c, p, L2) { L2.data.L.negBy = p; negate(g, L2.data.L, true); } }] },
-  'B. Skull Dragon (Archfiend)': { mats: [x => /Summoned Skull/.test(D(x).n), x => /^Red-Eyes B(lack|\.) Dragon$/.test(D(x).n)], effs: [] },
+  // exact names (Toon Summoned Skull is another card; King of the Swamp substitutes only for a named material: pass2 edison-18). The name
+  // differs by database: "Summoned Skull (Archfiend)" in Edison, "Summoned Skull" in Goat.
+  'B. Skull Dragon (Archfiend)': { mats: [Object.assign(x => ['Summoned Skull (Archfiend)', 'Summoned Skull'].includes(D(x).n), { named: true }), x => D(x).n === 'Red-Eyes Black Dragon'], effs: [] },
   'Blue-Eyes Ultimate Dragon': { mats: [0, 1, 2].map(() => x => D(x).n === 'Blue-Eyes White Dragon'), effs: [] },
   'Flame Swordsman': { mats: [x => D(x).n === 'Flame Manipulator', x => D(x).n === 'Masaki the Legendary Swordsman'], effs: [] },
   "Koa'ki Meiru Powerhand": {
