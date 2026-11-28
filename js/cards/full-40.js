@@ -158,7 +158,7 @@ E.addScripts({
       cond: (g, c, p, x) => c.f40dead !== (x.ev && x.ev.group) && freeM(g, p) >= 0 && ['hand', 'deck', 'gy'].some(z => g.p[p][z].some(y => named(y, 'Elemental HERO Neos'))),
       res: function* (g, c, p) { yield* ssFrom(g, p, x => named(x, 'Elemental HERO Neos'), 'Special Summon Elemental HERO Neos', ['hand', 'deck', 'gy']); } }] },
   'Intercept': { effs: [{ type: 'act',
-    cond: (g, c, p) => !!g.sw && g.sw.p !== p && g.sw.how === 'tribute' && g.sw.cs.some(x => onField(x) && (x.tributes || []).length === 1),
+    cond: (g, c, p) => !!g.sw && E.lib.swOf(g, 1 - p).length > 0 && g.sw.how === 'tribute' && g.sw.cs.some(x => onField(x) && (x.tributes || []).length === 1),
     target: function* (g, c, p, L2) { L2.t = g.sw.cs.filter(x => onField(x)); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t && t.ctrl !== p) takeControl(g, p, t, false); } }] },
   // Swap control of the two targets. PARTIAL: with all 10 Monster Zones full the swap can't be done.
@@ -381,7 +381,7 @@ E.addScripts({
   'Lightsworn Barrier': { effs: [actNoop,
     { type: 'quick', loc: 'st', label: 'Send the top 2 cards: negate the attack',
       // once per attack: it answers the attack being targeted, so it can't be chained to itself again and again
-      cond: (g, c, p) => !!g.aw && !!g.aw.t && g.aw.t.ctrl === p && isLS(g.aw.t) && g.aw.a.ctrl !== p && g.p[p].deck.length >= 2 && !(g.aw.f40lb || []).includes(c.u),
+      cond: (g, c, p) => (!!g.aw && !!g.aw.t && g.aw.t.ctrl === p && isLS(g.aw.t) && g.aw.a.ctrl !== p && g.p[p].deck.length >= 2 && !(g.aw.f40lb || []).includes(c.u)) && !!g.aw && E.lib.canTarget(g, g.aw.a, { c, p }),
       cost: function* (g, c, p) { g.aw.f40lb = (g.aw.f40lb || []).concat(c.u); const xs = g.p[p].deck.slice(-2).reverse(); for (const x of xs) move(g, x, 'gy', { reason: 'cost', by: p }); log(g, `${PN(g, p)} sent ${xs.map(x => D(x).n).join(', ')} from the Deck to the GY.`); },
       target: function* (g, c, p, L2) { L2.t = [g.aw.a]; },
       res: function* (g, c, p, L2) { const a = L2.t[0]; if (g.aw && g.aw.a === a && onField(a)) negateAttack(g); } }] },

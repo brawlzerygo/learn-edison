@@ -56,7 +56,7 @@ function synMats(g, p, sx, o) {
   for (let mask = 1; mask < (1 << n) && out.length < 12; mask++) {
     const mats = mons.filter((_, i) => mask & (1 << i)); if (mats.length < 2) continue;
     if (mats.reduce((s, c) => s + lv(c), 0) !== Lv) continue;
-    if (mats.some(t => D(t).tu && o.tuner(t) && mats.filter(x => x !== t).every(x => !D(x).tu))) out.push(mats);
+    if (E.lib.synOk(g, sx, mats, { line: false }) && mats.some(t => D(t).tu && o.tuner(t) && mats.filter(x => x !== t).every(x => !D(x).tu))) out.push(mats);
   }
   return out;
 }

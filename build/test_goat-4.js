@@ -66,7 +66,7 @@ T('Gatling Dragon destroys as many monsters as heads', () => {
     const g = duel({ seed, board: [{ m: ['Gatling Dragon'] }, { m: [BIG, FILL, FILL] }] });
     const g2 = { log: g.log };
     choose(g, 'Toss 3 coins'); passAll(g);
-    const line = g.log.filter(t => /^Coins:/.test(t)).pop(); const h = (line.match(/heads/g) || []).length;
+    const h = g.log.filter(t => /tossed a coin: Heads/.test(t)).length;   // the shared full-22 script logs each toss (Goat override dropped, E2)
     if (h && g.prompt && g.prompt.type === 'pick') { E.act(g, g.prompt.opts.filter(o => !/Gatling/.test(o.label)).slice(0, g.prompt.min).map(o => o.key)); passAll(g); }
     ok(E.fieldOf(g, 1).length === 3 - Math.min(h, 3), `seed ${seed}: ${h} heads, ${3 - E.fieldOf(g, 1).length} destroyed`);
     ok(!hasOpt(g, 'Toss 3 coins'), `seed ${seed}: once per turn`);

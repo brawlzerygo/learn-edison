@@ -131,7 +131,7 @@ E.addScripts({
       res: function* (g, c, p, L2) { const k = L2.ev.killer; const who = k ? (onField(k) ? k.ctrl : k.owner) : opp(L2.ev.prevCtrl); damage(g, who, 1000, { src: c, srcP: L2.ev.prevCtrl }); } }] },
   'Aussa the Earth Charmer': charmer('EARTH'),
   'Autonomous Action Unit': { effs: [
-    { type: 'act', tags: { ss: 1 }, cond: (g, c, p) => g.p[p].lp > 1500 && freeM(g, p) >= 0 && g.p[opp(p)].gy.some(isMon),
+    { type: 'act', tags: { ss: 1 }, cond: (g, c, p) => g.p[p].lp > 1500 && freeM(g, p) >= 0 && g.p[opp(p)].gy.filter(x => E.lib.ssable(g, p, x)).some(isMon),
       cost: function* (g, c, p) { pay(g, p, 1500); },
       target: function* (g, c, p, L2) { yield* tgt(g, p, L2, "Special Summon which monster from your opponent's GY?", g.p[opp(p)].gy.filter(isMon), 1, 1, 'good'); },
       res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy' && onField(c) && ss(g, p, t, 'atk')) { equip(g, c, t); c.flags.f19aau = t.u; } } },
@@ -336,7 +336,7 @@ E.addScripts({
   'Bowganian': { effs: [{ type: 'trig', mand: true, opt: true, label: '600 damage', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
     res: function* (g, c, p) { damage(g, opp(p), 600, { src: c, srcP: p }); } }] },
   'Bubonic Vermin': { effs: [{ type: 'trig', faceDownOk: true, tags: { ss: 1 }, label: 'Special Summon a Bubonic Vermin', on: (g, ev, c) => ev.type === 'flip' && ev.c === c,
-    cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].deck.some(x => named(x, 'Bubonic Vermin')),
+    cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].deck.filter(x => E.lib.ssable(g, p, x)).some(x => named(x, 'Bubonic Vermin')),
     res: function* (g, c, p) { const x = g.p[p].deck.find(y => named(y, 'Bubonic Vermin')); if (x && freeM(g, p) >= 0) ss(g, p, x, 'set'); shuffleDeck(g, p); } }] },
   'Buster Blader': { self: { atk: (g, c) => 500 * [...monsOf(g, opp(c.ctrl)).filter(faceUp), ...g.p[opp(c.ctrl)].gy].filter(x => isMon(x) && race(x) === 'Dragon').length }, effs: [] },
   // The boost is added in the Damage Step of its battles. If the equipped monster's ATK goes above 1000 by another effect,

@@ -120,8 +120,8 @@ T('Trident Dragion: Synchro Summon, destroy a card, extra attack', () => {
 });
 T('Trident Dragion can\'t be revived by Call of the Haunted', () => {
   const g = duel({ board: [{ hand: [], gy: ['Trident Dragion'], st: ['Call of the Haunted'] }, {}] });
-  choose(g, 'a:'); passAll(g);
-  ok(!g.p[0].m.some(Boolean), 'not summoned');
+  // 2026-11-28 audit (E2): an effect that can't Special Summon anything can't be activated (Call of the Haunted's target list)
+  ok(!g.prompt.opts.some(o => /^a:/.test(o.key)) && !g.p[0].m.some(Boolean), 'Call of the Haunted not offered, nothing summoned');
 });
 console.log(fails ? `\n${fails} check(s) failed.` : '\nAll batch-1 checks passed.');
 process.exit(fails ? 1 : 0);

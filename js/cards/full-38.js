@@ -148,7 +148,7 @@ E.addScripts({
       log(g, `${PN(g, p)} banished ${ms.length} Morphtronic monster${ms.length === 1 ? '' : 's'}.`);
       const t = live(L2)[0]; if (t && faceUp(t) && ms.length) { addMod(g, t, { atk: 200 * ms.length, end: true }); log(g, `${name(t)} gained ${200 * ms.length} ATK.`); } } }] },
   'Faustian Bargain': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => fieldMons(g).some(wasSS) && g.p[p].hand.some(x => D(x).k === 'normal' && lv(x) <= 4),
+    cond: (g, c, p) => fieldMons(g).some(wasSS) && g.p[p].hand.filter(x => E.lib.ssable(g, p, x)).some(x => D(x).k === 'normal' && lv(x) <= 4),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Send which Special Summoned monster to the GY?', fieldMons(g).filter(wasSS), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (!t) return; const ev = move(g, t, 'gy', { reason: 'effect', by: p }); log(g, `${D(t).n} was sent to the GY.`);
       if (!ev || t.zone !== 'gy') return;
@@ -266,7 +266,7 @@ E.addScripts({
       target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Destroy which card?', fieldOf(g, opp(p)), 1, 1, 'bad'); },
       res: function* (g, c, p, L2) { destroy(g, live(L2), { by: p }); } },
     { type: 'quick', tags: { destroy: 1 }, label: 'Destroy the summoned monster(s), 800 damage',
-      cond: (g, c, p) => g.tp !== p && !g.inDS && c.flags.f38sky !== g.turnNo && g.sw && g.sw.p !== p && g.sw.cs.some(x => onField(x) && x.ctrl !== p),
+      cond: (g, c, p) => g.tp !== p && !g.inDS && c.flags.f38sky !== g.turnNo && g.sw && E.lib.swOf(g, 1 - p).length > 0 && g.sw.cs.some(x => onField(x) && x.ctrl !== p),
       cost: function* (g, c, p, L2) { c.flags.f38sky = g.turnNo; L2.data.cs = g.sw.cs.filter(x => onField(x) && x.ctrl !== p); },
       res: function* (g, c, p, L2) { if (destroy(g, L2.data.cs.filter(onField), { by: p }).length) damage(g, opp(p), 800, { src: c, srcP: p }); } },
     // ENGINE: no response window after a Set, so the Set part is an optional trigger.
@@ -296,7 +296,7 @@ E.addScripts({
           for (const m of fieldMons(g)) { if (on && !m.flags.noTribute) { m.flags.noTribute = true; m.flags.f38fogT = true; } else if (!on && m.flags.f38fogT) { m.flags.noTribute = false; m.flags.f38fogT = false; } } }
         else if (!fieldMons(g).some(k => named(k, 'Fog King'))) for (const m of fieldMons(g)) if (m.flags.f38fogT) { m.flags.noTribute = false; m.flags.f38fogT = false; }
         return false; } }] },
-  'Foolish Revival': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, opp(p)) >= 0 && g.p[opp(p)].gy.some(isMon),
+  'Foolish Revival': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, opp(p)) >= 0 && g.p[opp(p)].gy.filter(x => E.lib.ssable(g, p, x)).some(isMon),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which monster to their side?', g.p[opp(p)].gy.filter(isMon), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy') ss(g, opp(p), t, 'def'); } }] },
   // The negation ends in the End Phase (cleared by any copy of this card that sees the End Phase).
@@ -401,7 +401,7 @@ E.addScripts({
   'Garma Sword Oath': { effs: ritualEffs('Garma Sword') },
   // PARTIAL: Flip Summons aren't blocked by the "can't Summon" lock.
   'Gateway to Dark World': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => !g.summoned[p] && freeM(g, p) >= 0 && g.p[p].gy.some(x => isMon(x) && /Dark World/.test(D(x).n)),
+    cond: (g, c, p) => !g.summoned[p] && freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && /Dark World/.test(D(x).n)),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which Dark World monster?', g.p[p].gy.filter(x => isMon(x) && /Dark World/.test(D(x).n)), 1, 1, 'good'); },
     after: (g, c, p, L2) => { const u = L2.t[0] && L2.t[0].u; addRule(g, (g2, a) => (a.type === 'ns' || a.type === 'ss') && a.p === p && !(a.c && a.c.u === u && a.c.zone === 'gy'), { end: g.turnNo }); },
     res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy') ss(g, p, t, 'atk'); } }] },

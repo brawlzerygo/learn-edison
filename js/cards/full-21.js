@@ -180,7 +180,7 @@ E.addScripts({
   // "This face-up card can't be Tributed for a Tribute Summon" keeps c.flags.noTribute in step with its face.
   'Fox Fire': { effs: [
     { type: 'trig', loc: 'any', res: noopG, on: (g, ev, c) => {
-      if (onField(c) && c.zone === 'm') c.flags.noTribute = faceUp(c) && !negd(g, c);
+      if (onField(c) && c.zone === 'm') c.flags.noTribute = faceUp(c) && !negd(g, c) ? 'summon' : false;
       if (ev.type === 'dsStart' && (ev.a === c || ev.t === c) && faceUp(c)) c.f21ds = g.turnNo;
       if (ev.type === 'move' && ev.c === c && ev.battle && ev.destroyed && ev.to === 'gy' && c.f21ds === g.turnNo) c.f21fox = g.turnNo;
       return false; } },
@@ -259,7 +259,7 @@ E.addScripts({
   'Electro-Whip': { cont: eqBonus(300, 300), effs: [equipAct(m => race(m) === 'Thunder', 'Equip to which face-up Thunder monster?')] },
   // Ported from classic-4.js.
   'Elegant Egotist': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => freeM(g, p) >= 0 && fieldMons(g).some(m => faceUp(m) && name(m) === 'Harpie Lady') && [...g.p[p].hand, ...g.p[p].deck].some(x => named(x, 'Harpie Lady', 'Harpie Lady Sisters')),
+    cond: (g, c, p) => freeM(g, p) >= 0 && fieldMons(g).some(m => faceUp(m) && name(m) === 'Harpie Lady') && [...g.p[p].hand, ...g.p[p].deck].filter(x => E.lib.ssable(g, p, x)).some(x => named(x, 'Harpie Lady', 'Harpie Lady Sisters')),
     res: function* (g, c, p) { if (freeM(g, p) < 0 || !fieldMons(g).some(m => faceUp(m) && name(m) === 'Harpie Lady')) return;
       const cs = [...g.p[p].hand, ...g.p[p].deck].filter(x => named(x, 'Harpie Lady', 'Harpie Lady Sisters')); const [x] = yield* pick(g, p, 'Special Summon Harpie Lady or Harpie Lady Sisters', cs, 1, 1, 'good');
       if (x) { const fromDeck = x.zone === 'deck'; ss(g, p, x); if (fromDeck) shuffleDeck(g, p); } } }] },
@@ -333,7 +333,7 @@ E.addScripts({
     effs: [noop] },
   'Frontline Base': { effs: [noop,
     { type: 'ign', loc: 'st', opt: true, tags: { ss: 1 }, label: 'Special Summon a Union monster',
-      cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].hand.some(x => isUnion(x) && lv(x) <= 4),
+      cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].hand.filter(x => E.lib.ssable(g, p, x)).some(x => isUnion(x) && lv(x) <= 4),
       res: function* (g, c, p) { const cs = g.p[p].hand.filter(x => isUnion(x) && lv(x) <= 4); if (!cs.length || freeM(g, p) < 0) return;
         const [x] = yield* pick(g, p, 'Special Summon which Level 4 or lower Union monster?', cs, 1, 1, 'good'); if (x) ss(g, p, x, 'atk'); } }] },
 
@@ -353,7 +353,7 @@ E.addScripts({
     res: function* (g, c, p, L2) { const at = L2.data.at; if (!at) return; const k = yield* choose(g, opp(p), 'Earthshaker: destroy all face-up monsters of which Attribute?', at);
       log(g, `${PN(g, opp(p))} chose ${at[k]}.`); destroy(g, fieldMons(g).filter(m => faceUp(m) && attr(m) === at[k]), { by: p, src: c }); } }] },
   'Eatgaboon': { effs: [{ type: 'act', tags: { destroy: 1 },
-    cond: (g, c, p) => !!g.sw && g.sw.p !== p && ['normal', 'tribute', 'flip', 'gemini'].includes(g.sw.how) && g.sw.cs.some(x => onField(x) && faceUp(x) && atk(g, x) <= 500),
+    cond: (g, c, p) => !!g.sw && E.lib.swOf(g, 1 - p).length > 0 && ['normal', 'tribute', 'flip', 'gemini'].includes(g.sw.how) && g.sw.cs.some(x => onField(x) && faceUp(x) && atk(g, x) <= 500),
     target: function* (g, c, p, L2) { L2.data.cs = g.sw.cs.slice(); },
     res: function* (g, c, p, L2) { destroy(g, L2.data.cs.filter(x => onField(x) && faceUp(x) && atk(g, x) <= 500), { by: p, src: c }); } }] },
   // Ported from classic-5.js. PARTIAL: as a monster it has no Type or Attribute (ENGINE: attr()/race() can't be set by a

@@ -401,7 +401,7 @@ E.addScripts({
     target: function* (g, c, p, L2) { L2.data.L = g.chain[g.chain.length - 1]; },
     res: function* (g, c, p, L2) { L2.data.L.negBy = p; negate(g, L2.data.L, true); } }] },
   'Hidden Soldiers': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => !!g.sw && g.sw.p !== p && ['normal', 'tribute', 'flip', 'gemini'].includes(g.sw.how) && freeM(g, p) >= 0 && g.p[p].hand.some(x => isMon(x) && lv(x) <= 4 && attr(x) === 'DARK' && canSS(g, p, x)),
+    cond: (g, c, p) => !!g.sw && E.lib.swOf(g, 1 - p).length > 0 && ['normal', 'tribute', 'flip', 'gemini'].includes(g.sw.how) && freeM(g, p) >= 0 && g.p[p].hand.some(x => isMon(x) && lv(x) <= 4 && attr(x) === 'DARK' && canSS(g, p, x)),
     res: function* (g, c, p) { const cs = g.p[p].hand.filter(x => isMon(x) && lv(x) <= 4 && attr(x) === 'DARK'); if (!cs.length || freeM(g, p) < 0) return; const [x] = yield* pick(g, p, 'Special Summon which DARK monster?', cs, 1, 1, 'good'); if (x) ss(g, p, x, 'atk'); } }] },
   // Its Token goes to the opponent's side. When that Token is destroyed by battle with a Plant, its controller sends 1 card from the
   // hand to the GY. PARTIAL: that send is a chain link (it should not start a chain).

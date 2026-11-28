@@ -133,10 +133,9 @@ T('Byser Shock returns Set cards', () => {
   choose(g, keyOf(g, 'ns', 0, 'Byser Shock')); if (g.prompt && g.prompt.type === 'pick') choose(g, 'Giant Soldier'); passAll(g);
   ok(inZ(g, 1, 'hand', 'Penguin Soldier') && inZ(g, 1, 'hand', 'Heavy Slump'), 'both Set cards back in the hand');
 });
-T('Protector of the Sanctuary stops Pot of Greed draws', () => {
+T('Protector of the Sanctuary: the opponent cannot activate Pot of Greed', () => {   // E2: the Goat override dropped, the shared script follows the ruling
   const g = duel({ board: [{ hand: ['Pot of Greed'] }, { m: ['Protector of the Sanctuary'] }] });
-  const h = g.p[0].hand.length; act(g, 0, 'Pot of Greed'); passAll(g);
-  ok(g.p[0].hand.length === h - 1, 'no cards drawn');
+  ok(!hasOpt(g, 'a:' + cardIn(g, 0, 'Pot of Greed').u + ':'), 'Pot of Greed not offered');
 });
 T('Gear Golem pays 800 to attack directly over a monster', () => {
   const g = duel({ board: [{ hand: [], m: ['Gear Golem the Moving Fortress'], turn: 2 }, { m: ['Giant Soldier of Stone'] }] });
@@ -154,12 +153,18 @@ T('Emergency Provisions gains 1000 per card', () => {
   act(g, 0, 'Emergency Provisions'); E.act(g, g.prompt.opts.map(o => o.key)); passAll(g);
   ok(g.p[0].lp === 10000, `A at ${g.p[0].lp}`);
 });
-T('Last Will summons after a monster went to the GY', () => {
+T('Last Will first, then a Tribute: summon from the Deck (2005 state, E2)', () => {
   const g = duel({ board: [{ hand: ['Last Will'], m: ['Cannon Soldier', 'Giant Soldier of Stone'] }, {}] });
-  ok(!hasOpt(g, 'a:' + cardIn(g, 0, 'Last Will').u), 'not yet');
+  act(g, 0, 'Last Will'); passAll(g);
+  act(g, 0, 'Cannon Soldier'); choose(g, 'Giant Soldier');
+  if (g.prompt.type === 'pick') E.act(g, [g.prompt.opts[0].key]); choose(g, 'Attack Position'); passAll(g);
+  ok(g.p[0].m.filter(Boolean).length === 2, 'a 1500-or-less monster came from the Deck');
+});
+T('Last Will after the monster went: nothing', () => {
+  const g = duel({ board: [{ hand: ['Last Will'], m: ['Cannon Soldier', 'Giant Soldier of Stone'] }, {}] });
   act(g, 0, 'Cannon Soldier'); choose(g, 'Giant Soldier'); passAll(g);
-  act(g, 0, 'Last Will'); passAll(g); if (g.prompt.type === 'pick') E.act(g, [g.prompt.opts[0].key]); choose(g, 'Attack Position'); passAll(g);
-  ok(on(g, 0, 'Giant Soldier of Stone'), 'a 1300 ATK monster came from the Deck');
+  act(g, 0, 'Last Will'); passAll(g);
+  ok(g.prompt.type === 'idle' && g.p[0].m.filter(Boolean).length === 1, 'nothing summoned');
 });
 T('Heavy Slump reshuffles an 8-card hand into 2 cards', () => {
   const g = duel({ board: [{ hand: ['Dream Clown', ...Array(8).fill(FILL)] }, { st: ['Heavy Slump'] }] });

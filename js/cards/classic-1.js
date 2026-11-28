@@ -198,7 +198,7 @@ E.addScripts({
       { type: 'trig', loc: 'st', mand: true, label: '500 damage', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl && !!c.equipTo,
         res: function* (g, c, p) { const t = fieldMons(g).find(x => x.u === c.equipTo); if (t && onField(c)) damage(g, t.ctrl, 500, { src: c, srcP: p }); } }] },
   'Mask of Weakness': { effs: [{ type: 'act', label: 'Attacker loses 700 ATK',
-    cond: (g, c, p) => !!(g.aw && g.aw.a && g.aw.a.ctrl !== p),
+    cond: (g, c, p) => (!!(g.aw && g.aw.a && g.aw.a.ctrl !== p)) && !!g.aw && E.lib.canTarget(g, g.aw.a, { c, p }),
     target: function* (g, c, p, L2) { L2.t = [g.aw.a]; },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (t && faceUp(t)) { addMod(g, t, { atk: -700, end: true }); log(g, `${name(t)} lost 700 ATK.`); } } }] },
 

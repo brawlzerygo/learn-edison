@@ -202,8 +202,8 @@ T('The Creator revives by sending a card; it cannot itself be revived', () => {
   ok(inZone(g, 0, 'm', BIG) && inZone(g, 0, 'gy', FILL), 'Archfiend Soldier revived, a card sent');
   ok(!hasOpt(g, 'revive'), 'once per turn');
   const h = duel({ board: [{ hand: ['Premature Burial'], gy: ['The Creator'] }, {}] });
-  choose(h, 'a:' + handU(h, 0, 'Premature Burial')); passAll(h);
-  ok(inZone(h, 0, 'gy', 'The Creator') && !inZone(h, 0, 'm', 'The Creator'), 'Premature Burial cannot revive The Creator');
+  // 2026-11-28 audit (E2): with nothing it can summon, Premature Burial can't even be activated
+  ok(!hasOpt(h, 'a:' + handU(h, 0, 'Premature Burial')) && inZone(h, 0, 'gy', 'The Creator') && !inZone(h, 0, 'm', 'The Creator'), 'Premature Burial cannot revive The Creator (not offered)');
 });
 T('Greenkappa flips and destroys 2 Set Spells/Traps', () => {
   const g = duel({ board: [{ m: [{ n: 'Greenkappa', pos: 'set' }] }, { st: ['Mirror Force', 'Ring of Destruction'] }] });

@@ -182,7 +182,7 @@ E.addScripts({
     res: function* (g, c, p) { if (!lordUp(g)) return; const cs = g.p[p].hand.filter(x => isMon(x) && race(x) === 'Dragon' && D(x).k !== 'ritual' && !noNS(x)); if (!cs.length || freeM(g, p) < 0) return;
       const xs = yield* pick(g, p, 'Special Summon up to 2 Dragons from your hand', cs, 1, Math.min(2, nFreeM(g, p)), 'good'); for (const x of xs) ss(g, p, x, 'atk'); } }] },
   'The Flute of Summoning Kuriboh': { effs: [{ type: 'act',
-    cond: (g, c, p) => g.p[p].deck.some(x => named(x, 'Kuriboh') || named(x, 'Winged Kuriboh')),
+    cond: (g, c, p) => g.p[p].deck.filter(x => E.lib.ssable(g, p, x)).some(x => named(x, 'Kuriboh') || named(x, 'Winged Kuriboh')),
     res: function* (g, c, p) {
       const cs = g.p[p].deck.filter(x => named(x, 'Kuriboh') || named(x, 'Winged Kuriboh')); if (!cs.length) return;
       const [x] = yield* pick(g, p, 'Take Kuriboh or Winged Kuriboh from your Deck', cs, 1, 1, 'good'); if (!x) return;

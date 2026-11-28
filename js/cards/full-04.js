@@ -152,7 +152,7 @@ E.addScripts({
 
   /* ----- Contracts ----- */
   'Contract with Exodia': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => ['Exodia the Forbidden One', 'Right Arm of the Forbidden One', 'Left Arm of the Forbidden One', 'Right Leg of the Forbidden One', 'Left Leg of the Forbidden One'].every(n => g.p[p].gy.some(x => named(x, n))) && freeM(g, p) >= 0 && g.p[p].hand.some(x => named(x, 'Exodia Necross')),
+    cond: (g, c, p) => ['Exodia the Forbidden One', 'Right Arm of the Forbidden One', 'Left Arm of the Forbidden One', 'Right Leg of the Forbidden One', 'Left Leg of the Forbidden One'].every(n => g.p[p].gy.some(x => named(x, n))) && freeM(g, p) >= 0 && g.p[p].hand.filter(x => E.lib.ssable(g, p, x)).some(x => named(x, 'Exodia Necross')),
     res: function* (g, c, p) { const xs = g.p[p].hand.filter(x => named(x, 'Exodia Necross')); if (!xs.length || freeM(g, p) < 0) return; const [x] = yield* pick(g, p, 'Special Summon Exodia Necross', xs, 1, 1, 'good'); if (x) ss(g, p, x, 'atk'); } }] },
   'Contract with the Abyss': { effs: [{ type: 'act', tags: { ss: 1 },
     cond: (g, c, p) => canRitual(g, p, { monster: x => attr(x) === 'DARK', exact: true }),

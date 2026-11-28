@@ -113,7 +113,7 @@ E.addScripts({
   'Fire Ant Ascator': { effs: [
     { type: 'trig', loc: 'gy', when: true, tags: { ss: 1 }, label: 'Special Summon a Level 5 from your GY',
       on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.battle && ev.destroyed && ev.to === 'gy',
-      cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.some(x => x !== c && isMon(x) && lv(x) === 5),
+      cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => x !== c && isMon(x) && lv(x) === 5),
       target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which Level 5 monster?', g.p[p].gy.filter(x => x !== c && isMon(x) && lv(x) === 5), 1, 1, 'good'); },
       res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy' && ss(g, p, t, 'atk', { negate: true })) { t.flags.ascator = g.turnNo; c.flags.ascTurn = g.turnNo; } } },
     { type: 'trig', loc: 'any', mand: true, label: 'Send the summoned monster to the GY',
@@ -287,7 +287,7 @@ E.addScripts({
     res: function* (g, c, p) { draw(g, p, 3); yield* discardPick(g, p, 2, 'Discard 2 cards'); } }] },
   'Graceful Dice': { effs: [{ type: 'act', cond: (g, c, p) => monsOf(g, p).length > 0,
     res: function* (g, c, p) { const n = dice(g, p) * 100; for (const m of monsOf(g, p)) addMod(g, m, { atk: n, def: n, end: true }); if (monsOf(g, p).length) log(g, `${PN(g, p)}'s monsters gained ${n} ATK and DEF.`); } }] },
-  'Graceful Revival': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.some(x => isMon(x) && lv(x) <= 2),
+  'Graceful Revival': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && lv(x) <= 2),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which Level 2 or lower monster?', g.p[p].gy.filter(x => isMon(x) && lv(x) <= 2), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy' && onField(c) && ss(g, p, t, 'atk')) link(g, c, t); } }] },
 });

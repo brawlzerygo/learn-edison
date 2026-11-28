@@ -378,7 +378,7 @@ E.addScripts({
   })(),
   'Beast of the Pharaoh': { effs: [{ type: 'trig', loc: 'gy', tags: { ss: 1 }, label: 'Special Summon a Zombie',
     on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.reason === 'synchro' && ev.to === 'gy',
-    cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.some(x => isMon(x) && race(x) === 'Zombie' && lv(x) <= 4),
+    cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && race(x) === 'Zombie' && lv(x) <= 4),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which Level 4 or lower Zombie?', g.p[p].gy.filter(x => isMon(x) && race(x) === 'Zombie' && lv(x) <= 4), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = L2.t[0]; if (t && t.zone === 'gy') ss(g, p, t, 'atk'); } }] },
   'Beast Soul Swap': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => monsOf(g, p).some(x => faceUp(x) && race(x) === 'Beast'),

@@ -300,7 +300,7 @@ E.addScripts({
     effs: [{ type: 'trig', loc: 'gy', mand: true, tags: { ss: 1 }, label: 'Special Summon 2 Rockstone Tokens',
       on: (g, ev, c) => fromFieldToGY(ev, c) && ev.battle && !!g.battle && g.battle.a === c,
       res: function* (g, c, p) { const n = Math.min(2, nFreeM(g, p)); if (n <= 0) return; const pos = yield* askPos(g, p, 'Rockstone Tokens');
-        tokens(g, p, { n: 'Rockstone Token', a: 'EARTH', r: 'Rock', lv: 1, atk: 0, def: 0 }, n, pos, { noTribute: true }); } }] },
+        tokens(g, p, { n: 'Rockstone Token', a: 'EARTH', r: 'Rock', lv: 1, atk: 0, def: 0 }, n, pos, { noTribute: 'summon' }); } }] },
   'Roll Out!': { effs: [{ type: 'act',
     cond: (g, c, p) => g.p[p].st.filter(z => !z).length >= (c.zone === 'st' ? 1 : 2) && g.p[p].gy.some(u => isUnion(u) && unionTargets(g, p, u).length > 0),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Equip which Union monster from your GY?', g.p[p].gy.filter(u => isUnion(u) && unionTargets(g, p, u).length > 0), 1, 1, 'good'); },

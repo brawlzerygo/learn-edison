@@ -41,6 +41,11 @@
 //   under it; move(..., 'ban') honors banish forbids (Imperial Iron Wall); Necrovalley from each format's own text; Extra Deck monsters go
 //   back to the Extra Deck from any zone; a "sent to the GY" trigger survives its card leaving the GY (Dandylion); a resolved chained card
 //   waiting to leave isn't bounced (Giant Trunade); a monster destroyed by battle stays doomed face-down and can't activate its effects.
+// 63-68 (Group E2, 2026-11-28 audit, summons, targets, Tributes, Synchros): one effect's several Special Summons are one summon (both
+//   players' parts kept apart); Synchro materials read from the material line (tx fallback) and each material's own rules; effects that
+//   Special Summon need something they can summon, and their choices list only summonable monsters; hand-filled targets go through
+//   canTarget, which also covers the GY (Aurkus); Tribute costs follow the Tribute rules (Tribute-Summon-only tokens, Mask of Restrict,
+//   "can't be Tributed", reason 'tribute'); stale Goat overrides dropped (the shared script follows the Goat text).
 const { E, C } = require('./load')();
 const id = n => { const c = C.find(x => x.n === n); if (!c) throw new Error('no card ' + n); return c.id; };
 const FILL = 'Gene-Warped Warwolf';
@@ -732,6 +737,74 @@ T('62. A monster destroyed by battle stays doomed when turned face-down, and can
   const before = can(); sd2.flags.battleDoomed = true; g2.seq++;
   ok(before && !can(), 'a Stardust destroyed by battle, waiting after damage calculation, can\'t negate (ruling 14)');
   g2.chain.pop();
+});
+
+
+/* ----- Group E2 (2026-11-28 audit): summons, targets, Tributes, Synchros ----- */
+T('63. One effect that Special Summons several monsters is one summon (Return from the Different Dimension, Bottomless Trap Hole, Wanghu)', () => {
+  let g = duel([{ st: [{ n: 'Return from the Different Dimension', pos: 'set' }], ban: ['Breaker the Magical Warrior', 'Dark Blade'], turn: 2 }, { st: [{ n: 'Bottomless Trap Hole', pos: 'set' }] }]);
+  actU(g, g.p[0].st[0]);
+  drive(g, { respond: pr => { if (pr.p !== 1) return null; const b = g.p[1].st.find(x => x && E.name(x) === 'Bottomless Trap Hole'); const o = b && pr.opts.find(x => x.key.startsWith('a:' + b.u + ':')); return o && o.key; } });
+  ok(banOf(g, 0, 'Breaker the Magical Warrior') && banOf(g, 0, 'Dark Blade'), 'Bottomless Trap Hole sees both monsters of the one summon and banishes both');
+  g = duel([{ m: [FILL] }, { m: [FILL] }]); g.resolvingL = { c: g.p[0].m[0], p: 0 }; g.ssBatch = { L: g.resolvingL, parts: [], cs: [], group: null };
+  const a = g.p[0].deck[0], b = g.p[1].deck[0]; E.lib.ss(g, 0, a); E.lib.ss(g, 1, b);
+  ok(g.events.filter(e => e.type === 'summon').length === 0, 'inside a resolving link the summon event waits for the link');
+  const bat = g.ssBatch; g.ssBatch = null; g.resolvingL = null; E._internal.ssBatchFlush(g, bat);
+  ok(E.lib.swOf(g, 0).includes(a) && E.lib.swOf(g, 1).includes(b) && !E.lib.swOf(g, 0).includes(b) && g.events.filter(e => e.type === 'summon').every(e => e.all.length === 2), 'one summon: both players\' parts kept in g.sw (Cyber Jar), every event lists all of them');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../js/cards/batch-5.js'), 'utf8');
+  ok(/'King Tiger Wanghu'[\s\S]{0,400}ev\.cs\.some\(x => onField\(x\)[\s\S]{0,400}L\.ev\.all \|\| L\.ev\.cs/.test(src), 'Wanghu triggers on its own summon too and destroys the whole summon (Goat archive)');
+});
+const exCard = (n, u) => ({ id: id(n), u, flags: {}, used: {}, mods: [], ctr: {}, zone: 'extra' });
+T('64. Synchro materials: the material line falls back to tx, and each material\'s own rules apply (Underground Arachnid, Debris Dragon, Fishborg Blaster)', () => {
+  let g = duel([{ m: ['Dark Resonator', 'Flying Kamakiri 1', 'Sangan'] }, {}]); const M = n => g.p[0].m.find(c => c && E.name(c) === n);
+  const sx = exCard('Underground Arachnid', -1);
+  ok(E.lib.synOk(g, sx, [M('Dark Resonator'), M('Flying Kamakiri 1')]) && !E.lib.synOk(g, sx, [M('Dark Resonator'), M('Sangan')]), 'Arachnid needs a non-Tuner Insect, read from tx (its Edison text opens with an effect)');
+  g = duel([{ m: ['Debris Dragon', 'Gene-Warped Warwolf', 'Sangan'] }, {}]);
+  ok(E._internal.synCombos(g, 0, exCard('Stardust Dragon', -2)).length === 0 && E._internal.synCombos(g, 0, exCard('Black Rose Dragon', -3)).length === 1, 'Debris Dragon: no Level 4 partner; Black Rose with Sangan is fine');
+  g = duel([{ m: ['Fishborg Blaster', 'Trent'] }, {}]);
+  ok(!E.lib.synOk(g, exCard('Queen of Thorns', -4), g.p[0].m.filter(Boolean), { line: false }), 'Fishborg Blaster: all other materials must be WATER, also in the batch-2 procedures (Queen of Thorns)');
+});
+T('65. Effects that Special Summon need a summonable monster, and their choices list only those (Call of the Haunted, Mystic Tomato)', () => {
+  let g = duel([{ st: [{ n: 'Call of the Haunted', pos: 'set' }], gy: ['Dark Armed Dragon'], turn: 2 }, {}]);
+  ok(!keyOf(g, g.p[0].st[0]), 'Call of the Haunted with only Dark Armed Dragon in the GY can\'t be activated');
+  g = duel([{ m: ['Sangan'] }, {}]); g.resolvingL = { c: g.p[0].m[0], p: 0, t: [] }; const tsu = g.p[0].deck[0], sg = g.p[0].deck[1]; tsu.id = id('Tsukuyomi'); sg.id = id('Sangan');
+  const r = E.lib.pick(g, 0, 'Special Summon a DARK from your Deck', [tsu, sg]).next(); g.resolvingL = null;
+  const got = r.done ? r.value : (r.value && r.value.opts || []).map(o => [tsu, sg].find(x => x.u === o.u));
+  ok(got.length === 1 && got[0] === sg, 'a Special Summon choice leaves out Tsukuyomi ("Cannot be Special Summoned")');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../js/cards/batch-1.js'), 'utf8');
+  ok(/'Mystic Tomato'[\s\S]{0,300}filter\(x => E\.lib\.ssable\(g, p, x\)\)/.test(src), 'Mystic Tomato\'s cond counts summonable monsters only');
+});
+T('66. Targets: hand-filled target picks honor "can\'t be targeted", and Aurkus protects Lightsworn in the GY', () => {
+  let g = duel([{ hand: ['Monster Reborn'], gy: ['Lyla, Lightsworn Sorceress', 'Sangan'] }, { m: ['Aurkus, Lightsworn Druid'] }]);
+  actU(g, hand(g, 'Monster Reborn')); drive(g);
+  ok(gyOf(g, 0, 'Lyla, Lightsworn Sorceress') && g.p[0].m.some(c => c && E.name(c) === 'Sangan'), 'Monster Reborn can\'t target a Lightsworn in the GY while Aurkus is face-up (site ruling 1)');
+  g = duel([{ hand: ['Book of Life'], gy: ['Pyramid Turtle'] }, { m: ['Aurkus, Lightsworn Druid'], gy: ['Lyla, Lightsworn Sorceress'] }]);
+  ok(!keyOf(g, hand(g, 'Book of Life')), 'Book of Life can\'t target the Lightsworn in their GY (its hand-filled target pick)');
+  g = duel([{ m: ['Sangan'] }, { m: ['Aurkus, Lightsworn Druid', 'Lyla, Lightsworn Sorceress'] }]); g.lockL = { c: g.p[0].m[0], p: 0, t: [] };
+  const r = E.lib.pick(g, 0, 'Pick a monster', g.p[1].m.filter(Boolean)).next(); g.lockL = null;
+  ok(r.done && Array.isArray(r.value) && r.value.length === 0, 'a pick in a target step drops cards that can\'t be targeted');
+});
+T('67. Tribute costs follow the Tribute rules (Fluff Tokens, Mask of Restrict, the Tributed reason)', () => {
+  let g = duel([{ m: ['Sangan'] }, {}]);
+  const fl = E.lib.tokens(g, 0, { n: 'Fluff Token', a: 'WIND', r: 'Plant', lv: 1, atk: 0, def: 0 }, 1, 'def', { noTribute: 'summon' })[0];
+  ok(E.lib.tribPool(g, 0).includes(fl) && !E.lib.tributeCands(g, 0).includes(fl), 'a Fluff Token can pay a Tribute cost, not a Tribute Summon (its text; Ojama Trio Netrep)');
+  g = duel([{ m: ['Cannon Soldier', 'Sangan'], turn: 2 }, { st: [{ n: 'Mask of Restrict', pos: 'up' }] }]);
+  ok(!keyOf(g, g.p[0].m[0]) && E.lib.tribPool(g, 0).length === 0, 'Mask of Restrict: Cannon Soldier\'s Tribute cost can\'t be paid (archive)');
+  g = duel([{ m: ['Cannon Soldier', 'Sangan'], turn: 2 }, {}]); actU(g, g.p[0].m[0]);
+  drive(g, { pick: pr => { const o = pr.opts.find(x => /Sangan/.test(x.label)); return o ? [o.key] : null; } });
+  ok(g.events.some(e => e.type === 'move' && e.c && e.from === 'm' && e.reason === 'tribute'), 'a monster paid for a Tribute cost is Tributed (reason tribute)');
+});
+T('68. Goat: stale overrides dropped, the shared scripts follow the Goat text (Lava Golem, The Shallow Grave)', () => {
+  const { G, mk } = goatEngine();
+  let g = mk([{ hand: ['Lava Golem'], gy: ['Sangan'] , turn: 2 }, { m: ['Sangan', 'Sangan'] }]);
+  const lg = g.p[0].hand.find(c => G.name(c) === 'Lava Golem'); const before = g.prompt.opts.some(o => o.u === lg.u);
+  g.ns[0] = 1; g.seq++; const g2opts = G.idleOpts ? G.idleOpts(g) : null;
+  ok(before && g2opts && !g2opts.some(o => o.u === lg.u), 'Lava Golem can\'t be Special Summoned after a Normal Summon (archive)');
+  g = mk([{ hand: ['The Shallow Grave'], gy: ['Sangan'] }, {}]);
+  const sg = g.p[0].hand.find(c => G.name(c) === 'The Shallow Grave');
+  ok(!g.prompt.opts.some(o => o.key.startsWith('a:' + sg.u + ':')), 'The Shallow Grave needs a monster in both GYs (archive)');
+  const fs = require('fs'), path = require('path'); const goat = [1, 2, 3, 4, 5, 6, 7].map(n => fs.readFileSync(path.join(__dirname, '../js/cards/goat-' + n + '.js'), 'utf8')).join('\n');
+  ok(!/^\s*'(Gigantes|Premature Burial|Jinzo|Megamorph|Stumbling|Gilasaurus|Mataza the Zapper|Lava Golem|The Shallow Grave)': \{/m.test(goat), 'the stale Goat overrides are gone');
 });
 
 console.log(fails ? `\n${fails} failed` : '\nAll root-cause guards passed.');

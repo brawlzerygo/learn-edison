@@ -30,7 +30,7 @@ const battledHook = { type: 'trig', on: (g, ev, c) => { if (ev.type === 'afterCa
 function tagOut(self, n = 1, except = self) {
   return { type: 'quick', label: 'Tag out', tags: { ss: 1 },
     cond: (g, c, p, x) => !x.top && g.phase === 'battle' && g.tp === p && !g.inDS && !g.aw && c.flags.battled === g.turnNo
-      && g.p[p].deck.filter(y => gbMon(y) && nm(y) !== except).length >= n && nFreeM(g, p) + 1 >= n,
+      && g.p[p].deck.filter(y => gbMon(y) && nm(y) !== except && E.lib.ssable(g, p, y)).length >= n && nFreeM(g, p) + 1 >= n,
     cost: function* (g, c, p) { move(g, c, 'deck', { reason: 'cost' }); log(g, `${PN(g, p)} shuffled ${nm(c)} into the ${L.isExtraD(D(c)) ? 'Extra Deck' : 'Deck'}.`); },
     res: function* (g, c, p) {
       for (let i = 0; i < n; i++) {
@@ -63,7 +63,7 @@ function synSets(g, p, sx, tuners) {
   const tun = mons.filter(x => D(x).tu && tuners.includes(nm(x))), non = mons.filter(x => !D(x).tu);
   for (const t of tun) for (let mask = 1; mask < (1 << non.length); mask++) {
     const ms = non.filter((_, i) => mask & (1 << i));
-    if (ms.reduce((s, x) => s + lv(x), lv(t)) === Lv) out.push([t, ...ms]);
+    if (ms.reduce((s, x) => s + lv(x), lv(t)) === Lv && E.lib.synOk(g, sx, [t, ...ms], { line: false })) out.push([t, ...ms]);
     if (out.length > 8) return out;
   }
   return out;
@@ -82,7 +82,6 @@ const skyUp = g => [g.p[0].fz, g.p[1].fz].some(f => f && f.pos !== 'set' && nm(f
 const atkLock = { forbid: (g, src, a) => a.type === 'activate' && a.eff.type === 'act' && isST(a.c) && a.p !== src.ctrl && ((g.aw && g.aw.a === src) || (g.battle && g.battle.a === src)) };
 E.addScripts({
   /* ===== Fish OTK ===== */
-  // ENGINE: Synchro material condition (all other materials must be WATER) is not checked by synCombos.
   'Fishborg Blaster': { effs: [{ type: 'ign', loc: 'gy', tags: { ss: 1 }, label: 'Discard: Special Summon from the GY',
     cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].hand.length > 0 && monsOf(g, p).some(x => faceUp(x) && attr(x) === 'WATER' && lv(x) <= 3),
     cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Discard a card', g.p[p].hand, 1, 1, 'cost'); move(g, x, 'gy', { reason: 'cost' }); log(g, `${PN(g, p)} discarded ${nm(x)}.`); },
@@ -102,11 +101,10 @@ E.addScripts({
   'Oyster Meister': { effs: [{ type: 'trig', loc: 'gy', mand: true, tags: { ss: 1 },
     on: (g, ev, c) => fromFieldToGY(ev, c) && !(ev.destroyed && ev.battle), cond: (g, c, p) => freeM(g, p) >= 0,
     res: function* (g, c, p) { tokens(g, p, { n: 'Oyster Token', a: 'WATER', r: 'Fish', lv: 1, atk: 0, def: 0 }, 1, 'def'); } }] },
-  // ENGINE: Synchro material condition (all other materials must be Fish) is not checked by synCombos.
   'Royal Swamp Eel': { effs: [] },
   'Superancient Deepsea King Coelacanth': { effs: [
     { type: 'ign', opt: true, tags: { ss: 1 }, label: 'Discard: summon Fish from the Deck',
-      cond: (g, c, p) => g.p[p].hand.length > 0 && freeM(g, p) >= 0 && g.p[p].deck.some(x => isFish(x) && lv(x) <= 4),
+      cond: (g, c, p) => g.p[p].hand.length > 0 && freeM(g, p) >= 0 && g.p[p].deck.filter(x => E.lib.ssable(g, p, x)).some(x => isFish(x) && lv(x) <= 4),
       cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Discard a card', g.p[p].hand, 1, 1, 'cost'); move(g, x, 'gy', { reason: 'cost' }); log(g, `${PN(g, p)} discarded ${nm(x)}.`); },
       res: function* (g, c, p) {
         let cands = g.p[p].deck.filter(x => isFish(x) && lv(x) <= 4); const n = Math.min(cands.length, nFreeM(g, p)); if (!n) return;
@@ -147,7 +145,7 @@ E.addScripts({
 
   /* ===== Flamvell ===== */
   'Flamvell Firedog': { effs: [{ type: 'trig', tags: { ss: 1 }, on: (g, ev, c) => battleKill(ev, c) && ev.c.owner !== c.ctrl,
-    cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].deck.some(x => isMon(x) && attr(x) === 'FIRE' && num(D(x).def) <= 200 && nm(x) !== 'Flamvell Firedog'),
+    cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].deck.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && attr(x) === 'FIRE' && num(D(x).def) <= 200 && nm(x) !== 'Flamvell Firedog'),
     res: function* (g, c, p) { const cs = g.p[p].deck.filter(x => isMon(x) && attr(x) === 'FIRE' && num(D(x).def) <= 200 && nm(x) !== 'Flamvell Firedog'); const [x] = yield* pick(g, p, 'Special Summon a FIRE with 200 or less DEF', cs, 1, 1, 'good'); if (x) ss(g, p, x); shuffleDeck(g, p); } }] },
   'Flamvell Magician': { self: { atk: (g, c) => monsOf(g, c.ctrl).some(x => faceUp(x) && /^Ally of Justice/.test(name(x))) ? 400 : 0 }, effs: [] },
   "Gravekeeper's Descendant": { effs: [{ type: 'ign', tags: { destroy: 1 }, label: "Tribute a Gravekeeper's: destroy a card",
@@ -156,10 +154,10 @@ E.addScripts({
     target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Destroy which card?', fieldOf(g, opp(p)), 1, 1, 'bad'); },
     res: function* (g, c, p, L) { destroy(g, live(L).filter(x => x.ctrl !== p), { by: p }); } }] },
   "Gravekeeper's Spy": { effs: [{ type: 'trig', mand: true, faceDownOk: true, tags: { ss: 1 }, on: (g, ev, c) => ev.type === 'flip' && ev.c === c,
-    cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].deck.some(x => isGK(x) && baseAtk(x) <= 1500),
+    cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].deck.filter(x => E.lib.ssable(g, p, x)).some(x => isGK(x) && baseAtk(x) <= 1500),
     res: function* (g, c, p) { const cs = g.p[p].deck.filter(x => isGK(x) && baseAtk(x) <= 1500); const [x] = yield* pick(g, p, "Special Summon a Gravekeeper's with 1500 or less ATK", cs, 1, 1, 'good'); if (x && freeM(g, p) >= 0) ss(g, p, x, yield* posPick(g, p, x)); shuffleDeck(g, p); } }] },
   'Rekindling': { effs: [
-    { type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.some(x => isMon(x) && attr(x) === 'FIRE' && num(D(x).def) === 200),
+    { type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && attr(x) === 'FIRE' && num(D(x).def) === 200),
       res: function* (g, c, p) {
         let cs = g.p[p].gy.filter(x => isMon(x) && attr(x) === 'FIRE' && num(D(x).def) === 200 && !/Cannot be Special Summoned/i.test(D(x).ps || D(x).tx || ''));
         const n = Math.min(cs.length, nFreeM(g, p)); if (!n) return;
@@ -263,7 +261,7 @@ E.addScripts({
   // "Any monster sent to the GY is banished instead": a replacement in move() (cont.gyBan), no chain link (2026-11-28 audit)
   'Dimensional Fissure': { effs: [{ type: 'act', res: function* (g) { g.seq++; } }], cont: { gyBan: 'mon' } },
   'Trap Hole': { effs: [{ type: 'act', tags: { destroy: 1 },
-    cond: (g, c, p) => !!g.sw && g.events.length && g.events[g.events.length - 1].group === g.sw.group && g.sw.p !== p && ['normal', 'tribute', 'flip'].includes(g.sw.how) && g.sw.cs.length === 1 && onField(g.sw.cs[0]) && faceUp(g.sw.cs[0]) && atk(g, g.sw.cs[0]) >= 1000,
+    cond: (g, c, p) => !!g.sw && g.events.length && g.events[g.events.length - 1].group === g.sw.group && E.lib.swOf(g, 1 - p).length > 0 && ['normal', 'tribute', 'flip'].includes(g.sw.how) && g.sw.cs.length === 1 && onField(g.sw.cs[0]) && faceUp(g.sw.cs[0]) && atk(g, g.sw.cs[0]) >= 1000,
     target: function* (g, c, p, L) { L.t = g.sw ? [g.sw.cs[0]] : []; },
     res: function* (g, c, p, L) { destroy(g, live(L).filter(x => faceUp(x) && atk(g, x) >= 1000), { by: p }); } }] },
 
@@ -292,7 +290,7 @@ E.addScripts({
   'The Dark Creator': {
     proc: { label: 'Special Summon (5+ DARKs in your GY, no monsters)', cond: (g, c, p) => monsOf(g, p).length === 0 && g.p[p].gy.filter(x => isMon(x) && attr(x) === 'DARK').length >= 5 },
     effs: [{ type: 'ign', opt: true, tags: { ss: 1 }, label: 'Banish a DARK: revive a DARK',
-      cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => isMon(x) && attr(x) === 'DARK').length >= 2,
+      cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.filter(x => isMon(x) && attr(x) === 'DARK').length >= 2 && g.p[p].gy.some(x => attr(x) === 'DARK' && E.lib.ssable(g, p, x)),
       cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Banish a DARK from your GY', g.p[p].gy.filter(x => isMon(x) && attr(x) === 'DARK'), 1, 1, 'cost'); move(g, x, 'ban', { reason: 'cost' }); },
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Special Summon which DARK from your GY?', g.p[p].gy.filter(x => isMon(x) && attr(x) === 'DARK'), 1, 1, 'good'); },
       res: function* (g, c, p, L) { const t = L.t[0]; if (t && t.zone === 'gy') ss(g, p, t); } }] },
@@ -366,7 +364,7 @@ E.addScripts({
     cost: function* (g, c, p) { pay(g, p, 1000); },
     res: function* (g, c, p) { const xs = [...monsOf(g, opp(p)).filter(faceUp), ...g.p[opp(p)].gy].filter(x => isMon(x) && race(x) === 'Machine'); for (const x of xs) move(g, x, 'ban', { reason: 'effect', by: p }); if (xs.length) log(g, `${xs.map(nm).join(', ')} ${xs.length > 1 ? 'were' : 'was'} banished.`); } }] },
   "Gottoms' Emergency Call": { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => nFreeM(g, p) >= 2 && fieldMons(g).some(x => faceUp(x) && /X-Saber/.test(name(x))) && allCards(g, 'gy').filter(x => isMon(x) && /X-Saber/.test(nm(x))).length >= 2,
+    cond: (g, c, p) => nFreeM(g, p) >= 2 && fieldMons(g).some(x => faceUp(x) && /X-Saber/.test(name(x))) && allCards(g, 'gy').filter(x => isMon(x) && /X-Saber/.test(nm(x)) && E.lib.ssable(g, p, x) && L.canTarget(g, x, { c, p })).length >= 2,
     target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Special Summon which 2 X-Sabers?', allCards(g, 'gy').filter(x => isMon(x) && /X-Saber/.test(nm(x))), 2, 2, 'good'); },
     res: function* (g, c, p, L) { if (L.t.length < 2 || L.t.some(x => x.zone !== 'gy') || nFreeM(g, p) < 2) return; for (const t of L.t) ss(g, p, t); } }] },
   'Swallow Flip': { effs: [{ type: 'act',
@@ -408,7 +406,7 @@ E.addScripts({
   // ENGINE: ① (1 less Tribute for Ancient Gear monsters) needs tribNeed() support.
   'Geartown': { effs: [{ type: 'act', res: function* () {} },
     { type: 'trig', loc: 'gy', when: true, tags: { ss: 1 }, on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && ev.destroyed && ev.to === 'gy',
-      cond: (g, c, p) => freeM(g, p) >= 0 && [...g.p[p].hand, ...g.p[p].deck, ...g.p[p].gy].some(isAG),
+      cond: (g, c, p) => freeM(g, p) >= 0 && [...g.p[p].hand, ...g.p[p].deck, ...g.p[p].gy].filter(x => E.lib.ssable(g, p, x)).some(isAG),
       res: function* (g, c, p) { const cs = [...g.p[p].hand, ...g.p[p].deck, ...g.p[p].gy].filter(isAG); if (!cs.length || freeM(g, p) < 0) return; const [x] = yield* pick(g, p, 'Special Summon an Ancient Gear monster', cs, 1, 1, 'good'); if (x) { const fromDeck = x.zone === 'deck'; ss(g, p, x); if (fromDeck) shuffleDeck(g, p); } } }] },
   // ENGINE: ① (every monster becomes a Zombie) needs race() to read it; ② blocks face-up Tribute Summons of non-Zombies.
   'Zombie World': { effs: [{ type: 'act', res: function* () {} }],

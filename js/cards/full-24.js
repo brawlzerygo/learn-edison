@@ -291,7 +291,7 @@ E.addScripts({
     cont: { grant: (g, src, c, flag) => flag === 'noAttackTarget' && c !== src && c.zone === 'm' && c.ctrl === src.ctrl && faceUp(c) && race(c) === 'Warrior' },
     effs: [{ type: 'trig', when: true, tags: { ss: 1 }, label: 'Special Summon a Level 4 or lower monster',
       on: (g, ev, c) => evSummoned(ev, c, ['normal']),
-      cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].hand.some(x => isMon(x) && !isExtraD(D(x)) && lv(x) <= 4),
+      cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].hand.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && !isExtraD(D(x)) && lv(x) <= 4),
       res: function* (g, c, p) { if (freeM(g, p) < 0) return; const cs = g.p[p].hand.filter(x => isMon(x) && !isExtraD(D(x)) && D(x).k !== 'ritual' && lv(x) <= 4 && !forbid(g, { type: 'ss', c: x, p, how: 'special' }));
         const [x] = yield* pick(g, p, 'Special Summon a Level 4 or lower monster from your hand', cs, 1, 1, 'good'); if (x) ss(g, p, x, 'atk'); } }] },
   'Maryokutai': { effs: [{ type: 'quick', ds: true, label: 'Tribute: negate the Spell',

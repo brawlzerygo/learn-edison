@@ -24,7 +24,7 @@ const flip = (label, more) => ({ type: 'trig', mand: true, faceDownOk: true, lab
 // the 0 lasts until damage calculation is done (removed at afterCalc).
 const guardian = [
   { type: 'quick', ds: true, label: 'Make the attacker’s ATK 0',
-    cond: (g, c, p) => g.inDS && g.battle && g.battle.t === c && g.tp !== c.ctrl && !c.flags.guardUsed && g.battle.a && onField(g.battle.a) && !g.battle.a.mods.some(m => m.guardZero),
+    cond: (g, c, p) => (g.inDS && g.battle && g.battle.t === c && g.tp !== c.ctrl && !c.flags.guardUsed && g.battle.a && onField(g.battle.a) && !g.battle.a.mods.some(m => m.guardZero)) && !!g.battle && E.lib.canTarget(g, g.battle.a, { c, p }),
     target: function* (g, c, p, L2) { L2.t = [g.battle.a]; },
     after: (g, c) => { c.flags.guardUsed = true; },
     res: function* (g, c, p, L2) { const a = live(L2)[0]; if (!a || a.zone !== 'm' || !g.battle) return; addMod(g, a, { set: 0, which: 'atk', end: true, guardZero: true }); g.seq++; log(g, `${name(a)}'s ATK became 0 for damage calculation.`); } },

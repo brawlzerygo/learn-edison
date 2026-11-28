@@ -134,7 +134,7 @@ E.addScripts({
     { type: 'trig', loc: 'any', mand: true, tags: { destroy: 1 }, label: 'Destroy the Hats',
       on: (g, ev, c) => (ev.type === 'phase' && ev.ph === 'bpEnd' || ev.type === 'phase' && ev.ph === 'end') && fieldMons(g).some(x => x.flags.hatsBy === c.u),
       res: function* (g, c, p) { destroy(g, fieldMons(g).filter(x => x.flags.hatsBy === c.u), { by: p }); } }] },
-  'Negate Attack': { effs: [{ type: 'act', cond: (g, c, p) => !!(g.aw && g.aw.a.ctrl !== p), res: function* (g) { endBattle(g); } }] },
+  'Negate Attack': { effs: [{ type: 'act', cond: (g, c, p) => (!!(g.aw && g.aw.a.ctrl !== p)) && !!g.aw && E.lib.canTarget(g, g.aw.a, { c, p }), res: function* (g) { endBattle(g); } }] },
   'Shadow Spell': { cont: { ...holdLock, atk: (g, src, m) => m.u === src.flags.hold ? -700 : 0 },
     effs: [holdAct(faceUp, 'Target which face-up monster?'), holdGone(false)] },
   // Trigger-style Trap (see trapTrig): when the opponent Sets a monster.
@@ -184,7 +184,7 @@ E.addScripts({
       else log(g, `${PN(g, e.p)} drew ${D(x).n} and showed it to Crush Card Virus.`);
       return false; } }] },
   'Dark Renewal': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => !!(g.sw && g.sw.p !== p && g.sw.how !== 'flip' && g.sw.cs.some(x => onField(x) && x.ctrl !== p)) && monsOf(g, p).some(m => faceUp(m) && race(m) === 'Spellcaster'),
+    cond: (g, c, p) => !!(g.sw && E.lib.swOf(g, 1 - p).length > 0 && g.sw.how !== 'flip' && g.sw.cs.some(x => onField(x) && x.ctrl !== p)) && monsOf(g, p).some(m => faceUp(m) && race(m) === 'Spellcaster'),
     target: function* (g, c, p, L2) {
       const [a] = yield* pick(g, p, 'Target which summoned monster?', g.sw.cs.filter(x => onField(x) && x.ctrl !== p), 1, 1, 'bad');
       const [b] = yield* pick(g, p, 'Target which of your Spellcasters?', monsOf(g, p).filter(m => faceUp(m) && race(m) === 'Spellcaster'), 1, 1, 'cost');
@@ -256,7 +256,7 @@ E.addScripts({
         g.lfs = g.lfs.filter(e => !(e.by === c.u && e.n >= 4)); } }] },
   // PARTIAL: the new battle is worked out by the card (miniBattle). Control returns at the end of the Battle Phase.
   'Magical Arm Shield': { effs: [
-    { type: 'act', cond: (g, c, p) => !!(g.aw && g.aw.a.ctrl !== p) && monsOf(g, p).length > 0 && freeM(g, p) >= 0 && oppFaceUp(g, p).some(m => m !== g.aw.a),
+    { type: 'act', cond: (g, c, p) => (!!(g.aw && g.aw.a.ctrl !== p)) && !!g.aw && E.lib.canTarget(g, g.aw.a, { c, p }) && monsOf(g, p).length > 0 && freeM(g, p) >= 0 && oppFaceUp(g, p).some(m => m !== g.aw.a),
       target: function* (g, c, p, L2) { L2.data.a = g.aw.a; yield* tgt(g, p, L2, 'Take control of which face-up monster?', oppFaceUp(g, p).filter(m => m !== g.aw.a), 1, 1, 'bad'); },
       res: function* (g, c, p, L2) { const t = live(L2)[0], a = L2.data.a; if (!t || !faceUp(t) || t.ctrl === p) return; const from = t.ctrl;
         if (!takeControl(g, p, t, false)) return; (g.mas || (g.mas = [])).push({ by: c.u, u: t.u, from });
@@ -340,7 +340,7 @@ E.addScripts({
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Destroy which monster?', monsOf(g, opp(p)), 1, 1, 'bad'); },
     res: function* (g, c, p, L2) { if (!monsOf(g, p).some(m => faceUp(m) && named(m, 'Dark Magician'))) return; destroy(g, live(L2), { by: p, src: c }); } }] },
   'The Flute of Summoning Dragon': { effs: [{ type: 'act', tags: { ss: 1 },
-    cond: (g, c, p) => lordUp(g) && freeM(g, p) >= 0 && g.p[p].hand.some(x => isMon(x) && race(x) === 'Dragon'),
+    cond: (g, c, p) => lordUp(g) && freeM(g, p) >= 0 && g.p[p].hand.filter(x => E.lib.ssable(g, p, x)).some(x => isMon(x) && race(x) === 'Dragon'),
     res: function* (g, c, p) { if (!lordUp(g)) return; const cs = g.p[p].hand.filter(x => isMon(x) && race(x) === 'Dragon' && D(x).k !== 'ritual'); if (!cs.length) return;
       const xs = yield* pick(g, p, 'Special Summon up to 2 Dragons from your hand', cs, 1, Math.min(2, nFreeM(g, p)), 'good'); for (const x of xs) ss(g, p, x, 'atk'); } }] },
   'The Dark Door': { effs: [{ type: 'act', res: function* () {} }],
@@ -365,7 +365,7 @@ E.addScripts({
   'Silent Doom': { effs: [{ type: 'act', tags: { ss: 1 }, cond: (g, c, p) => freeM(g, p) >= 0 && g.p[p].gy.some(x => D(x).k === 'normal'),
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Special Summon which Normal Monster?', g.p[p].gy.filter(x => D(x).k === 'normal'), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = L2.t[0]; if (!t || t.zone !== 'gy') return; if (ss(g, p, t, 'def')) t.flags.cantAttack = true; } }] },
-  'Roulette Spider': { effs: [{ type: 'act', cond: (g, c, p) => !!(g.aw && g.aw.a.ctrl !== p),
+  'Roulette Spider': { effs: [{ type: 'act', cond: (g, c, p) => (!!(g.aw && g.aw.a.ctrl !== p)) && !!g.aw && E.lib.canTarget(g, g.aw.a, { c, p }),
     target: function* (g, c, p, L2) { L2.data.a = g.aw.a; L2.data.t = g.aw.t; L2.t = [g.aw.a]; },
     res: function* (g, c, p, L2) {
       const a = L2.data.a; const n = dice(g, p); const o = opp(p);
