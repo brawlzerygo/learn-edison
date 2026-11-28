@@ -304,7 +304,7 @@ E.addScripts({
     cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Tribute which Hero Kid?', E.lib.tribPool(g, p, { known: true }).filter(x => named(x, 'Hero Kid')), 1, 1, 'cost'); if (x) { move(g, x, 'gy', { reason: 'cost', by: p }); log(g, `${PN(g, p)} Tributed Hero Kid.`); } },
     res: function* (g, c, p) { if (g.aw) negateAttack(g); yield* search(g, p, x => isMon(x) && /^Elemental HERO/.test(D(x).n), 'Add which Elemental HERO monster?'); } }] },
   // The 2000 applies during damage calculation only (E.lib.dcalc, 2026-11-28 audit).
-  'Kinetic Soldier (Cipher Soldier)': { self: {
+  'Kinetic Soldier (Cipher Soldier)': { self: { calcGain: true,
     atk: (g, c) => { const b = g.battle; if (!E.lib.dcalc(g) || !b || b.a !== c && b.t !== c || !b.t) return 0; const o = b.a === c ? b.t : b.a; return onField(o) && race(o) === 'Warrior' ? 2000 : 0; },
     def: (g, c) => { const b = g.battle; if (!E.lib.dcalc(g) || !b || b.a !== c && b.t !== c || !b.t) return 0; const o = b.a === c ? b.t : b.a; return onField(o) && race(o) === 'Warrior' ? 2000 : 0; } } },
   "King's Knight": { effs: [{ type: 'trig', when: true, tags: { ss: 1 }, label: "Special Summon Jack's Knight",

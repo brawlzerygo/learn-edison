@@ -21,11 +21,12 @@ const canNS = c => isMon(c) && !isExtraD(D(c)) && !['ritual', 'token'].includes(
 function excavate(g, p) { const deck = g.p[p].deck, out = []; for (let i = deck.length - 1; i >= 0; i--) { const x = deck[i]; if (canNS(x)) return [x, out]; out.push(x); } return [null, out]; }
 const sendAll = (g, xs) => { for (const x of xs) if (x.zone === 'deck') move(g, x, 'gy', { reason: 'effect' }); };
 const killFoe = (g, c, p, t) => { if (t && onField(t) && t.zone === 'm') destroy(g, [t], { by: p, src: c }); };
-// Mirror Wall: halve once per wall (the mod goes when the wall leaves)
+// Mirror Wall: a live halving per wall (engine stat(): `half` halves the value under it while its wall is face-up on the field and not
+// negated; archive ruling 5: with 2 walls one leaving brings it back to half; Netrep: "until Mirror Wall is no longer on the field or is
+// negated"; Shrink ruling 10: it recalculates, so Shrink in either order gives 1/4). A gain applied after it adds on top (Lily: 3200).
 function halve(g, wall, m) {
   if (!onField(m) || !faceUp(m) || m.mods.some(x => x.mw === wall.u)) return;
-  const a = stat(g, m, 'atk'), cut = a - Math.floor(a / 2); if (!cut) return;
-  m.mods.push({ set: a - cut, which: 'atk', mw: wall.u, turn: g.turnNo }); log(g, `${name(m)}'s ATK was halved by Mirror Wall.`);
+  addMod(g, m, { half: true, which: 'atk', mw: wall.u }); g.seq++; log(g, `${name(m)}'s ATK was halved by Mirror Wall.`);
 }
 // Ojama King / Ojama Knight: up to n of the opponent's unused Monster Zones (rulings 1 to 4: empty ones only, picked when it becomes face-up,
 // none after a control change), chosen by its controller (chooseKingZones). The engine locks them (cont.lockZones, 2026-11-28 audit, E4b).
@@ -261,7 +262,8 @@ E.addScripts({
   'Mirror Wall': { effs: [
     { type: 'act', ds: true, res: function* (g, c, p) { const b = g.aw || g.battle; if (b && b.a && b.a.ctrl !== p) halve(g, c, b.a); } },   // it can be activated in the Damage Step (goat-10)
     { type: 'trig', loc: 'st', on: (g, ev, c) => { if (ev.type === 'attack' && ev.a.ctrl !== c.ctrl && faceUp(c) && !L.negd(g, c)) halve(g, c, ev.a); return false; }, res: noop },   // a lasting effect: not while negated (Jinzo, goat-10)
-    { type: 'trig', loc: 'any', on: (g, ev, c) => { if (ev.type === 'move' && ev.c === c && ev.wasField) for (const m of fieldMons(g)) m.mods = m.mods.filter(x => x.mw !== c.u); return false; }, res: noop },
+    // its halvings end for good when it leaves the field or is negated (a later un-negation doesn't bring them back)
+    { type: 'trig', loc: 'any', on: (g, ev, c) => { if ((ev.type === 'move' && ev.c === c && ev.wasField) || (onField(c) && faceUp(c) && L.negd(g, c))) for (const m of fieldMons(g)) if (m.mods.some(x => x.mw === c.u)) m.mods = m.mods.filter(x => x.mw !== c.u); return false; }, res: noop },
     { type: 'trig', loc: 'st', mand: true, label: 'Pay 2000 LP or destroy it', on: (g, ev, c) => ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl,
       res: function* (g, c, p) { if (!onField(c)) return; if (E.lib.canPay(g, p, 2000) && (yield* yn(g, p, 'Pay 2000 LP to keep Mirror Wall?'))) pay(g, p, 2000); else destroy(g, [c], { rule: true }); } }] },
 

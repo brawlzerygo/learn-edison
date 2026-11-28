@@ -148,9 +148,6 @@ const hexFusion = at => ({ effs: [{ type: 'ign', tags: { ss: 1 }, label: `Tribut
   },
   res: function* (g, c, p, L2) { const fx = L2.data.fx; if (fx && fx.zone === 'extra') ss(g, p, fx, 'atk'); } }] });
 
-/* ----- Thousand-Eyes Restrict (as goat-1.js) ----- */
-const eyeEquip = (g, c) => allField(g).find(x => x.zone === 'st' && isMon(x) && x.equipTo === c.u) || null;
-const eqStat = (g, e, which) => e.flags.f17fd ? 0 : stat(g, e, which);
 
 /* ----- Needles: destroy the attacker at the end of the Damage Step ----- */
 const needles = (beats) => ({ effs: [{ type: 'trig', mand: true, tags: { destroy: 1 }, label: 'Destroy the attacking monster',
@@ -254,25 +251,11 @@ E.addScripts({
     effs: [lockEff, { type: 'trig', res: noop, on: (g, ev, c) => {
       if (faceUp(c) && (evSummoned(ev, c) || (ev.type === 'phase' && ev.ph === 'standby' && ev.tp === c.ctrl))) { const h = g.p[opp(c.ctrl)].hand; log(g, `${PN(g, opp(c.ctrl))}'s revealed hand: ${h.length ? h.map(x => D(x).n).join(', ') : 'empty'}.`); }
       return false; } }] },
-  // Ported from goat-1.js. "Other monsters on the field can't change their battle positions or attack" (position changes
-  // by card effects still happen, rulings). A face-down monster equipped this way gives 0 ATK/DEF.
-  // PARTIAL: Flip Summons of other monsters aren't stopped (no forbid action for a Flip Summon).
-  'Thousand-Eyes Restrict': {
-    self: {
-      atk: (g, c) => { const e = eyeEquip(g, c); return e ? eqStat(g, e, 'atk') : 0; },
-      def: (g, c) => { const e = eyeEquip(g, c); return e ? eqStat(g, e, 'def') : 0; },
-      replaceDestroy: (g, c, o) => { if (!o.battle) return false; const e = eyeEquip(g, c); if (!e) return false; destroy(g, [e]); log(g, `${name(c)} survived: the equipped monster was destroyed instead.`); return true; },
-    },
-    cont: { forbid: (g, src, a) => (a.type === 'attack' || a.type === 'pos') && a.c !== src },
-    effs: [{ type: 'ign', opt: true, label: 'Equip an opponent’s monster',
-      cond: (g, c, p) => !eyeEquip(g, c) && freeST(g, p) >= 0 && monsOf(g, opp(p)).length > 0,
-      target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Equip which of their monsters to this card?', monsOf(g, opp(p)), 1, 1, 'bad'); },
-      res: function* (g, c, p, L2) {
-        const t = live(L2)[0]; if (!t || t.zone !== 'm' || !onField(c) || !faceUp(c) || eyeEquip(g, c) || freeST(g, p) < 0) return;
-        const nm = D(t).n, fd = t.pos === 'set'; move(g, t, 'st', { ctrl: p, pos: 'up', reason: 'equip', by: p });
-        t.equipTo = c.u; t.flags.negated = true; if (fd) t.flags.f17fd = true;
-        log(g, `${nm} was equipped to ${name(c)}.`);
-      } }] },
+  // "Other monsters on the field can't change their battle positions or attack" (Flip Summons too; position changes by card effects still
+  // happen, rulings). The absorb is shared with Relinquished and Goat (batch-7.js E.lib.absorb / absorbSelf; fixer M).
+  'Thousand-Eyes Restrict': { self: L.absorbSelf(false),
+    cont: { forbid: (g, src, a) => (a.type === 'attack' || a.type === 'pos' || a.type === 'flip') && a.c !== src },
+    effs: [L.absorb] },
 
   /* ----- Thunder ----- */
   'Thunder Crash': { effs: [{ type: 'act', tags: { destroy: 1 }, cond: (g, c, p) => monsOf(g, p).length > 0,

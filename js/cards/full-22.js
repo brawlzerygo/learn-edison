@@ -130,7 +130,8 @@ E.addScripts({
   'Gust Fan': { cont: eqBonus(400, -200), effs: [equipAct(m => E.lib.isAttr(m, 'WIND'), 'Equip to which WIND monster?')] },
   // Not destroyed by battle or by a card effect that targets it; destroyed itself once the monster's ATK is 1300 or more.
   'Heart of Clear Water': {
-    cont: { grant: (g, src, m, flag) => flag === 'noBattleDestroy' && src.equipTo === m.u,
+    // at 1300 ATK or more it is destroyed at once (archive: Lily's +3000 at damage calculation destroys it), so it protects nothing then
+    cont: { grant: (g, src, m, flag) => flag === 'noBattleDestroy' && src.equipTo === m.u && atk(g, m) < 1300,
       replaceDestroy: (g, src, m, o) => {
         if (o.battle || o.rule || src.equipTo !== m.u || !faceUp(src)) return false;
         const snapL = src.flags.hcwChain || []; const L2 = snapL.find(x => !g.chain.includes(x));
@@ -141,8 +142,9 @@ E.addScripts({
       { type: 'trig', loc: 'st', mand: true, tags: { destroy: 1 }, label: 'Destroy Heart of Clear Water',
         // its own activation is watched too: the equip at resolution announces nothing
         on: (g, ev, c) => { if (ev.type === 'move' && ev.c === c && ev.to === 'st' && ev.reason === 'activate') return true; if (!c.equipTo || c.flags.hcwDue) return false; const m = fieldMons(g).find(x => x.u === c.equipTo); if (m && atk(g, m) >= 1300) { c.flags.hcwDue = true; return true; } return false; },
-        cond: (g, c) => { const m = c.equipTo && fieldMons(g).find(x => x.u === c.equipTo); return !!m && atk(g, m) >= 1300; },
-        res: function* (g, c, p) { c.flags.hcwDue = false; const m = fieldMons(g).find(x => x.u === c.equipTo); if (onField(c) && m && atk(g, m) >= 1300) destroy(g, [c], { by: p }); } }] },
+        // hcwDue: it reached 1300 (also during damage calculation only: Lily's +3000, seen at the calcStart event), so it is destroyed
+        cond: (g, c) => { const m = c.equipTo && fieldMons(g).find(x => x.u === c.equipTo); return !!m && (c.flags.hcwDue || atk(g, m) >= 1300); },
+        res: function* (g, c, p) { const due = c.flags.hcwDue; c.flags.hcwDue = false; const m = fieldMons(g).find(x => x.u === c.equipTo); if (onField(c) && m && (due || atk(g, m) >= 1300)) destroy(g, [c], { by: p }); } }] },
 
   /* ----- Spirit, Ritual and summon-rule monsters ----- */
   'Fushi No Tori': { effs: [lockInstall, spiritReturn,

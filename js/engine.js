@@ -55,13 +55,34 @@ let TMPROBE = false;
 const isTrapMon = c => !!(c && c.flags && c.flags.trapMon && c.zone === 'm');
 const isMon = c => isMonD(D(c)) || (!TMPROBE && isTrapMon(c));
 const onField = c => c.zone === 'm' || c.zone === 'st' || c.zone === 'fz';
+/* An Effect Monster by its card data: k 'effect', or a Fusion/Synchro/Ritual whose text has more than its materials / Ritual Summon line
+ (Stardust Dragon, Cyber End Dragon, Relinquished yes; Thousand Dragon, Black Luster Soldier no). Phantom of Chaos (pass2 edison-09). */
+const effMemo = new Map();
+function isEffectMonD(d) { if (!d) return false; if (d.k === 'effect') return true; if (!['fusion', 'synchro', 'ritual'].includes(d.k)) return false;
+  if (effMemo.has(d.n)) return effMemo.get(d.n);
+  let t = String(d.tx || '').split(/\r?\n/); if (d.k !== 'ritual') t = t.slice(1);
+  const r = t.join(' ').replace(/(You can |This card can only be )?Ritual Summon(ed)? (this card )?(with|by) [^.]*\./gi, '').trim().length > 0; effMemo.set(d.n, r); return r; }
 const faceUp = c => onField(c) && c.pos !== 'set';
-const SC = c => (FMT !== 'edison' && FSCRIPTS[FMT] && FSCRIPTS[FMT][D(c).n]) || SCRIPTS[D(c).n] || null;
 const scByName = n => (FMT !== 'edison' && FSCRIPTS[FMT] && FSCRIPTS[FMT][n]) || SCRIPTS[n] || null;
+/* A monster that copied another's effects (c.flags.copyEffs: Phantom of Chaos "gains that monster's effect(s)", archive; pass2 edison-09)
+ has its continuous effects too, on the field: the copied card's self and cont joined to its own (its own keys first, both damage hooks
+ apply; its own original ATK stays). Negation works as for its own (the copied effects are negated under Skill Drain, site ruling). */
+const copyMemo = new Map();
+function copiedSC(own, me, n) {
+  const k = FMT + '|' + me + '|' + n; if (copyMemo.has(k)) return copyMemo.get(k);
+  const cs = scByName(n); let out = own;
+  if (cs && (cs.self || cs.cont)) { const cself = { ...(cs.self || {}) }; delete cself.origAtk; delete cself.origDef;
+    const ownC = (own && own.cont) || {}, cc = cs.cont || {}; const cont = { ...cc, ...ownC };
+    if (ownC.dmg && cc.dmg) cont.dmg = (g, src, p, n2, o) => { const r = ownC.dmg(g, src, p, n2, o); return typeof r === 'number' ? cc.dmg(g, src, p, r, o) : r; };
+    out = { ...(own || {}), self: { ...cself, ...((own && own.self) || {}) }, cont: Object.keys(cont).length ? cont : undefined }; }
+  copyMemo.set(k, out); return out;
+}
+const SC0 = c => (FMT !== 'edison' && FSCRIPTS[FMT] && FSCRIPTS[FMT][D(c).n]) || SCRIPTS[D(c).n] || null;
+const SC = c => { const own = SC0(c), n = c && c.flags && c.flags.copyEffs; if (!n || c.zone !== 'm' || c.pos === 'set') return own; return copiedSC(own, D(c).n, n); };
 /* a card's effects: its own, plus the monster effects it copied (c.flags.copyEffs = a card name: Phantom of Chaos and the like,
    2026-11-26: a launch report found Phantom of Chaos couldn't use Sky Scourge Norleras's effect). Copied effects work from the
    field only and keep their own conditions; summon rules and continuous effects aren't copied. */
-const effsOf = c => { const sc = SC(c), own = (sc && sc.effs) || []; const n = c && c.flags && c.flags.copyEffs; if (!n) return own;
+const effsOf = c => { const sc = SC0(c), own = (sc && sc.effs) || []; const n = c && c.flags && c.flags.copyEffs; if (!n) return own;
   const cs = scByName(n); const cp = ((cs && cs.effs) || []).filter(e => e.type !== 'act' && (e.loc || 'm') === 'm'); return cp.length ? own.concat(cp) : own; };
 /* A card's name now (2026-11-28 audit, findings edison-s01 and edison-15): "This card's name is always treated as "X"" everywhere (Harpie Lady
  1/2/3 and Cyber Harpie Lady are "Harpie Lady", A Legendary Ocean is "Umi": Karma Cut ruling 8, Harpies' Hunting Ground: nameIs, so the
@@ -77,7 +98,9 @@ function name(c) { const d = D(c); if (onField(c) && faceUp(c)) { const ng = () 
   if (d.n === 'Elemental HERO Neos Alius' && c.zone === 'm' && c.flags.gemini && !ng()) return 'Elemental HERO Neos';   // its Gemini effect (2026-11-27 audit)
   if ((d.n === 'Proto-Cyber Dragon' || (d.n === 'Cyber Dragon Zwei' && c.flags.f04zwei)) && c.zone === 'm' && !ng()) return 'Cyber Dragon';
   if (d.n === 'Forgotten Temple of the Deep' && !ng()) return 'Umi';
-  if (c.zone === 'm' && (c.flags.pocName || c.flags.prismaName) && !ng()) return c.flags.pocName || c.flags.prismaName;   // Phantom of Chaos, Elemental HERO Prisma: a name taken until the End Phase (E4)
+  // Phantom of Chaos, Elemental HERO Prisma: a name taken until the End Phase by a resolved effect, kept when they are negated later (site
+  // rulings: "the copied name and ATK are not negated", Prisma ruling 3; pass2 edison-09)
+  if (c.zone === 'm' && (c.flags.pocName || c.flags.prismaName)) return c.flags.pocName || c.flags.prismaName;
   } else if (d.n === 'Cyber Dragon Zwei' && c.zone === 'gy') return 'Cyber Dragon';
   return d.n; }
 // does c carry name n? (its current name, or the one its text always gives it: Harpie Lady 1 is a "Harpie Lady", A Legendary Ocean is "Umi")
@@ -261,21 +284,54 @@ function forbid(g, a) {
  cond's summonability check (ssable, a.inCond) leaves the permanent rules out: the engine's own summoning conditions (ssLimited, read from
  the text) apply there, and the rules still apply when it resolves. Locks with an end (this turn) or from an activation still count. */
 const legacyLock = r => r.end == null && r.startOf == null && !r.L;
+/* The stat layer order (2026-11-28 audit, fixer M; Shrink rulings 4, 5, 8, 10, Gishilnodon rulings 2 and 3, Black Rose Dragon ruling 5,
+ Ojama Country ruling 6/7 with Curse of Anubis, Lily and Cipher Soldier vs Mirror Wall, EDOPro's SET_BASE / SET / UPDATE layers):
+ 1. Original values: the printed (or own) original ATK/DEF, then "switch the original ATK and DEF" (cont.swapBase) and "its original ATK/DEF
+    becomes X" (base mods: Shrink, Curse of Anubis) in the order they started applying.
+ 2. Current values: every change in timestamp order. A "becomes X" (set mods, cont.atkSet: Megamorph) replaces what came before it, later
+    gains and losses add on top; Mirror Wall halves the value under it while its wall is on the field and not negated. A continuous effect
+    (cont.atk, self.atk, the built-in gains) counts from when it started applying to the monster: the later of its card's and the monster's
+    arrival or turning face-up (self.calcGain: a "during damage calculation" gain, from the start of damage calculation). Shrink's new
+    original ATK also drops current-ATK sets older than it (ruling 8: Limiter Removal, ruling 4: Megamorph), not gains (ruling 5).
+ g.clk is the clock: arrivals (c.at), flips face-up (c.upClk), a Continuous/Equip/Field card's resolved activation (c.actClk), mods (m.t). */
+const tick = g => (g.clk = (g.clk || 0) + 1);
+const upT = c => Math.max(c.at || 0, c.upClk || 0, c.actClk || 0);
+function swapSrc(c) { const g = c.g; if (!g || c.zone !== 'm' || !faceUp(c) || g._bsw) return null; g._bsw = true; try { const st = statics(g); if (!st.swap) return null; const e = st.find(([s, ct]) => ct.swapBase && ct.swapBase(g, s, c)); return e ? e[0] : null; } finally { g._bsw = false; } }
+function baseLayer(g, c, neg) {
+  let A = baseAtk0(c), Dv = baseDef0(c); const ops = [];
+  c.mods.forEach((m, i) => { if (m.base != null && !(m.own && neg)) ops.push({ t: m.t || 0, i, m }); });
+  const sw = swapSrc(c); if (sw) ops.push({ t: Math.max(upT(sw), upT(c)), i: -1, swap: true });
+  ops.sort((x, y) => x.t - y.t || x.i - y.i);
+  let shrinkT = -1;
+  for (const o of ops) { if (o.swap) { [A, Dv] = [Dv, A]; continue; } const m = o.m;
+    if (m.which === 'atk' || m.which === 'both') A = m.base; if (m.which === 'def' || m.which === 'both') Dv = m.base;
+    if (m.shrink && m.which !== 'def') shrinkT = Math.max(shrinkT, o.t); }
+  return { atk: A, def: Dv, shrinkT, based: { atk: ops.some(o => o.m && (o.m.which === 'atk' || o.m.which === 'both')), def: ops.some(o => o.m && (o.m.which === 'def' || o.m.which === 'both')) } };
+}
+const mwLive = (g, m) => { const w = allField(g).find(x => x.u === m.mw); return !!w && faceUp(w) && !negd(g, w); };
 function stat(g, c, which) { // current ATK or DEF
   const d = D(c); let v = which === 'atk' ? baseAtk(c) : baseDef(c);
   if (c.flags.tokAtk != null) v = c.flags.tokAtk;
   if (!onField(c) || !faceUp(c) || c.zone !== 'm') return v;
-  const nm = d.n, neg = negd(g, c);
-  // "its original ATK becomes X" (Shrink): a base mod {base, which} replaces the original value, and every other change still adds to it
-  for (const m of c.mods) if (m.base != null && (m.which === which || m.which === 'both') && !(m.own && neg)) v = m.base;
-  const sc = SC(c); if (!neg && sc && sc.self && sc.self[which]) v += sc.self[which](g, c) || 0;
-  for (const [s, ct] of statics(g)) if (ct[which]) v += ct[which](g, s, c) || 0;
-  if (!neg) {
-    if (nm === 'Colossal Fighter' && which === 'atk') v += 100 * allCards(g, 'gy').filter(x => isMon(x) && race(x) === 'Warrior').length;
-    if (nm === 'Elemental HERO Absolute Zero' && which === 'atk') v += 500 * fieldMons(g).filter(x => faceUp(x) && isAttr(x, 'WATER') && D(x).n !== 'Elemental HERO Absolute Zero').length;   // no other Absolute Zero (archive)
-    if (nm === 'Tragoedia') v += 600 * g.p[c.ctrl].hand.length;
+  const nm = d.n, neg = negd(g, c), bl = baseLayer(g, c, neg);
+  if (c.flags.tokAtk == null || bl.based[which]) v = bl[which];
+  const shrinkT = which === 'atk' ? bl.shrinkT : -1, tc = upT(c), es = [];
+  const sc = SC(c); if (!neg && sc && sc.self && sc.self[which]) { const n = sc.self[which](g, c) || 0; if (n) es.push({ t: sc.self.calcGain && g.calcNow ? (g.calcT || tc) : tc, add: n }); }
+  for (const [s, ct] of statics(g)) {
+    if (ct[which]) { const n = ct[which](g, s, c) || 0; if (n) es.push({ t: Math.max(upT(s), tc), add: n }); }
+    const sf = ct[which + 'Set']; if (sf) { const n = sf(g, s, c); if (n != null) es.push({ t: Math.max(upT(s), tc), set: n }); }
   }
-  for (const m of c.mods) { if ((m.own && neg) || (m.calc && !g.calcNow)) continue; if (m.set != null && (m.which === which || m.which === 'both')) v = m.set; else if (m.base == null && m[which]) v += m[which]; }
+  if (!neg) {
+    if (nm === 'Colossal Fighter' && which === 'atk') es.push({ t: tc, add: 100 * allCards(g, 'gy').filter(x => isMon(x) && race(x) === 'Warrior').length });
+    if (nm === 'Elemental HERO Absolute Zero' && which === 'atk') es.push({ t: tc, add: 500 * fieldMons(g).filter(x => faceUp(x) && isAttr(x, 'WATER') && D(x).n !== 'Elemental HERO Absolute Zero').length });   // no other Absolute Zero (archive)
+    if (nm === 'Tragoedia') es.push({ t: tc, add: 600 * g.p[c.ctrl].hand.length });
+  }
+  for (const m of c.mods) { if (m.base != null || (m.own && neg) || (m.calc && !g.calcNow)) continue; const t = m.t || 0;
+    if (m.half && (m.which === which || m.which === 'both')) { if (!m.mw || mwLive(g, m)) es.push({ t, half: true }); }
+    else if (m.set != null && (m.which === which || m.which === 'both')) es.push({ t, set: m.set });
+    else if (m[which]) es.push({ t, add: m[which] }); }
+  es.sort((x, y) => x.t - y.t);   // stable: mods keep their order
+  for (const e of es) { if (e.set != null) { if (e.t >= shrinkT) v = e.set; } else if (e.half) v = Math.floor(Math.max(0, v) / 2); else v += e.add; }
   return Math.max(0, v);
 }
 E.atk = (g, c) => stat(g, c, 'atk'); E.def = (g, c) => stat(g, c, 'def');
@@ -397,7 +453,7 @@ function move(g, c, to, o = {}) {
     else P[to].push(c);
   }
   if (from === 'gy' && c.flags.visitNeg) { delete c.flags.negated; delete c.flags.visitNeg; }
-  c.moved = g.moves = (g.moves || 0) + 1;   // which arrival this is (Stardust Dragon: the same visit to the GY)
+  c.moved = g.moves = (g.moves || 0) + 1; c.at = tick(g);   // which arrival this is (Stardust Dragon: the same visit to the GY)
   // asCost: the move happened while a cost was paid (a discard for a cost is not "discarded by a card effect": Dark World archive)
   const ev = emit(g, { type: 'move', c, from, to, wasField, snap: s, prevCtrl, ...(g.inCost ? { asCost: true } : null), ...o }, o.group);
   if (!o.noLater) flushLater(g, ev.group);
@@ -563,7 +619,7 @@ function emit(g, ev, group) {
   if (g.posWatch && ev.c && ev.type === 'pos') g.posWatch.push(ev.c.u);
   ev.group = group != null ? group : g.group; ev.seq = ++g.seq; ev.turn = g.turnNo; ev.phase = g.phase;
   if (ev.type === 'summon') g.summoned[ev.p] = true;
-  if (ev.type === 'flip' && ev.c && ev.c.flags) { ev.c.flags.flippedUp = true; ev.c.flags.upAt = g.seq; }
+  if (ev.type === 'flip' && ev.c && ev.c.flags) { ev.c.flags.flippedUp = true; ev.c.flags.upAt = g.seq; if (!ev.battle) ev.c.upClk = tick(g); }
   g.events.push(ev); if (g.events.length > 120) g.events.splice(0, 40);
   if (g.hooks) g.hooks.ev(g, ev); // a client watching the live duel (Learn Retro Play); clones and tests have none
   // collect triggers from every card that can see it (g.inEmit: a rule a watcher installs here is never tied to an activation, see addRule)
@@ -622,7 +678,9 @@ function ssPickable(g, p, text, cards) {
   // left out, so the about 45 scripts that pick and fill L.t by hand target through the same check as tgt() (2026-11-28 audit)
   if (g.lockL && !g.inCost && !g.pickNoTarget) cards = cards.filter(x => !x || !x.id || canTarget(g, x, g.lockL));
   if (g.inCost || !(g.resolvingL || g.lockL) || !/Special Summon/i.test(text || '')) return cards;
-  return cards.filter(x => !(x && x.id && isMon(x) && ['hand', 'deck', 'gy', 'ban'].includes(x.zone)) || !forbid(g, { type: 'ss', c: x, p, how: 'special', inCond: true }));   // inCond: see legacyLock
+  // L.ssProper: cards the resolving script summons as their own way (o.proper; Last Will with Toon Mermaid, fixer M)
+  const pr = (g.resolvingL && g.resolvingL.ssProper) || [];
+  return cards.filter(x => !(x && x.id && isMon(x) && ['hand', 'deck', 'gy', 'ban'].includes(x.zone)) || !forbid(g, { type: 'ss', c: x, p, how: 'special', inCond: true, proper: pr.includes(x.u) }));   // inCond: see legacyLock
 }
 function* yn(g, p, text) { const r = yield* ask(g, p, 'yesno', text, [{ key: 'y', label: 'Yes' }, { key: 'n', label: 'No' }]); return r[0] === 'y'; }
 /* Declaring a card name (2026-11-28 audit, E4b: Mind Crush, Prohibition, Cloak and Dagger listed names from the opponent's Deck, which leaks
@@ -1194,7 +1252,12 @@ function negate(g, L, destroyIt, o = {}) {
   // only where it was activated: a Gladiator Beast tag out negated after it returned to the Deck stays there (pass2 edison-10)
   else if (destroyIt && ['hand', 'extra'].includes(L.c.zone) && (L.actZone == null || L.actZone === L.c.zone)) { move(g, L.c, 'gy', { reason: 'effect', destroyed: true, by: L.negBy != null ? L.negBy : by ? g.resolvingL.p : undefined }); log(g, `${D(L.c).n} was destroyed.`); }
 }
-function addMod(g, c, m) { c.mods.push({ ...m, turn: g.turnNo }); }
+// m.replace: "becomes X" whose rulings drop earlier "becomes" changes of that value for good (Gishilnodon ruling 3: Gale's halving is gone)
+function addMod(g, c, m) {
+  if (m.replace && m.set != null) { const ws = m.which === 'both' ? ['atk', 'def'] : [m.which]; const out = [];
+    for (const x of c.mods) { if (x.set == null || x.base != null) { out.push(x); continue; } const left = (x.which === 'both' ? ['atk', 'def'] : [x.which]).filter(w => !ws.includes(w)); if (left.length === 2) out.push(x); else if (left.length === 1) out.push({ ...x, which: left[0] }); }
+    c.mods = out; }
+  c.mods.push({ ...m, turn: g.turnNo, t: tick(g) }); }
 
 /* ---------- Synchro and summon rules ---------- */
 /* Material lines (2026-11-28 audit, findings edison-17 and edison-10). A Synchro's or Fusion's materials are read from the first line of its
@@ -1571,6 +1634,11 @@ function* resolveChain(g) {
   while (g.chain.length) {
     const L = g.chain.pop(); g.seq++; beginOp(g);
     if (g.hooks) g.hooks.note(g, { type: 'resolve', L });
+    // "Before resolving an opponent's monster effect that targets this face-up card" (self.preTargeted(g, c, L): Machina Fortress ②, fixer M):
+    // a continuous effect, not a chain link; it still applies when the effect resolves negated, not when its activation was negated (site
+    // rulings), and only while the card is still the opponent's target (ruling 8: not after Enemy Controller took it); each copy (ruling 9)
+    if (!L.actNegated && !L.cardAct && isMonD(D(L.c))) for (const x of (L.t || []).slice()) { const sc = x && x !== L.c && x.zone === 'm' && faceUp(x) && SC(x), f = sc && sc.self && sc.self.preTargeted;
+      if (f && x.ctrl !== L.p && !negd(g, x)) yield* f(g, x, L); }
     // Necrovalley: "Negate any card effect that targets a card(s) in the GY" (Edison), "...that would move a card in the GY" (Goat); a
     // static cont.gyNegate(g, src, L) says when (2026-11-28 audit: Call of the Haunted, Premature Burial, Monster Reborn, Monster Reincarnation)
     if (!L.negated) for (const [s, ct] of statics(g)) if (ct.gyNegate && s !== L.c && ct.gyNegate(g, s, L)) { L.negated = true; log(g, `${D(s).n} negated ${name(L.c)}'s effect.`); break; }
@@ -1596,6 +1664,7 @@ function* resolveChain(g) {
     if (L.negated && L.eff.noNeg) { L.negated = false; L.actNegated = false; log(g, `${name(L.c)} can't be negated.`); }
     if (!L.negated) {
       const d = D(L.c);
+      if (L.cardAct && onField(L.c)) L.c.actClk = tick(g);   // its lasting effects start applying now (the stat layer order)
       // a Continuous/Equip/Field card that left the field doesn't resolve its activation, nor any effect it uses from the S/T or Field Zone
       // (2026-11-28 audit, edison-12: Ultimate Offering and Mausoleum of the Emperor after a chained MST)
       const stillThere = L.eff.type !== 'act' ? !(['st', 'fz'].includes(L.eff.loc) && !onField(L.c) && !L.offAtAct) : onField(L.c) || !['Continuous', 'Equip', 'Field'].includes(d.sub);
@@ -1936,6 +2005,10 @@ function idleOpts(g) {
     const sc = SC(c);
     if (sc && sc.proc && !sc.proc.extra && (sc.proc.toOpp || freeM(g, p) >= 0) && sc.proc.cond(g, c, p) && (sc.proc.how === 'normal' || !forbid(g, { type: 'ss', c, p, how: 'special', proc: true })) && !(sc.proc.cost && (gyCostBlocked(g, c, sc.proc) || banCostBlocked(g, p, c, sc.proc)))) out.push({ key: 'sp:' + c.u, u: c.u, kind: 'sp', label: sc.proc.label || 'Special Summon' });
   }
+  // a summon procedure that also works from the GY (proc.from: ['hand', 'gy']: Machina Fortress "from your hand or GY", rulings 2 and 3: no
+  // chain, Solemn Judgment and Rai-Oh can negate it; fixer M)
+  if (!g.noSummon[p] && freeM(g, p) >= 0) for (const c of P.gy) { const sc = SC(c);
+    if (sc && sc.proc && sc.proc.from && sc.proc.from.includes('gy') && sc.proc.cond(g, c, p) && !forbid(g, { type: 'ss', c, p, how: 'special', proc: true }) && !(sc.proc.cost && (gyCostBlocked(g, c, sc.proc) || banCostBlocked(g, p, c, sc.proc)))) out.push({ key: 'sp:' + c.u, u: c.u, kind: 'sp', label: sc.proc.label || 'Special Summon' }); }
   if (!g.noSummon[p] && freeM(g, p) >= 0 || monsOf(g, p).length) {
     for (const x of P.extra) {
       if (g.noSummon[p]) break;
@@ -2075,6 +2148,21 @@ function* battlePhase(g) {
   }
   g.bpEnd = false; beginOp(g); emit(g, { type: 'phase', ph: 'bpEnd', tp: g.tp }); yield* processTriggers(g);
 }
+/* A special Battle Phase run from inside a card (Last Turn ruling 5: "treated like a standard Battle Phase in every other way, with a Start
+ Step, Battle Step, Damage Step, and End Step"; only a attacks, t its target; o.noDamage: battle damage is 0, this battle only, ruling 7). It
+ is extra to the turn's own Battle Phase (ruling 4): the phase it ran in comes back after it, and the monster can attack again later. */
+function* specialBattle(g, a, t, o = {}) {
+  const prevPh = g.phase, prevEnd = g.bpEnd, nb = [g.p[0].noBattleDamage, g.p[1].noBattleDamage];
+  g.phase = 'battle'; g.bpEnd = false; if (o.noDamage) g.p[0].noBattleDamage = g.p[1].noBattleDamage = g.turnNo;
+  log(g, 'A special Battle Phase begins.');
+  try {
+    beginOp(g); emit(g, { type: 'phase', ph: 'battle', tp: g.tp, special: true }); yield* processTriggers(g);
+    yield* openWindow(g, 1 - g.tp, { text: 'Start of the special Battle Phase. Activate a card or effect?' });
+    if (!g.bpEnd && onField(a) && a.zone === 'm' && a.ctrl === g.tp && a.pos === 'atk' && onField(t) && t.zone === 'm' && t.ctrl !== g.tp) { const n = a.attacks; yield* attack(g, a, t); if (onField(a)) a.attacks = n; }
+    g.bpEnd = false; beginOp(g); emit(g, { type: 'phase', ph: 'bpEnd', tp: g.tp, special: true }); yield* processTriggers(g);
+  } finally { g.phase = prevPh; g.bpEnd = prevEnd; if (o.noDamage) { g.p[0].noBattleDamage = nb[0]; g.p[1].noBattleDamage = nb[1]; } }
+  log(g, 'The special Battle Phase ends.');
+}
 function* attack(g, a, t) {
   const tp = g.tp, op = 1 - tp;
   for (let replay = 0; replay < 4; replay++) {
@@ -2114,7 +2202,7 @@ function* damageStep(g, a, t) {
   const alive = () => onField(a) && a.ctrl === tp && (!t || (onField(t) && t.ctrl === op));
   if (!alive()) { g.inDS = false; g.battle = null; if (g.dsReap) { const r = g.dsReap; g.dsReap = null; reapSpirit(g, r); } return; }
   let flipped = false;
-  if (t && t.pos === 'set') { t.pos = 'def'; flipped = true; g.battle.flipped = t; g.seq++; log(g, `The face-down monster was ${name(t)}.`); }
+  if (t && t.pos === 'set') { t.pos = 'def'; t.upClk = tick(g); flipped = true; g.battle.flipped = t; g.seq++; log(g, `The face-down monster was ${name(t)}.`); }
   // right after the flip, before damage calculation (2026-11-28 audit, E4b; EDOPro EVENT_BATTLE_CONFIRM): Drillroid and Ehren, Lightsworn
   // Monk trigger here, on the monster already face-up (Drillroid ruling 2, Ehren rulings 3 and 4)
   if (t) { beginOp(g); emit(g, { type: 'battleConfirm', a, t, flipped }); yield* processTriggers(g); }
@@ -2132,18 +2220,22 @@ function* damageStep(g, a, t) {
   }
   beginOp(g);
   // damage calculation itself (2026-11-28 audit, E4b): "during damage calculation only" effects apply only now (dcalc(), mods with calc: true)
-  g.calcNow = true;
+  g.calcNow = true; g.calcT = tick(g);
+  // damage calculation starts: continuous checks on the values it uses (Heart of Clear Water with Injection Fairy Lily's +3000)
+  g.seq++; emit(g, { type: 'calcStart', a, t });
   const pre = g.battle.pre, tPos = t && !onField(t) ? pre.tpos : t && t.pos;
   const A = (onField(a) ? stat(g, a, 'atk') : pre.A) + (onField(a) && t && t.pos !== 'atk' && D(a).n === 'Blackwing Armed Wing' && !negd(g, a) ? 500 : 0);
   const pierce = c => (!negd(g, c) && ['Blackwing - Bora the Spear', 'Blackwing Armed Wing', 'Flamvell Uruquizas', 'Evil HERO Malicious Edge'].includes(D(c).n)) || has(g, c, 'piercing');
   const noDmg = (p, c1, c2) => [c1, c2].some(c => c && c.ctrl === p && faceUp(c) && ((D(c).n === 'Blackwing Armor Master' && !negd(g, c)) || has(g, c, 'noBattleDamage'))) || g.p[p].noBattleDamage === g.turnNo;
-  let killA = false, killT = false, dmgTo = null, dmg = 0;
+  let killA = false, killT = false, dmgTo = null, dmg = 0, pierceBy = null;
   const tDef = t && tPos !== 'atk';
   if (!t) { dmgTo = op; dmg = A; }
   else if (tPos === 'atk') { const T = onField(t) ? stat(g, t, 'atk') : pre.TA; if (A > T) { killT = true; dmgTo = op; dmg = A - T; } else if (A < T) { killA = true; dmgTo = tp; dmg = T - A; } else if (A > 0) { killA = killT = true; } }   // equal ATK: both destroyed, but two 0 ATK monsters both survive (2026-11-26)
-  else { const Dv = onField(t) ? stat(g, t, 'def') : pre.TD; if (A > Dv) { killT = true; if (onField(a) && pierce(a)) { dmgTo = op; dmg = A - Dv; } } else if (A < Dv) { dmgTo = tp; dmg = Dv - A; } }
+  // piercing damage goes to the attacker's opponent, or where the piercing grant says (cont.pierceTo: Big Bang Shot equipped to the
+  // opponent's monster hits the opponent of its own controller, ruling 8; the damage still comes from the monster, ruling 9; fixer M)
+  else { const Dv = onField(t) ? stat(g, t, 'def') : pre.TD; if (A > Dv) { killT = true; if (onField(a) && pierce(a)) { dmgTo = op; for (const [s2, ct] of statics(g)) if (ct.pierceTo && ct.grant && ct.grant(g, s2, a, 'piercing')) { dmgTo = ct.pierceTo(g, s2, a); break; } pierceBy = a; dmg = A - Dv; } } else if (A < Dv) { dmgTo = tp; dmg = Dv - A; } }
   if (dmgTo != null && noDmg(dmgTo, a, t)) dmg = 0;
-  if (dmg > 0) damage(g, dmgTo, dmg, { battle: true, src: dmgTo === op ? a : t, srcP: 1 - dmgTo, direct: !t });
+  if (dmg > 0) damage(g, dmgTo, dmg, { battle: true, src: pierceBy || (dmgTo === op ? a : t), srcP: 1 - dmgTo, direct: !t });
   g.dsCalcDone = true; if (g.dsReap) { const r = g.dsReap; g.dsReap = null; reapSpirit(g, r); }   // Spirit Reaper targeted earlier in the Damage Step
   const victims = [];
   if (killT && t && onField(t) && !cantBattleDestroy(g, t)) victims.push([t, a]);
@@ -2724,6 +2816,7 @@ E.lib.faceDownLocked = faceDownLocked;   // handlers for g.postSteps (processTri
 E.lib.lvAdd = lvAdd;   // Level +n/-n as a mod (end: until the End Phase)
 E.lib.tribWorth = tribWorthOf; E.lib.tribTotal = tribTotal;   // what a Tribute counts for summoning c (Double Coston: 2 for a DARK)
 E.lib.toDeckBlocked = toDeckBlocked;   // G.B. Hunter: can this card on the field be returned to the Deck/Extra Deck?
+E.lib.specialBattle = specialBattle; E.lib.tick = tick; E.lib.upT = upT; E.lib.isEffectMon = c => isEffectMonD(D(c));
 E.lib.dcalc = g => !!(g.inDS && g.calcNow);   // during damage calculation (Skyscraper, Alien counters, Cipher Soldier, Clear Vice Dragon...)
 E.lib.assignMats = assignMats; E.lib.SC = SC; E.lib.scByName = scByName;   // a card's script for the duel's format (Goat overrides first; pool review goat-h01)
  E.lib.ctrlLocked = ctrlLocked; E.lib.matBlocked = matBlocked; E.lib.isFusionSub = isFusionSub; E.lib.moreMats = moreMats;   // Fusion material sets (with a Fusion substitute: pass the Fusion as fx)

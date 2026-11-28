@@ -28,7 +28,7 @@ E.addScripts({
         damage(g, opp(p), n, { src: c, srcP: p }); } }] },
   // No shared script. The +2000 applies during damage calculation only (E.lib.dcalc, 2026-11-28 audit).
   'Cipher Soldier': {
-    self: { atk: (g, c) => cipher(g, c), def: (g, c) => cipher(g, c) },
+    self: { calcGain: true, atk: (g, c) => cipher(g, c), def: (g, c) => cipher(g, c) },   // on top of Mirror Wall's halving (calcGain)
     effs: [] },
 }, 'goat');
 

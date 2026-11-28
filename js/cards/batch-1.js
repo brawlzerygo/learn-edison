@@ -140,7 +140,8 @@ const S = {
         // until the end of their 3rd turn, the activation turn counting as the first (ruling 4): their turns T, T+2, T+4 when it is activated
         // on their turn, T+1, T+3, T+5 on yours
         g.b1ddv = (g.b1ddv || []).filter(r => r.u !== c.u); g.b1ddv.push({ u: c.u, p, victim: o, until: g.turnNo + (g.tp === o ? 4 : 5) }); } }] },
-  'Pulling the Rug': { effs: [{ type: 'act',
+  // negates and destroys the monster whose effect it negates: tags.destroy and destroys, so Starlight Road / Stardust see it (roles lead; fixer M)
+  'Pulling the Rug': { effs: [{ type: 'act', tags: { destroy: 1 }, destroys: (g, c, p, L2) => L2.data.L && !L2.data.L.negated ? [L2.data.L.c] : [],
     cond: (g, c, p, x) => { const t = x.top; return !!(t && !t.negated && t.eff.type === 'trig' && t.ev && t.ev.type === 'summon' && ['normal', 'tribute'].includes(t.ev.how) && isMon(t.c)); },   // any monster's effect triggered by the Normal Summon, not only the summoned one's (site ruling 3, archive: King Tiger Wanghu)
     target: function* (g, c, p, L2) { L2.data.L = g.chain[g.chain.length - 1]; },
     res: function* (g, c, p, L2) { L2.data.L.negBy = p; negate(g, L2.data.L, true); } }] },
@@ -325,7 +326,7 @@ const S = {
       const A = baseAtk(t), cs = oppFaceUp(g, p).filter(x => atk(g, x) <= A); if (!cs.length) return; const [x] = yield* pick(g, p, 'Destroy which monster?', cs, 1, 1, 'bad'); if (x) destroy(g, [x], { by: p, src: c }); } }] },
   'Sea Dragon Lord Gishilnodon': { hook: true, effs: [{ type: 'trig', mand: true,
     on: (g, ev, c) => ev.type === 'move' && ev.wasField && ev.to === 'gy' && ev.snap && ev.snap.faceUp && ev.snap.mon && ev.snap.lv <= 3,
-    res: function* (g, c) { if (onField(c) && faceUp(c)) { addMod(g, c, { set: 3000, which: 'atk', end: true, own: true }); log(g, 'Sea Dragon Lord Gishilnodon’s ATK became 3000.'); } } }] },
+    res: function* (g, c) { if (onField(c) && faceUp(c)) { addMod(g, c, { set: 3000, which: 'atk', end: true, own: true, replace: true }); log(g, 'Sea Dragon Lord Gishilnodon’s ATK became 3000.'); } } }] },   // replace: an earlier halving of its ATK is gone for good (ruling 3)
   // "Your opponent can't banish cards from either GY": no effect that banishes from a GY, as cost or effect, and no summon procedure that
   // does (Chaos Sorcerer, Gigantes): read from each card's text by the engine (banishesFromGY), not a list of names.
   'Kycoo the Ghost Destroyer': { cont: { forbid: (g, src, a) => a.p != null && a.p !== src.ctrl && ((a.type === 'banish' && a.from === 'gy') || (!!a.c &&

@@ -65,6 +65,10 @@
 //   substitutes, Chimeratech Overdragon's attacks and materials; Crystal Beast zones, Rainbow Ruins, Malicious Fiend, Aslla piscu; My Body as a
 //   Shield's destroys hooks; Brain Research Lab; Storm Caller and Djinn in Ritual Summons; the pass 2 edison-12/13/17 and goat-06/07 FAILs;
 //   Berserk Gorilla, Dark Balter, Ancient Forest's order; damage redirects, Barrier Statues, uniqueness timing, format-aware scripts (155-161).
+// 162- (Group M, main-wave close, 2026-11-28): the stat layer order (timestamps: Lily/Cipher Soldier/Heart of Clear Water vs Mirror Wall, Mirror
+//   Wall per wall, Shrink with Limiter Removal/Megamorph/Mirror Wall, Black Rose Dragon ruling 5, Gishilnodon ruling 3, Curse of Anubis with
+//   Ojama Country); Phantom of Chaos / Prisma; Machina Fortress' procedure and ②; Last Turn's special Battle Phase; Big Bang Shot's piercing;
+//   Last Will with Toon Mermaid; Gilasaurus under Necrovalley; the shared Thousand-Eyes Restrict / Relinquished absorb (162-169).
 // AI1. The computer Sets low-ATK Flip monsters instead of Normal Summoning them face-up (benzi_family), at every level.
 const { E, C } = require('./load')();
 const id = n => { const c = C.find(x => x.n === n); if (!c) throw new Error('no card ' + n); return c.id; };
@@ -2567,5 +2571,143 @@ T('161. Card files read the format\'s own scripts (E.lib.SC; pool review goat-h0
   ok(up === 2000 && G.atk(g, sg) === 1000, 'Goat: Sangan with Axe of Despair 2000, back to 1000 after Armored Glass');
 });
 
+T('162. The stat layer order (fixer M): a gain after a "becomes" adds on top; Mirror Wall halves live per wall; Shrink with Limiter Removal, Megamorph and Mirror Wall; Black Rose Dragon ruling 5; Gishilnodon ruling 3; Curse of Anubis with Ojama Country', () => {
+  // Lily and Mirror Wall (archive: 3200), both formats
+  for (const [lbl, P, mkx] of gFmts()) {
+    const g = mkx([{ m: ['Injection Fairy Lily'], turn: 3 }, { m: ['Blue-Eyes White Dragon'], st: [{ n: 'Mirror Wall', pos: 'up' }] }]);
+    const li = gFind(P, g, 0, 'Injection Fairy Lily'), be = gFind(P, g, 1, 'Blue-Eyes White Dragon'); let used = false;
+    gAttack(P, g, li, be, pr => { const o = pr.p === 0 && !used && pr.opts.find(o => o.key.startsWith('a:' + li.u + ':')); if (o) used = true; return o && o.key; });
+    ok(used && be.zone === 'gy' && g.p[1].lp === 7800 && g.p[0].lp === 6000, lbl + ': Lily halved to 200 by Mirror Wall pays 2000 and battles at 3200: Blue-Eyes destroyed, B takes 200');
+  }
+  { const { G, mk } = goatEngine();
+    let g = mk([{ m: ['Cipher Soldier'], turn: 3 }, { m: ['Black Luster Soldier'], st: [{ n: 'Mirror Wall', pos: 'up' }] }]);
+    gAttack(G, g, gFind(G, g, 0, 'Cipher Soldier'), gFind(G, g, 1, 'Black Luster Soldier'));
+    ok(g.p[0].lp === 8000 - 325, 'Goat: Cipher Soldier halved to 675 by Mirror Wall gains 2000 at damage calculation (2675): A takes 325');
+    for (const [foe, want] of [['Blue-Eyes White Dragon', 'win'], ['Master of Oz', 'lose']]) {
+      g = mk([{ m: ['Injection Fairy Lily'], st: [{ n: 'Heart of Clear Water', pos: 'up' }], turn: 3 }, { m: [foe] }]);
+      const li = gFind(G, g, 0, 'Injection Fairy Lily'), hc = g.p[0].st.find(Boolean); hc.equipTo = li.u; g.seq++; g.prompt.opts = G.idleOpts(g); let used = false;
+      gAttack(G, g, li, gFind(G, g, 1, foe), pr => { const o = pr.p === 0 && !used && pr.opts.find(o => o.key.startsWith('a:' + li.u + ':')); if (o) used = true; return o && o.key; });
+      if (want === 'win') ok(used && hc.zone === 'gy' && li.zone === 'm' && g.p[1].lp === 7600, 'Goat: Lily with Heart of Clear Water pays (3400) and beats Blue-Eyes: Heart of Clear Water is destroyed (archive)');
+      else ok(used && li.zone === 'gy' && g.p[0].lp === 5200, 'Goat: Lily with Heart of Clear Water pays (3400) into Master of Oz: Heart no longer protects it, Lily is destroyed, A takes 800'); } }
+  // Mirror Wall: two walls, one leaves (archive ruling 5); negated wall's halving ends for good (Netrep)
+  { const g = duel([{ m: ['Blue-Eyes White Dragon'], turn: 3 }, { st: [{ n: 'Mirror Wall', pos: 'up' }, { n: 'Mirror Wall', pos: 'up' }] }]);
+    const be = fld(g, 0, 'Blue-Eyes White Dragon'), [w1, w2] = g.p[1].st.filter(Boolean);
+    atkOn(g, be); const two = E.atk(g, be);
+    E.lib.destroy(g, [w1], { by: 0 }); E.lib.emit(g, { type: 'probe' }); const one = E.atk(g, be);
+    w2.flags.negated = true; g.seq++; E.lib.emit(g, { type: 'probe' }); const neg = E.atk(g, be); delete w2.flags.negated; g.seq++; E.lib.emit(g, { type: 'probe' });
+    ok(two === 750 && one === 1500 && neg === 3000 && E.atk(g, be) === 3000, `Mirror Wall x2: 750, one wall leaves: 1500, the other negated: 3000 and stays 3000 (got ${two}/${one}/${neg}/${E.atk(g, be)})`); }
+  // Shrink (Edison site rulings 4, 8, 10)
+  const shr = (first, second, lp) => { const g = duel([{ m: ['Cyber Dragon'], hand: [first, second], turn: 3 }, { m: [FILL] }]); if (lp) g.p[0].lp = lp;
+    const cd = fld(g, 0, 'Cyber Dragon');
+    for (const n of [first, second]) { actU(g, hand(g, n)); drive(g); }
+    return E.atk(g, cd); };
+  ok(shr('Limiter Removal', 'Shrink') === 1050, 'Limiter Removal (4200) then Shrink: 1050 (ruling 8)');
+  ok(shr('Shrink', 'Limiter Removal') === 2100, 'Shrink (1050) then Limiter Removal: 2100');
+  ok(shr('Megamorph', 'Shrink', 4000) === 1050 && shr('Shrink', 'Megamorph', 4000) === 4200, 'Megamorph and Shrink at lower LP: the one that resolved last applies (1050 / 4200, ruling 4)');
+  { const g2 = duel([{ m: ['Blue-Eyes White Dragon'], hand: ['Shrink'], turn: 3 }, { m: [FILL], st: [{ n: 'Mirror Wall', pos: 'up' }] }]); const be2 = fld(g2, 0, 'Blue-Eyes White Dragon');
+    E.lib.addMod(g2, be2, { half: true, which: 'atk', mw: g2.p[1].st.find(Boolean).u }); g2.seq++; g2.prompt.opts = E.idleOpts(g2); actU(g2, hand(g2, 'Shrink')); drive(g2);
+    const g3 = duel([{ m: ['Blue-Eyes White Dragon'], hand: ['Shrink'], turn: 3 }, { m: [FILL], st: [{ n: 'Mirror Wall', pos: 'up' }] }]); const be3 = fld(g3, 0, 'Blue-Eyes White Dragon');
+    actU(g3, hand(g3, 'Shrink')); drive(g3); E.lib.addMod(g3, be3, { half: true, which: 'atk', mw: g3.p[1].st.find(Boolean).u }); g3.seq++;
+    ok(E.atk(g2, be2) === 750 && E.atk(g3, be3) === 750, 'Shrink and Mirror Wall: 1/4 in either order (ruling 10)'); }
+  // Black Rose Dragon ruling 5: an ATK increase after the 0 applies to the 0
+  { const g = duel([{ m: ['Black Rose Dragon'], gy: ['Lonefire Blossom'], hand: ['Yami'], turn: 3 }, { m: [{ n: 'Sangan', pos: 'def' }] }]);
+    const sg = fld(g, 1, 'Sangan'); actU(g, fld(g, 0, 'Black Rose Dragon')); drive(g); const z = E.atk(g, sg);
+    actU(g, hand(g, 'Yami')); drive(g);
+    ok(z === 0 && E.atk(g, sg) === 200, `Black Rose Dragon makes Sangan 0, then Yami: 200 (ruling 5; got ${z}/${E.atk(g, sg)})`); }
+  // Gishilnodon ruling 3: halved by Gale, then 3000; after the turn 2300 ATK, DEF still halved
+  { const g = duel([{ m: ['Sea Dragon Lord Gishilnodon', 'Sangan'], turn: 3 }, { m: [{ n: FILL, pos: 'atk' }] }]); const gi = fld(g, 0, 'Sea Dragon Lord Gishilnodon');
+    E.lib.addMod(g, gi, { set: 1150, which: 'atk' }); E.lib.addMod(g, gi, { set: 900, which: 'def' }); g.seq++;
+    atkOn(g, fld(g, 0, 'Sangan'), fld(g, 1, FILL)); const up = E.atk(g, gi);
+    toTurnOf(g, 1);
+    ok(up === 3000 && E.atk(g, gi) === 2300 && E.def(g, gi) === 900, `Gishilnodon halved (1150) then 3000; next turn 2300 ATK, DEF still 900 (ruling 3; got ${up}/${E.atk(g, gi)}/${E.def(g, gi)})`); }
+  // Curse of Anubis and Ojama Country (Ojama Country rulings 6 and 7): the base changes in the order they started applying
+  const coa = (order) => { const g = duel([{ m: ['Ojama Yellow', 'Sangan'], hand: ['Ojama Country'], st: [{ n: 'Curse of Anubis', pos: 'set' }], turn: 3 }, { m: [FILL] }]);
+    const sg = fld(g, 0, 'Sangan'), cu = g.p[0].st.find(Boolean);
+    for (const k of order) { if (k === 'country') { actU(g, hand(g, 'Ojama Country')); drive(g); } else { actU(g, cu); drive(g); } }
+    return [E.atk(g, sg), E.def(g, sg)].join('/'); };
+  const a1 = coa(['country', 'curse']), a2 = coa(['curse', 'country']);
+  ok(a1 === '600/0' && a2 === '0/1000', `Sangan: Country then Curse 600/0, Curse then Country 0/1000 (got ${a1}, ${a2})`);
+});
+T('163. Phantom of Chaos and Elemental HERO Prisma (pass2 edison-09): a copied name stays under a later Skill Drain; Extra Deck Effect Monsters can be copied, Thousand Dragon can\'t; a copied Jinzo negates Traps', () => {
+  let g = duel([{ m: ['Phantom of Chaos'], gy: ['Cyber Dragon'], st: [{ n: 'Skill Drain', pos: 'set' }], turn: 3 }, {}]); const pc = fld(g, 0, 'Phantom of Chaos');
+  actU(g, pc); drive(g); const n1 = E.name(pc); actU(g, g.p[0].st.find(Boolean)); drive(g);
+  ok(n1 === 'Cyber Dragon' && E.name(pc) === 'Cyber Dragon' && E.atk(g, pc) === 2100, `Phantom of Chaos copies Cyber Dragon, then Skill Drain: still "Cyber Dragon", 2100 (got ${E.name(pc)} ${E.atk(g, pc)})`);
+  g = duel([{ m: ['Phantom of Chaos'], gy: ['Stardust Dragon'], turn: 3 }, {}]);
+  ok(!!keyOf(g, fld(g, 0, 'Phantom of Chaos')), 'Stardust Dragon (a Synchro Effect Monster) in the GY: Phantom of Chaos can copy it');
+  g = duel([{ m: ['Phantom of Chaos'], gy: ['Thousand Dragon'], turn: 3 }, {}]);
+  ok(!keyOf(g, fld(g, 0, 'Phantom of Chaos')), 'only Thousand Dragon (a Fusion with no effect) in the GY: nothing to copy');
+  g = duel([{ m: ['Phantom of Chaos'], gy: ['Jinzo'], turn: 3 }, { st: [{ n: 'Mirror Force', pos: 'set' }] }]); const pj = fld(g, 0, 'Phantom of Chaos');
+  actU(g, pj); drive(g); let offered = false;
+  atkOn(g, pj, null, { respond: pr => { if (pr.p === 1 && pr.opts.some(o => /Mirror Force/.test(o.label) || o.key.startsWith('a:' + g.p[1].st.find(Boolean).u + ':'))) offered = true; return null; } });
+  ok(E.name(pj) === 'Jinzo' && !offered && g.p[1].lp === 8000, `Phantom of Chaos copies Jinzo and attacks directly: Mirror Force can't be activated, and Phantom's own text keeps the battle damage at 0 (offered: ${offered}, B LP ${g.p[1].lp})`);
+  g = duel([{ m: ['Elemental HERO Prisma'], extra: ['Elemental HERO Flame Wingman'], deckTop: ['Elemental HERO Avian', 'Elemental HERO Avian'], st: [{ n: 'Skill Drain', pos: 'set' }], turn: 3 }, {}]); const pr = fld(g, 0, 'Elemental HERO Prisma');
+  actU(g, pr); drive(g); const n2 = E.name(pr); actU(g, g.p[0].st.find(Boolean)); drive(g);
+  ok(n2 === 'Elemental HERO Avian' && E.name(pr) === 'Elemental HERO Avian', `Prisma takes Avian's name, then Skill Drain: it keeps it (ruling 3; got ${n2}, ${E.name(pr)})`);
+});
+T('164. Machina Fortress (rulings 2, 3, 5, 8, 10; fixer M): its Special Summon is a procedure from the hand or the GY that Solemn Judgment can negate; ② discards from the opponent\'s hand before their targeting monster effect resolves', () => {
+  let g = duel([{ hand: ['Cyber Dragon', 'Cyber Dragon'], gy: ['Machina Fortress'], turn: 3 }, { st: [{ n: 'Solemn Judgment', pos: 'set' }] }]);
+  const fg = g.p[0].gy[0];
+  ok(!!opt(g, new RegExp('sp:' + fg.u + '$')) && !g.prompt.opts.some(o => o.key.startsWith('a:' + fg.u + ':')), 'the GY copy is offered as a Special Summon procedure, not as an effect');
+  let sol = false; act(g, new RegExp('sp:' + fg.u + '$'));
+  drive(g, { respond: pr => { const o = pr.p === 1 && pr.opts.find(o => o.key.startsWith('a:' + g.p[1].st.find(Boolean).u + ':')); if (o) sol = true; return o && o.key; } });
+  ok(sol && g.p[0].hand.length <= 1 && fg.zone === 'gy' && !g.chain.length, 'discarding Machines (cost) summons the GY copy with no chain; B negates it with Solemn Judgment');
+  g = duel([{ hand: ['Machina Fortress', 'Cyber Dragon'], turn: 3 }, {}]); const f2 = hand(g, 'Machina Fortress'); act(g, new RegExp('sp:' + f2.u + '$')); drive(g);
+  ok(f2.zone === 'm', 'the hand copy can discard itself with another Machine and be summoned from the GY (ruling 5)');
+});
+T('164b. Machina Fortress ② (rulings 10 and site): a continuous step before an opponent\'s targeting monster effect resolves', () => {
+  const g = duel([{ m: ['Machina Fortress'], turn: 3 }, { m: ['Brionac, Dragon of the Ice Barrier'], hand: ['Sangan', 'Sangan', 'Mystic Tomato'] }]);
+  const mf = fld(g, 0, 'Machina Fortress'); toTurnOf(g, 1); const br = fld(g, 1, 'Brionac, Dragon of the Ice Barrier'); const h0 = g.p[1].hand.length;
+  act(g, new RegExp('a:' + br.u + ':')); drive(g);
+  ok(mf.zone === 'hand' && g.p[1].hand.length === h0 - 2 && g.p[1].gy.length >= 2, `Brionac (discard 1) returns Machina Fortress: before it resolves A discards 1 more card from B's hand (hand ${h0} -> ${g.p[1].hand.length})`);
+});
+T('165. Last Turn (d): a real special Battle Phase (rulings 4 to 7; fixer M): Injection Fairy Lily in its Damage Step (ruling 6), battle damage 0, and the turn\'s own Battle Phase goes on', () => {
+  const g = duel([{ m: ['Sangan'], st: [{ n: 'Last Turn', pos: 'set' }], turn: 3 }, { deckTop: ['Injection Fairy Lily', 'Injection Fairy Lily'] }]); g.p[0].lp = 1000; const sg = fld(g, 0, 'Sangan'), lt = g.p[0].st.find(Boolean);
+  let fired = false, lily = false;
+  for (let i = 0; i < 200 && g.prompt && !g.winner; i++) { const pr = g.prompt;
+    if (pr.type === 'respond' && pr.p === 0 && !fired && g.tp === 1) { const o = pr.opts.find(o => o.key.startsWith('a:' + lt.u + ':')); if (o) { fired = true; E.act(g, [o.key]); continue; } }
+    if (fired && pr.type === 'pick' && /from your Deck/.test(pr.text)) { E.act(g, [pr.opts.find(o => /Lily/.test(o.label)).key]); continue; }
+    if (fired && pr.type === 'respond' && pr.p === 1 && !lily) { const lf = fld(g, 1, 'Injection Fairy Lily'); const o = lf && pr.opts.find(o => o.key.startsWith('a:' + lf.u + ':')); if (o) { lily = true; E.act(g, [o.key]); continue; } }
+    if (fired && pr.type === 'idle' && pr.p === 1) break;
+    if (pr.type === 'respond') E.act(g, ['pass']); else if (pr.type === 'idle') E.act(g, [(pr.opts.find(o => o.key === (pr.p === 1 ? 'bp' : 'end')) || pr.opts.find(o => o.key === 'end') || pr.opts[pr.opts.length - 1]).key]);
+    else if (pr.type === 'yesno') E.act(g, ['n']); else E.act(g, pr.opts.slice(0, pr.min || 1).map(o => o.key)); }
+  const x = fld(g, 1, 'Injection Fairy Lily');
+  ok(fired && lily && sg.zone === 'gy' && !!x && g.p[0].lp === 1000 && g.p[1].lp === 6000, `B summons Lily, pays 2000 in the special Damage Step (3400) and destroys Sangan; A takes no damage (fired ${fired}, Lily used ${lily}, LP ${g.p[0].lp}/${g.p[1].lp})`);
+  ok(!!x && x.attacks === 0 && g.prompt && g.prompt.type === 'idle' && g.prompt.p === 1 && g.prompt.opts.some(o => o.key.startsWith('atk:' + x.u)), 'afterwards B is back in its own Battle Phase and Lily can still attack (ruling 4)');
+});
+T('166. Big Bang Shot on the opponent\'s monster (ruling 8; fixer M): its piercing damage goes to the opponent of Big Bang Shot\'s controller', () => {
+  for (const [lbl, P, mkx] of gFmts()) {
+    const g = mkx([{ m: ['Dark Magician'], turn: 3 }, { m: [{ n: 'Giant Soldier of Stone', pos: 'def' }], st: [{ n: 'Big Bang Shot', pos: 'up' }] }]);
+    const dm = gFind(P, g, 0, 'Dark Magician'), bb = g.p[1].st.find(Boolean); bb.equipTo = dm.u; g.seq++; g.prompt.opts = P.idleOpts(g);
+    gAttack(P, g, dm, gFind(P, g, 1, 'Giant Soldier of Stone'));
+    ok(P.atk(g, dm) === 2900 && g.p[0].lp === 7100 && g.p[1].lp === 8000, `${lbl}: B's Big Bang Shot on A's Dark Magician (2900) attacks B's Giant Soldier of Stone (DEF 2000): A, who attacked, takes 900 (LP ${g.p[0].lp}/${g.p[1].lp})`);
+  }
+});
+T('167. Last Will Special Summons Toon Mermaid from the Deck while you control Toon World (Edison ruling 10, Goat archive; a ruling over the "from your hand" text; fixer M)', () => {
+  for (const [lbl, P, mkx] of gFmts()) {
+    const g = mkx([{ m: ['Sangan'], st: [{ n: 'Toon World', pos: 'up' }], hand: ['Last Will'], deckTop: ['Toon Mermaid', 'Toon Mermaid', 'Toon Mermaid'], turn: 3 }, { m: [{ n: 'Blue-Eyes White Dragon', pos: 'atk' }] }]);
+    const lw = g.p[0].hand.find(c => P.name(c) === 'Last Will'), sg = gFind(P, g, 0, 'Sangan');
+    if (lbl === 'Goat') { P.act(g, [g.prompt.opts.find(o => o.key.startsWith('a:' + lw.u + ':')).key]); gDrive(g, /Toon Mermaid/, null, P); }
+    { const bp = g.prompt.opts.find(o => /^Battle Phase/.test(o.label)); P.act(g, [bp.key]); gDrive(g, /./, null, P);
+      P.act(g, [g.prompt.opts.find(o => o.key === 'atk:' + sg.u + ':' + gFind(P, g, 1, 'Blue-Eyes White Dragon').u).key]); gDrive(g, /Toon Mermaid|Attack Position/, null, P); }
+    if (lbl === 'Edison') { const bp = g.prompt.opts.find(o => o.key === 'endbp'); if (bp) { P.act(g, [bp.key]); gDrive(g, /Toon Mermaid/, null, P); } const o = g.prompt.opts.find(o => o.key.startsWith('a:' + lw.u + ':')); if (o) { P.act(g, [o.key]); gDrive(g, /Toon Mermaid/, null, P); } }
+    ok(!!P.fieldOf(g, 0).find(c => P.name(c) === 'Toon Mermaid'), lbl + ': Sangan destroyed, Last Will summons Toon Mermaid from the Deck');
+  }
+});
+T('168. Goat Gilasaurus under Necrovalley (pool review; E4e ss() fix): the opponent\'s revival is stopped and no summon is logged', () => {
+  const { G, mk } = goatEngine();
+  const g = mk([{ hand: ['Gilasaurus'], turn: 3 }, { fz: 'Necrovalley', gy: ['Sangan'] }]); const gi = g.p[0].hand.find(c => G.name(c) === 'Gilasaurus');
+  G.act(g, [g.prompt.opts.find(o => o.key === 'sp:' + gi.u).key]); gDrive(g, /Sangan|Attack/, null, G);
+  const sg = g.p[1].gy.find(c => G.name(c) === 'Sangan');
+  ok(gi.zone === 'm' && !!sg && !g.log.some(l => /B Special Summoned Sangan/.test(l)), `Gilasaurus summoned; B's Sangan stays in the GY under Necrovalley and no summon is logged (${g.log.slice(-3).join(' / ')})`);
+});
+T('169. Thousand-Eyes Restrict and Relinquished share one absorb script in both formats (pool review edison-h22 D; fixer M): Edison TER under a later Skill Drain loses the equipped monster (archive), Edison Relinquished survives battle by losing it', () => {
+  let g = duel([{ m: ['Thousand-Eyes Restrict'], st: [{ n: 'Skill Drain', pos: 'set' }], turn: 3 }, { m: [FILL] }]); const te = fld(g, 0, 'Thousand-Eyes Restrict'), w = fld(g, 1, FILL);
+  actU(g, te); drive(g); const eq = w.zone === 'st' && E.atk(g, te) === 2000; actU(g, g.p[0].st.find(x => x && E.name(x) === 'Skill Drain')); drive(g);
+  ok(eq && w.zone === 'gy', `Edison TER equips Warwolf (2000), then Skill Drain: Warwolf is destroyed (zone ${w.zone})`);
+  g = duel([{ m: ['Relinquished'], turn: 3 }, { m: [{ n: 'Sangan', pos: 'atk' }, { n: 'Blue-Eyes White Dragon', pos: 'atk' }] }]); const rq = fld(g, 0, 'Relinquished'), sg = fld(g, 1, 'Sangan');
+  act(g, new RegExp('a:' + rq.u + ':')); drive(g); const be = fld(g, 1, 'Blue-Eyes White Dragon');
+  atkOn(g, rq, be);
+  ok(sg.zone === 'gy' && rq.zone === 'm' && g.p[0].lp === 6000 && g.p[1].lp === 6000, `Edison Relinquished (Sangan, 1000) attacks Blue-Eyes: Sangan destroyed instead, A takes 2000 and B takes 2000 (LP ${g.p[0].lp}/${g.p[1].lp}, Relinquished ${rq.zone})`);
+});
 console.log(fails ? `\n${fails} failed` : '\nAll root-cause guards passed.');
 process.exit(fails ? 1 : 0);

@@ -239,7 +239,7 @@ E.addScripts({
       res: function* (g, c, p) { destroy(g, fieldMons(g).filter(x => faceUp(x) && x.flags.f23ns === g.turnNo && lv(x) <= 3), { by: p, src: c }); } }] },
   // Used in the window before damage calculation (the engine's damage-calculation window); the 3000 applies during damage calculation only (E.lib.dcalc, 2026-11-28 audit).
   'Injection Fairy Lily': {
-    self: { atk: (g, c) => E.lib.dcalc(g) && g.battle && c.flags.lilyB === g.battle ? 3000 : 0 },   // during that damage calculation only
+    self: { calcGain: true, atk: (g, c) => E.lib.dcalc(g) && g.battle && c.flags.lilyB === g.battle ? 3000 : 0 },   // during that damage calculation only, on top of Mirror Wall's halving (calcGain)
     effs: [{ type: 'quick', ds: true, label: 'Pay 2000: +3000 ATK',
       cond: (g, c, p) => g.inDS && inBattle(g, c) && c.flags.lilyB !== g.battle && c.flags.lilyPaid !== g.battle && E.lib.canPay(g, p, 2000),
       cost: function* (g, c, p) { c.flags.lilyPaid = g.battle; pay(g, p, 2000); },

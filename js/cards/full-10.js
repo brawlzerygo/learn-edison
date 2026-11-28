@@ -59,11 +59,15 @@ const spellCounter = { type: 'trig', on: (g, ev, c) => {
 // monsters destroyed by battle this turn (Lady Panther): stamped on the card object, which keeps it after it leaves the field
 const bkMark = { type: 'trig', loc: 'any', res: noop, on: (g, ev) => { if (ev.type === 'move' && ev.battle && ev.destroyed && ev.to === 'gy') ev.c.f10bk = g.turnNo; return false; } };
 const over = (g, winner, why) => { g.winner = winner; g.why = why; log(g, why + '.'); throw { over: true }; };
-const lwFrom = c => isMon(c) && !isExtraD(D(c)) && !['ritual', 'token'].includes(D(c).k) && baseAtk(c) <= 1500 && !/Cannot be (Normal|Special) Summoned/i.test(tx(c));
+const lwFrom = c => isMon(c) && !isExtraD(D(c)) && !["ritual", "token"].includes(D(c).k) && baseAtk(c) <= 1500 && (!/Cannot be (Normal|Special) Summoned/i.test(tx(c)) || D(c).n === "Toon Mermaid");   // summon-only monsters stay out (ruling 10), Toon Mermaid by L.lwToon
 // the minimum Tributes a Normal Summon of this monster takes (Kaiser Colosseum)
 const tribs = c => { const l = lv(c); return l >= 7 ? 2 : l >= 5 ? 1 : 0; };
 const lvBase = n => { const m = n.match(/^(.*) LV(\d+)$/); return m ? { base: m[1], lv: +m[2] } : null; };
 
+/* Last Will may Special Summon Toon Mermaid from the Deck while you control a face-up Toon World (Edison ruling 10, Goat archive: "You CAN
+ Special Summon Toon Mermaid with Last Will's effect, as long as you have Toon World on your side of the field"): a ruling over its
+ "Must first be Special Summoned (from your hand)" text, so the summon counts as its own way (proper). Fixer M; RULINGS_DECIDED. */
+L.lwToon = (g, p, x) => D(x).n === 'Toon Mermaid' && stOnField(g).some(t => t.ctrl === p && faceUp(t) && named(t, 'Toon World') && !L.negd(g, t)) && !forbid(g, { type: 'ss', c: x, p, how: 'special', proper: true });
 // Last Turn's summon and battle (after its chain and the triggers it caused; see 'Last Turn')
 L.STEPS.lastTurn = function* (g, st) {
   const p = st.p, o = opp(p), m = fieldMons(g).find(x => x.u === st.m && x.ctrl === p) || null;
@@ -72,13 +76,8 @@ L.STEPS.lastTurn = function* (g, st) {
   const [x] = yield* pick(g, o, 'Special Summon which monster from your Deck?', ms, 1, 1, 'good'); shuffleDeck(g, o);
   if (!x || !ss(g, o, x, 'atk')) return;
   if (!m || !onField(m) || !onField(x)) return;
-  x.attacks = 1; log(g, `${name(x)} attacks ${m.pos === 'set' ? 'a face-down monster' : name(m)}.`);
-  if (m.pos === 'set') { m.pos = 'def'; g.seq++; log(g, `The face-down monster was ${name(m)}.`); emit(g, { type: 'flip', c: m, p, battle: true }); }
-  const A = stat(g, x, 'atk'); let dead = [];
-  if (m.pos === 'atk') { const T = stat(g, m, 'atk'); if (A > T) dead = [[m, x]]; else if (A < T) dead = [[x, m]]; else if (A > 0) dead = [[m, x], [x, m]]; }
-  else if (A > stat(g, m, 'def')) dead = [[m, x]];
-  for (const [v, k] of dead) destroy(g, [v], { battle: true, killer: k });
-  log(g, 'Battle damage from this battle is 0.');
+  // a real special Battle Phase: Damage Step windows, Flip effects, Injection Fairy Lily (rulings 5 and 6), battle damage 0 (ruling 7)
+  yield* L.specialBattle(g, x, m, { noDamage: true });
 };
 E.addScripts({
   /* ----- Hyper ----- */
@@ -405,8 +404,7 @@ E.addScripts({
       const of = g.p[opp(p)].fz; if (of && faceUp(of)) destroy(g, [of], { rule: true });
       if (L2.data.had) draw(g, opp(p), 1); } }] },
   // Port of goat-6.js. The resolution ends after the cards are sent; the summon and battle are a later step (L.STEPS.lastTurn).
-  // PARTIAL: the forced attack is worked out inside the card (no Damage Step windows, not a real special Battle Phase). The End
-  // Phase check ends the duel: a player with monsters wins if the other has none, else a draw.
+  // The attack is a real special Battle Phase (E.lib.specialBattle, rulings 4 to 7; fixer M). The End Phase check ends the duel: a player with monsters wins if the other has none, else a draw.
   'Last Turn': { effs: [
     { type: 'act', cond: (g, c, p) => g.tp !== p && g.p[p].lp <= 1000 && monsOf(g, p).length > 0,
       res: function* (g, c, p) {
@@ -433,10 +431,11 @@ E.addScripts({
   // Port of goat-7.js. PARTIAL: the Special Summon happens when it resolves, not at a later moment of your choice.
   'Last Will': { effs: [
     { type: 'trig', loc: 'any', on: (g, ev) => { if (ev.type === 'move' && ev.wasField && ev.to === 'gy' && ev.snap && ev.snap.mon && ev.prevCtrl === ev.c.owner) (g.lastWill || (g.lastWill = {}))[ev.c.owner] = g.turnNo; return false; }, res: noop },
-    { type: 'act', tags: { ss: 1 }, cond: (g, c, p) => g.lastWill && g.lastWill[p] === g.turnNo && freeM(g, p) >= 0 && g.p[p].deck.filter(x => E.lib.ssable(g, p, x)).some(lwFrom),
-      res: function* (g, c, p) { const cs = g.p[p].deck.filter(x => lwFrom(x) && !forbid(g, { type: 'ss', c: x, p, how: 'special' }));
+    { type: 'act', tags: { ss: 1 }, cond: (g, c, p) => g.lastWill && g.lastWill[p] === g.turnNo && freeM(g, p) >= 0 && g.p[p].deck.filter(x => E.lib.ssable(g, p, x) || L.lwToon(g, p, x)).some(lwFrom),
+      res: function* (g, c, p) { const cs = g.p[p].deck.filter(x => lwFrom(x) && (!forbid(g, { type: 'ss', c: x, p, how: 'special' }) || L.lwToon(g, p, x)));
+        if (g.resolvingL) g.resolvingL.ssProper = cs.filter(x => L.lwToon(g, p, x)).map(x => x.u);
         if (cs.length && freeM(g, p) >= 0) { const [x] = yield* pick(g, p, 'Special Summon a monster with 1500 or less ATK from your Deck', cs, 1, 1, 'good');
-          if (x) ss(g, p, x, yield* pos2(g, p, x)); }
+          if (x) ss(g, p, x, yield* pos2(g, p, x), L.lwToon(g, p, x) ? { proper: true } : {}); }
         shuffleDeck(g, p); } }] },
 
   /* ----- Lava ----- */

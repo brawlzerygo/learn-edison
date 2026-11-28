@@ -25,7 +25,7 @@ const T = (name, f) => { try { f(); } catch (e) { fails++; console.log('FAIL ' +
 
 T('Relinquished equips, survives battle, reflects damage', () => {
   const g = duel({ board: [{ hand: [], m: ['Relinquished'], turn: 2 }, { m: ['Cyber Dragon', 'Dark Armed Dragon'] }] });
-  choose(g, 'Equip a monster'); choose(g, 'Cyber Dragon'); passAll(g);
+  choose(g, 'Equip an opponent’s monster'); choose(g, 'Cyber Dragon'); passAll(g);
   const r = on(g, 0, 'Relinquished');
   ok(r && E.atk(g, r) === 2100 && inZ(g, 0, 'st', 'Cyber Dragon'), 'Relinquished has 2100 ATK with Cyber Dragon equipped');
   choose(g, 'bp'); passAll(g); choose(g, 'Attack Dark Armed Dragon'); passAll(g); passAll(g); passAll(g);

@@ -72,7 +72,9 @@ const scorpion = (label, modes) => ({ effs: [{ type: 'trig', when: true, label,
   cond: (g, c, p) => modes.some(m => m.ok(g, c, p)),
   target: function* (g, c, p, L2) {
     const ms = modes.filter(m => m.ok(g, c, p)); const i = ms.length > 1 ? yield* choose(g, p, `${D(c).n}: which effect?`, ms.map(m => m.label)) : 0;
-    L2.data.m = modes.indexOf(ms[i]); if (ms[i].target) yield* ms[i].target(g, c, p, L2); },
+    L2.data.m = modes.indexOf(ms[i]); if (ms[i].tags) L2.tags = { ...L2.tags, ...ms[i].tags }; if (ms[i].target) yield* ms[i].target(g, c, p, L2); },
+  // a mode that destroys says so (mode.tags, mode.destroys), so Starlight Road and the like see it (roles mismatch lead: Cliff; fixer M)
+  destroys: (g, c, p, L2) => { const m = modes[L2.data.m]; return m && m.destroys ? m.destroys(g, c, p, L2) : []; },
   res: function* (g, c, p, L2) { yield* modes[L2.data.m].res(g, c, p, L2); } }] });
 // Does this chain link destroy a monster on the field? (Destruction Jammer): the engine's wouldDestroy, so an effect that may or may not
 // destroy one (Snipe Hunter, Reign-Beaux) doesn't count (ruling 1); not a Continuous Spell/Trap's own effect (ruling 2).
@@ -101,7 +103,7 @@ E.addScripts({
         const i = yield* choose(g, p, `The top card of their Deck is ${D(x).n}. Put it where?`, ['Leave it on top', 'Put it on the bottom']);
         if (i) { d.pop(); d.unshift(x); g.seq++; log(g, `${PN(g, p)} put the top card of ${PN(g, opp(p))}'s Deck on the bottom.`); } else log(g, `${PN(g, p)} looked at the top card of ${PN(g, opp(p))}'s Deck and left it there.`); } }]) },
   'Dark Scorpion - Cliff the Trap Remover': { ...scorpion('Destroy a Spell/Trap or mill 2', [
-    { label: 'Destroy 1 Spell/Trap on the field', ok: g => stOnField(g).length > 0,
+    { label: 'Destroy 1 Spell/Trap on the field', ok: g => stOnField(g).length > 0, tags: { destroy: 1 }, destroys: (g, c, p, L2) => live(L2),
       target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Destroy which Spell/Trap?', stOnField(g), 1, 1, 'bad'); },
       res: function* (g, c, p, L2) { destroy(g, live(L2), { by: p, src: c }); } },
     { label: 'Send the top 2 cards of their Deck to the GY', ok: () => true, res: function* (g, c, p) { mill(g, opp(p), 2); } }]) },

@@ -337,12 +337,14 @@ E.addScripts({
     cost: function* (g, c, p) { let n = 10; for (const x of fieldOf(g, p).filter(x => ctr(x, 'spell')).sort((a, b) => ctr(b, 'spell') - ctr(a, 'spell'))) { const k = Math.min(n, ctr(x, 'spell')); addCtr(g, x, 'spell', -k); n -= k; if (!n) break; }
       log(g, `${PN(g, p)} removed 10 Spell Counters.`); },
     res: function* (g, c, p) { destroy(g, fieldOf(g, opp(p)), { by: p, src: c }); } }] },
-  // Only one Megamorph on a monster counts (ruling 2). PARTIAL: done as + its original ATK or - half of it, so other changes stack on top.
+  // Only one Megamorph on a monster counts (ruling 2). Its ATK "becomes" double or half the original ATK: a set in the engine's stat layer
+  // order (cont.atkSet), so changes that start applying after it add on top and an older one is replaced; Shrink after it replaces it, and it
+  // after Shrink reads the printed original (Shrink ruling 4: "only the effect of the card that resolved last will be applied"; fixer M).
   'Megamorph': {
-    cont: { atk: (g, src, m) => { if (src.equipTo !== m.u) return 0;
-      const first = stOnField(g).filter(x => named(x, 'Megamorph') && faceUp(x) && x.equipTo === m.u).sort((a, b) => a.u - b.u)[0]; if (first !== src) return 0;
+    cont: { atkSet: (g, src, m) => { if (src.equipTo !== m.u) return null;
+      const first = stOnField(g).filter(x => named(x, 'Megamorph') && faceUp(x) && x.equipTo === m.u).sort((a, b) => a.u - b.u)[0]; if (first !== src) return null;
       const me = g.p[src.ctrl].lp, them = g.p[opp(src.ctrl)].lp, b = baseAtk(m);
-      return me < them ? b : me > them ? -Math.floor(b / 2) : 0; } },
+      return me < them ? 2 * b : me > them ? Math.floor(b / 2) : null; } },
     effs: [equipAct()] },
   'Megarock Dragon': {
     self: { atk: (g, c) => 700 * (c.flags.rocks || 0), def: (g, c) => 700 * (c.flags.rocks || 0) },

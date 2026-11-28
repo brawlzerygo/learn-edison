@@ -74,7 +74,7 @@ E.addScripts({
         cond: (g, c, p, x) => x.top && !x.top.negated && x.top.c !== c,
         // as Stardust Dragon: the End Phase return needs this negation resolved (not negated itself) and the card still in that GY visit
         cost: function* (g, c, p, L) { L.data.L = g.chain[g.chain.length - 1]; move(g, c, 'gy', { reason: 'cost' }); L.data.at = c.moved; log(g, `${PN(g, p)} Tributed ${D(c).n}.`); },
-        res: function* (g, c, p, L) { L.data.L.negBy = p; negate(g, L.data.L, true); if (c.zone === 'gy' && c.moved === L.data.at) { (g.stardust || (g.stardust = {}))[c.u] = { t: g.turnNo, at: c.moved }; if (g.phase === 'end') L.emit(g, { type: 'stardustEnd', c }); } } },   // used during the End Phase: it can return again in that End Phase (ruling 11)
+        res: function* (g, c, p, L) { L.data.L.negBy = p; negate(g, L.data.L, true); if (c.zone === 'gy' && c.moved === L.data.at) { (g.stardust || (g.stardust = {}))[c.u] = { t: g.turnNo, at: c.moved }; if (g.phase === 'end') E.lib.emit(g, { type: 'stardustEnd', c }); } } },   // used during the End Phase: it can return again in that End Phase (ruling 11)
       { type: 'trig', loc: 'gy', tags: { ss: 1 }, label: 'Return to the field', on: (g, ev, c) => ((ev.type === 'phase' && ev.ph === 'end') || (ev.type === 'stardustEnd' && ev.c === c)) && g.stardust && g.stardust[c.u] && g.stardust[c.u].t === g.turnNo && g.stardust[c.u].at === c.moved,
         cond: (g, c, p) => freeM(g, p) >= 0, res: function* (g, c, p) { if (c.zone === 'gy') ss(g, p, c); } },
       { type: 'trig', loc: 'gy', when: true, tags: { ss: 1 }, label: 'Special Summon Stardust Dragon',

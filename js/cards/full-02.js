@@ -393,7 +393,8 @@ E.addScripts({
 
   /* ----- Big ----- */
   // ported from goat-4.js: +400 ATK, piercing; when it leaves the field, banish the equipped monster.
-  'Big Bang Shot': { cont: { ...eqBonus(400, 0), grant: (g, src, m, flag) => flag === 'piercing' && src.equipTo === m.u && !glassOn(g) },
+  // piercing damage to the opponent of Big Bang Shot's controller, also when it equips the opponent's monster (ruling 8; fixer M)
+  'Big Bang Shot': { cont: { ...eqBonus(400, 0), grant: (g, src, m, flag) => flag === 'piercing' && src.equipTo === m.u && !glassOn(g), pierceTo: (g, src) => 1 - src.ctrl },
     effs: [equipAct(),
       { type: 'trig', loc: 'any', mand: true, label: 'Banish the equipped monster',
         on: (g, ev, c) => ev.type === 'move' && ev.c === c && ev.wasField && !!(ev.snap && ev.snap.flags && ev.snap.flags.eqU),

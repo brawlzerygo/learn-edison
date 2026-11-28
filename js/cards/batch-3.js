@@ -314,12 +314,13 @@ E.addScripts({
       cost: function* (g, c, p) { const [x] = yield* pick(g, p, 'Banish a DARK from your GY', g.p[p].gy.filter(x => isMon(x) && E.lib.isAttr(x, 'DARK')), 1, 1, 'cost'); move(g, x, 'ban', { reason: 'cost' }); },
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Special Summon which DARK from your GY?', g.p[p].gy.filter(x => isMon(x) && E.lib.isAttr(x, 'DARK')), 1, 1, 'good'); },
       res: function* (g, c, p, L) { const t = L.t[0]; if (t && t.zone === 'gy') ss(g, p, t); } }] },
-  // PARTIAL: copies the name and original ATK only; ENGINE: copying another card's effects (scripts are looked up by printed name).
+  // Copies the name, original ATK and effects (E.lib.effsOf for the activated ones, the engine's SC() for the continuous ones) until the
+  // End Phase; any Effect Monster but a Gemini, Extra Deck and Ritual ones included (archive, EDOPro TYPE_EFFECT; pass2 edison-09)
   'Phantom of Chaos': {
     cont: { dmg: (g, src, p, n, o) => o.battle && p !== src.ctrl && g.battle && (g.battle.a === src || g.battle.t === src) ? 0 : n },
     effs: [{ type: 'ign', opt: true, label: 'Copy a monster in the GY',
-      cond: (g, c, p) => g.p[p].gy.some(x => D(x).k === 'effect' && !isGemini(x)),
-      target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Banish which Effect Monster to copy?', g.p[p].gy.filter(x => D(x).k === 'effect' && !isGemini(x)), 1, 1, 'good'); },
+      cond: (g, c, p) => g.p[p].gy.some(x => E.lib.isEffectMon(x) && !isGemini(x)),
+      target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Banish which Effect Monster to copy?', g.p[p].gy.filter(x => E.lib.isEffectMon(x) && !isGemini(x)), 1, 1, 'good'); },
       res: function* (g, c, p, L) { const t = L.t[0]; if (!t || t.zone !== 'gy' || !onField(c) || !faceUp(c)) return; move(g, t, 'ban', { reason: 'effect' });
         c.flags.baseAtk = baseAtk(t); c.flags.poc = g.turnNo; c.flags.pocName = nm(t); c.flags.copyEffs = D(t).n; /* its effects too (E.lib.effsOf) */ log(g, `Phantom of Chaos copied ${nm(t)} (${baseAtk(t)} ATK) until the End Phase.`); } },
     { type: 'trig', on: (g, ev, c) => { if (ev.type === 'phase' && ev.ph === 'end' && c.flags.poc) { delete c.flags.baseAtk; delete c.flags.poc; delete c.flags.pocName; delete c.flags.copyEffs; } return false; }, res: function* () {} }] },

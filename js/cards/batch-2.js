@@ -141,16 +141,19 @@ E.addScripts({
     { type: 'ign', loc: 'st', tags: { ss: 1 }, label: 'Unequip and Special Summon',
       cond: (g, c, p) => c.used[1] !== g.turnNo && c.used[2] !== g.turnNo && !!c.equipTo && freeM(g, p) >= 0,
       res: function* (g, c, p) { if (c.zone !== 'st') return; c.equipTo = null; ssx(g, p, c, 'atk'); } }] },
-  'Machina Fortress': { effs: [
-    { type: 'ign', loc: 'hand', tags: { ss: 1 }, label: 'Discard Machines: Special Summon', cond: (g, c, p) => fortressOk(g, c, p),
-      cost: function* (g, c, p) { yield* fortressCost(g, c, p); }, res: function* (g, c, p) { if (['hand', 'gy'].includes(c.zone)) ssx(g, p, c); } },
-    { type: 'ign', loc: 'gy', tags: { ss: 1 }, label: 'Discard Machines: Special Summon', cond: (g, c, p) => fortressOk(g, c, p),
-      cost: function* (g, c, p) { yield* fortressCost(g, c, p); }, res: function* (g, c, p) { if (c.zone === 'gy') ssx(g, p, c); } },
+  // Its Special Summon is a procedure from the hand or the GY (rulings 2 and 3: no chain; Solemn Judgment and Rai-Oh can negate it; the
+  // discard is a cost, itself included, ruling 5). ② is the engine's self.preTargeted step before an opponent's targeting monster effect
+  // resolves (site rulings; fixer M).
+  'Machina Fortress': {
+    proc: { from: ['hand', 'gy'], label: 'Discard Machines: Special Summon', cond: (g, c, p) => fortressOk(g, c, p), cost: function* (g, c, p, grp) { yield* fortressCost(g, c, p, grp); } },
+    self: { preTargeted: function* (g, c, L) { const o = L.p, h = g.p[o].hand.slice(); log(g, `${name(c)}: ${PN(g, c.ctrl)} looks at ${PN(g, o)}'s hand.`); if (!h.length) return;
+      const [x] = yield* pick(g, c.ctrl, `Machina Fortress: discard 1 card from ${PN(g, o)}'s hand`, h, 1, 1, 'bad'); if (!x) return;
+      move(g, x, 'gy', { reason: 'discard', by: c.ctrl }); log(g, `${PN(g, c.ctrl)} discarded ${name(x)} from ${PN(g, o)}'s hand.`); } },
+    effs: [
     { type: 'trig', loc: 'gy', mand: true, tags: { destroy: 1 }, on: (g, ev, c) => takenFromBattle(ev, c) && ev.destroyed,
       cond: (g, c, p) => fieldOf(g, opp(p)).length > 0,
       target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Destroy which card?', fieldOf(g, opp(p)), 1, 1, 'bad'); },
       res: function* (g, c, p, L) { destroy(g, live(L), { by: p }); } }],
-    // ENGINE: ② (look at the hand and discard 1 before an opponent's targeting monster effect resolves) needs a "before resolving" hook.
   },
   'Machina Force': {
     // PARTIAL: "must be Special Summoned by Commander Covington" isn't enforced (Covington has no script yet). The 1000 LP is paid as the attack is declared.
@@ -385,14 +388,14 @@ function unionOn(g, m) { return allField(g).some(x => x.equipTo === m.u && isMon
 // under Macro Cosmos / Dimensional Fissure the copy being summoned can't be discarded for its own cost: it would be banished (ruling 11)
 function fortressPool(g, c, p) { return g.p[p].hand.filter(x => isMachine(x) && !(x === c && L.gyBanBy(g, x, { reason: 'cost' }))); }
 function fortressOk(g, c, p) { if (freeM(g, p) < 0) return false; return fortressPool(g, c, p).reduce((s, x) => s + lv(x), 0) >= 8; }
-function* fortressCost(g, c, p) {
+function* fortressCost(g, c, p, grp) {
   let sum = 0; const out = [];
   for (let i = 0; i < 8 && sum < 8; i++) {
     const left = fortressPool(g, c, p).filter(x => !out.includes(x)); if (!left.length) break;
     const [x] = yield* pick(g, p, `Discard Machines with total Levels of 8 or more (${sum} so far)`, left, 1, 1, 'cost'); if (!x) break;
     out.push(x); sum += lv(x);
   }
-  for (const x of out) move(g, x, 'gy', { reason: 'cost' });
+  for (const x of out) move(g, x, 'gy', { reason: 'cost', group: grp });
   log(g, `${PN(g, p)} discarded ${out.map(name).join(', ')}.`);
 }
 const FORCE3 = ['Machina Soldier', 'Machina Sniper', 'Machina Defender'];

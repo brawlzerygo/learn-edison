@@ -450,7 +450,7 @@ E.addScripts({
     target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Which monster gains the ATK?', monsOf(g, p).filter(faceUp), 1, 1, 'good'); },
     res: function* (g, c, p, L2) { const t = live(L2)[0]; if (!t || !faceUp(t)) return;
       const n = monsOf(g, p).filter(x => x !== t && x.pos === 'atk').reduce((s, x) => s + stat(g, x, 'atk'), 0); const T = g.turnNo;
-      t.mods.push({ get atk() { return g.phase === 'battle' && g.turnNo === T ? n : 0; }, end: true, turn: T });
+      t.mods.push({ get atk() { return g.phase === 'battle' && g.turnNo === T ? n : 0; }, end: true, turn: T, t: E.lib.tick(g) });
       g.p[opp(p)].noBattleDamage = T;
       addRule(g, (g2, a) => a.type === 'attack' && a.c && a.c.ctrl === p && a.c !== t && g2.turnNo === T, { end: T });
       log(g, `${name(t)} gains ${n} ATK during this Battle Phase. Other monsters can't attack.`); } }] },

@@ -51,9 +51,10 @@ E.addScripts({
     { type: 'trig', loc: 'gy', tags: { ss: 1 }, label: 'Special Summon a monster with 1500 or less ATK',
       on: (g, ev, c) => { const s = lwState(g, c); if (!s || s.t !== g.turnNo || !s.hit || s.fired) return false; s.fired = true; return true; },
       res: function* (g, c, p) { const s = lwState(g, c); const q = s ? s.p : p; if (s) delete g.lw7[c.u];
-        const cs = freeM(g, q) >= 0 ? g.p[q].deck.filter(x => lwFrom(x) && L.canSS(g, q, x)) : [];
+        const cs = freeM(g, q) >= 0 ? g.p[q].deck.filter(x => lwFrom(x) && (L.canSS(g, q, x) || L.lwToon(g, q, x))) : [];   // Toon Mermaid with Toon World (archive; L.lwToon)
+        if (g.resolvingL) g.resolvingL.ssProper = cs.filter(x => L.lwToon(g, q, x)).map(x => x.u);
         if (cs.length) { const [x] = yield* pick(g, q, 'Special Summon a monster with 1500 or less ATK from your Deck? (none is fine)', cs, 0, 1, 'good');
-          if (x) { const i = yield* choose(g, q, `${name(x)}: which position?`, ['Attack Position', 'Defense Position']); ss(g, q, x, i ? 'def' : 'atk'); } }
+          if (x) { const i = yield* choose(g, q, `${name(x)}: which position?`, ['Attack Position', 'Defense Position']); ss(g, q, x, i ? 'def' : 'atk', L.lwToon(g, q, x) ? { proper: true } : {}); } }
         shuffleDeck(g, q); } }] },
 }, 'goat');
 })();

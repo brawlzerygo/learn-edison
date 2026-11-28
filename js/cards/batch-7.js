@@ -64,6 +64,37 @@ const birPool = (g, p) => { const mask = L.forbid(g, { type: 'tribute', p }), no
 const poleTop = g => { const ms = fieldMons(g).filter(faceUp); if (!ms.length) return []; const hi = Math.max(...ms.map(x => atk(g, x))); return ms.filter(x => atk(g, x) === hi); };
 const areaB = g => { const ch = fieldMons(g).filter(x => x.pos === 'atk' && lv(x) >= 4); for (const x of ch) x.pos = 'def'; return ch; };
 
+/* Thousand-Eyes Restrict / Relinquished, both formats (one script; fixer M, pool review edison-h22 D: Edison's copies lacked the Skill Drain
+ destruction, the seq bump after negating the equip and the "control can't switch" filter). */
+// the monster equipped to this card (it sits in a Spell/Trap Zone as an Equip Card).
+const eyeEquip = (g, c) => allField(g).find(x => x.zone === 'st' && isMon(x) && x.equipTo === c.u) || null;
+// a face-down monster equipped this way gives 0 ATK/DEF (as full-17.js; EDOPro, goat-08 finding)
+const eqStat = (g, e, which) => e.flags.fdEquip ? 0 : which === "atk" ? atk(g, e) : def(g, e);
+const absorbable = (g, p) => monsOf(g, opp(p)).filter(m => !(faceUp(m) && E.lib.has(g, m, 'noCtrlSwitch')));
+const absorb = { type: 'ign', opt: true, label: 'Equip an opponent’s monster',
+  // a monster whose control can't switch can't be targeted (archive: Blindly Loyal Goblin; pass2 goat-08)
+  cond: (g, c, p) => !eyeEquip(g, c) && freeST(g, p) >= 0 && absorbable(g, p).length > 0,
+  target: function* (g, c, p, L2) { yield* tgt(g, p, L2, 'Equip which of their monsters to this card?', absorbable(g, p), 1, 1, 'bad'); },
+  res: function* (g, c, p, L2) {
+    // gone if the target came back to this card's controller in the chain (Remove Brainwashing: archive), or this card left or turned face-down
+    const t = live(L2)[0]; if (!t || t.zone !== 'm' || t.ctrl === p || !onField(c) || !faceUp(c) || eyeEquip(g, c) || freeST(g, p) < 0 || (faceUp(t) && E.lib.has(g, t, 'noCtrlSwitch'))) return;
+    const nm = D(t).n, fd = t.pos === 'set'; move(g, t, 'st', { ctrl: p, pos: 'up', reason: 'equip', by: p });
+    t.equipTo = c.u; t.flags.negated = true; if (fd) t.flags.fdEquip = true; g.seq++;   // an Equip Card now: its monster effects don't apply (seq: Jinzo's trap lock goes at once, pass2 goat-08)
+    log(g, `${nm} was equipped to ${name(c)}.`);
+  } };
+const absorbSelf = (refl) => ({
+  // negated (Skill Drain, Gorgon's Eye), the equipped monster is destroyed (archive: "Monsters equipped to Relinquished while Skill Drain is
+  // active are negated and destroyed"; 2026-11-28 audit, E4b, goat-01): run by the engine's dropOwnWhenNegated sweep
+  onNegated: (g, c) => { const e = eyeEquip(g, c); if (e && !g.relBusy) { g.relBusy = true; try { destroy(g, [e], { rule: true }); log(g, `${D(e).n} equipped to ${name(c)} was destroyed.`); } finally { g.relBusy = false; } } },
+  atk: (g, c) => { const e = eyeEquip(g, c); return e ? eqStat(g, e, 'atk') : 0; },
+  def: (g, c) => { const e = eyeEquip(g, c); return e ? eqStat(g, e, 'def') : 0; },
+  // "If this card would be destroyed by battle, destroy the equipped monster instead."
+  replaceDestroy: (g, c, o) => { if (!o.battle) return false; const e = eyeEquip(g, c); if (!e) return false;
+    // Relinquished (2005): the battle damage its controller took in this battle is dealt to the opponent too, only in this case
+    if (refl && c.flags.relDmg && c.flags.relDmg.b === g.battle && c.flags.relDmg.n > 0) c.flags.relRefl = { u: e.u, n: c.flags.relDmg.n };
+    destroy(g, [e], { quietLog: false }); log(g, `${name(c)} survived: the equipped monster was destroyed instead.`); return true; },
+});
+L.absorb = absorb; L.absorbSelf = absorbSelf;
 E.addScripts({
   /* ----- Monster Mash ----- */
   'Gallis the Star Beast': { effs: [{ type: 'ign', loc: 'hand', tags: { ss: 1 }, label: 'Reveal: send the top card',
@@ -265,19 +296,11 @@ E.addScripts({
         res: function* (g, c, p) { const n = c.flags.hpb; c.flags.hpb = 0; if (n) gain(g, p, n); } }] },
 
   /* ----- Relinquished ----- */
-  'Relinquished': {
-      self: { atk: (g, c) => { const e = relEq(g, c); return e ? num(D(e).atk) : 0; }, def: (g, c) => { const e = relEq(g, c); return e ? num(D(e).def) : 0; },
-        noBattleDestroy: (g, c) => !!relEq(g, c) },
-      effs: [
-        { type: 'ign', opt: true, label: 'Equip a monster',
-          cond: (g, c, p) => !relEq(g, c) && freeST(g, p) >= 0 && monsOf(g, opp(p)).length > 0,
-          target: function* (g, c, p, L) { yield* tgt(g, p, L, 'Equip which monster to Relinquished?', monsOf(g, opp(p)), 1, 1, 'bad'); },
-          res: function* (g, c, p, L) { const t = live(L)[0]; if (!t) return;
-            if (!onField(c) || !faceUp(c) || freeST(g, p) < 0 || relEq(g, c)) { move(g, t, 'gy', { reason: 'effect', by: p }); log(g, `${D(t).n} was sent to the GY.`); return; }
-            move(g, t, 'st', { ctrl: p, pos: 'up', reason: 'equip' }); t.equipTo = c.u; log(g, `${D(t).n} was equipped to Relinquished.`); } },
-        { type: 'trig', mand: true, tags: { destroy: 1 }, on: (g, ev, c) => ev.type === 'afterCalc' && (ev.a === c || ev.t === c),
-          cond: (g, c, p, x) => !!relEq(g, c) && losesBattle(g, c, x.ev.a, x.ev.t),
-          res: function* (g, c, p) { const e = relEq(g, c); if (e) destroy(g, [e], { by: p }); } },
+  // Edison text: the absorb and the battle replacement are shared with Thousand-Eyes Restrict (absorbSelf); "While equipped with that
+  // monster, any battle damage you take from battles involving this card inflicts equal effect damage to your opponent" (goat-1 keeps the
+  // 2005 reflection)
+  'Relinquished': { self: absorbSelf(false),
+      effs: [absorb,
         { type: 'trig', mand: true, on: (g, ev, c) => ev.type === 'damage' && ev.battle && ev.p === c.ctrl && g.battle && (g.battle.a === c || g.battle.t === c) && !!relEq(g, c),
           res: function* (g, c, p, L) { damage(g, opp(p), L.ev.n, { src: c, srcP: p }); } }] },
   'Djinn Releaser of Rituals': { // banished from the GY for any Ritual Summon (engine ritualCombos, RITGY_RE) and for Black Illusion Ritual (birPool)
