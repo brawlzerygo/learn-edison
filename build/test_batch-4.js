@@ -49,7 +49,7 @@ T('Doomcaliber Knight negates a monster effect', () => {
   const g = duel({ board: [{ m: ['Card Trooper'] }, { m: ['Doomcaliber Knight'] }] });
   const deck = g.p[0].deck.length;
   choose(g, 'Send 1-3'); choose(g, '1');
-  choose(g, 'Doomcaliber', 1); passAll(g);
+  passAll(g);   // Doomcaliber Knight activates by itself (a mandatory Quick Effect, 2026-11-28 audit)
   ok(inZ(g, 0, 'gy', 'Card Trooper') && inZ(g, 1, 'gy', 'Doomcaliber Knight') && g.p[0].deck.length === deck - 2, 'Card Trooper negated and destroyed: its cost card was sent anyway, and it draws 1 for being destroyed (2026-11-27 audit: the mill is a cost)');
 });
 T('Gemini Soldier survives and summons a Gemini', () => {

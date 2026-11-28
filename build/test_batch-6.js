@@ -60,8 +60,8 @@ T('Ccarayhua destroyed by an effect destroys all cards', () => {
 
 T('Double Coston counts as 2 Tributes for a DARK', () => {
   const g = duel({ board: [{ hand: ['Dark Magician'], m: ['Double Coston'] }, {}] });
-  act(g, 0, 'm', 'Double Coston'); passAll(g);
-  ok(inZone(g, 0, 'm', 'Dark Magician') && inZone(g, 0, 'gy', 'Double Coston'), 'Dark Magician Tribute Summoned with Coston alone');
+  const dm = g.p[0].hand.find(c => E.name(c) === 'Dark Magician'); E.act(g, ['ns:' + dm.u]); passAll(g);   // a real Tribute Summon (2026-11-28 audit)
+  ok(inZone(g, 0, 'm', 'Dark Magician') && inZone(g, 0, 'gy', 'Double Coston') && dm.summonType === 'tribute', 'Dark Magician Tribute Summoned with Coston alone');
   ok(!hasOpt(g, 'ns:'), 'that used the Normal Summon');
 });
 

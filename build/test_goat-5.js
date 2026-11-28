@@ -94,7 +94,7 @@ T('Golem Sentry: Flip Summon bounces a monster, then it turns itself face-down',
   const g = duel({ board: [{ m: [{ n: 'Golem Sentry', pos: 'set' }] }, { m: [BIG] }] });
   choose(g, 'Flip Summon'); passAll(g);
   ok(inZone(g, 1, 'hand', BIG), 'Archfiend Soldier returned to the hand');
-  ok(!hasOpt(g, 'Turn face-down'), 'cannot turn face-down the turn it changed position');
+  ok(hasOpt(g, 'Turn face-down'), 'it can turn face-down the turn it was Flip Summoned (RULING? decided by EDOPro: once per turn only; 2026-11-28 audit)');
   endTurn(g); endTurn(g);
   choose(g, 'Turn face-down'); passAll(g);
   ok(fieldC(g, 0, 'Golem Sentry').pos === 'set', 'Golem Sentry is face-down again');

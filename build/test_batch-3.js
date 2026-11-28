@@ -47,7 +47,7 @@ T('Gyzarus contact fusion destroys 2 cards', () => {
 T('Light and Darkness Dragon negates MST', () => {
   const g = duel({ board: [{ hand: ['Mystical Space Typhoon'] }, { hand: [], m: ['Light and Darkness Dragon'], st: ['Mirror Force'] }] });
   choose(g, 'a:' + handU(g, 0, 'Mystical Space Typhoon')); if (g.prompt.type === 'pick') choose(g, 'Mirror');
-  ok(hasOpt(g, 'Negate (lose 500'), 'LADD can respond'); choose(g, 'Negate (lose 500'); passAll(g);
+  ok(!hasOpt(g, 'Negate (lose 500'), 'LADD activates by itself (a mandatory Quick Effect, 2026-11-28 audit)'); passAll(g);
   const l = on(g, 1, 'Light and Darkness Dragon');
   ok(l && E.atk(g, l) === 2300 && E.def(g, l) === 1900, 'LADD lost 500 ATK/DEF');
   ok(g.p[1].st.some(Boolean), 'Mirror Force survived');

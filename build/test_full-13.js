@@ -278,8 +278,8 @@ T('Rocket Warrior: no destruction or damage on your turn, -500', () => {
 T("Rod of Silence negates a Spell targeting the equipped monster", () => {
   const g = duel({ board: [{ hand: ['Book of Moon'], turn: 2 }, { m: ['Cyber Dragon'], st: [{ n: "Rod of Silence - Kay'est", pos: 'up' }] }] });
   g.p[1].st[0].equipTo = g.p[1].m[0].u;
-  use(g, 'Book of Moon'); use(g, "Rod of Silence - Kay'est"); settle(g);
-  ok(on(g, 1, 'Cyber Dragon').pos === 'atk' && E.def(g, on(g, 1, 'Cyber Dragon')) === 2100, 'Book of Moon negated, +500 DEF');
+  use(g, 'Book of Moon'); settle(g);   // a continuous negation as Book of Moon resolves (2026-11-28 audit, E4b), not a chain link
+  ok(on(g, 1, 'Cyber Dragon').pos === 'atk' && E.def(g, on(g, 1, 'Cyber Dragon')) === 2100 && g.p[0].gy.some(c => E.name(c) === 'Book of Moon'), 'Book of Moon negated and destroyed, +500 DEF');
 });
 T('Royal Command negates Flip effects', () => {
   const g = duel({ board: [{ m: [{ n: 'Princess of Tsurugi', pos: 'set' }], turn: 2 }, { st: [{ n: 'Royal Command', pos: 'up' }, 'Trap Hole'] }] });
